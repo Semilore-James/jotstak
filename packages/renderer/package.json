@@ -2,6 +2,7 @@
   "name": "@jotstak/renderer",
   "version": "0.0.0",
   "description": "Framework-free .jot parser and HTML renderer. Shared by the extension preview and the web playground.",
+  "license": "MIT",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -11,10 +12,11 @@
       "import": "./dist/index.js"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
-    "build": "tsc -b",
-    "test": "vitest run"
+    "build": "tsc -b"
   },
   "dependencies": {
     "@jotstak/schema": "*"

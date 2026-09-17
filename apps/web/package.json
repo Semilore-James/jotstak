@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "description": "Jotstak marketing site, live playground, and docs (Starlight). Deploys to Cloudflare Pages.",
+  "license": "MIT",
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",

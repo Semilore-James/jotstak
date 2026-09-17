@@ -3,6 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "description": "A code-first document tool for product managers, rendered as a warm, hand-kept notebook.",
+  "license": "MIT",
   "workspaces": [
     "packages/*",
     "apps/*"
@@ -20,5 +21,9 @@
   },
   "engines": {
     "node": ">=22.12.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Semilore-James/jotstak.git"
   }
 }

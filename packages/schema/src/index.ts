@@ -222,14 +222,12 @@ const footnote: PrimitiveSpec = {
   name: "footnote",
   group: "text",
   summary:
-    "Footnote. Reference in body text with `[^id]`, then define the note anywhere with `@footnote id`. Renders at the bottom of the page in notebook mode.",
-  params: [
-    { name: "id", type: "string", required: true, description: "Unique footnote identifier, referenced in text as [^id]." },
-  ],
+    "Footnote. Reference in body text with `[^id]`, then define the note anywhere with `@footnote id=<id>` — it uses the universal `id` param, which is effectively required here (the renderer reports a footnote without one). Renders at the bottom of the page in notebook mode.",
+  params: [],
   bodyShape: "plain",
   breaksRuling: false,
   examples: [
-    "See the original research[^disco1].\n\n@footnote disco1\n  Findings from the March discovery sprint, slide 14.",
+    "See the original research[^disco1].\n\n@footnote id=disco1\n  Findings from the March discovery sprint, slide 14.",
   ],
 };
 
@@ -366,14 +364,14 @@ const doodle: PrimitiveSpec = {
   summary:
     "Freeform space for anything the structured primitives cannot express. The only primitive that accepts coordinate-style placement. Body is a mini drawing language (lines, circles, labels, arrows with positions). This is the escape hatch — reach for a named primitive first.",
   params: [
-    { name: "width", type: "number", required: false, description: "Width in grid units (1 unit ≈ 1 ruled line height). Default: full width." },
-    { name: "height", type: "number", required: false, description: "Height in grid units." },
+    { name: "cols", type: "number", required: false, description: "Drawing area width in grid units (1 unit ≈ 1 ruled line height). Default: fills the block's `width`. Distinct from the universal `width`, which sets how much page the block takes." },
+    { name: "rows", type: "number", required: false, description: "Drawing area height in grid units." },
     { name: "caption", type: "string", required: false, description: "Caption below the doodle." },
   ],
   bodyShape: "plain",
   breaksRuling: true,
   examples: [
-    '@doodle height=6 caption="Rough architecture"\n  box "API" at 2,1 size 3,2\n  box "DB" at 2,4 size 3,2\n  arrow from "API" to "DB"',
+    '@doodle rows=6 caption="Rough architecture"\n  box "API" at 2,1 size 3,2\n  box "DB" at 2,4 size 3,2\n  arrow from "API" to "DB"',
   ],
 };
 

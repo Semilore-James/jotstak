@@ -3,20 +3,38 @@
   "displayName": "Jotstak",
   "version": "0.0.0",
   "description": "Write PM documents in .jot and render them as a warm, hand-kept notebook.",
+  "license": "MIT",
   "publisher": "TBD",
   "engines": {
     "vscode": "^1.90.0"
   },
-  "categories": ["Programming Languages", "Visualization", "Other"],
-  "keywords": ["product management", "prd", "notebook", "markdown alternative", "spec"],
+  "categories": [
+    "Programming Languages",
+    "Visualization",
+    "Other"
+  ],
+  "keywords": [
+    "product management",
+    "prd",
+    "notebook",
+    "markdown alternative",
+    "spec"
+  ],
   "main": "./dist/extension.js",
-  "activationEvents": ["onLanguage:jot"],
+  "activationEvents": [
+    "onLanguage:jot"
+  ],
   "contributes": {
     "languages": [
       {
         "id": "jot",
-        "aliases": ["Jotstak", "jot"],
-        "extensions": [".jot"],
+        "aliases": [
+          "Jotstak",
+          "jot"
+        ],
+        "extensions": [
+          ".jot"
+        ],
         "configuration": "./language-configuration.json"
       }
     ],
@@ -28,11 +46,26 @@
       }
     ],
     "commands": [
-      { "command": "jotstak.openPreview", "title": "Jotstak: Open Preview" },
-      { "command": "jotstak.toggleMode", "title": "Jotstak: Toggle Notebook / Doc Mode" },
-      { "command": "jotstak.exportHtml", "title": "Jotstak: Export as HTML" },
-      { "command": "jotstak.copyMarkdown", "title": "Jotstak: Copy as Markdown" },
-      { "command": "jotstak.learnSyntax", "title": "Jotstak: Learn the Syntax" }
+      {
+        "command": "jotstak.openPreview",
+        "title": "Jotstak: Open Preview"
+      },
+      {
+        "command": "jotstak.toggleMode",
+        "title": "Jotstak: Toggle Notebook / Doc Mode"
+      },
+      {
+        "command": "jotstak.exportHtml",
+        "title": "Jotstak: Export as HTML"
+      },
+      {
+        "command": "jotstak.copyMarkdown",
+        "title": "Jotstak: Copy as Markdown"
+      },
+      {
+        "command": "jotstak.learnSyntax",
+        "title": "Jotstak: Learn the Syntax"
+      }
     ]
   },
   "scripts": {
@@ -51,5 +84,10 @@
     "@vscode/vsce": "^4.0.0",
     "ovsx": "^1.2.0",
     "typescript": "~6.0.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Semilore-James/jotstak.git",
+    "directory": "apps/extension"
   }
 }

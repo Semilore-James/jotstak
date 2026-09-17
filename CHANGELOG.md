@@ -17,7 +17,15 @@ All notable changes to Jotstak are recorded here. Format loosely follows [Keep a
 - Dependencies moved to current majors: Astro 7, Starlight 0.42, Vitest 5, vsce 4, ovsx 1; TypeScript 6.0.3 (7 blocked by `@astrojs/check`). `@types/vscode` pinned to 1.90.0 to match the engine floor.
 - Docs content moved to `src/content/docs/docs/` so Starlight serves `/docs` instead of claiming `/`.
 
+- `@footnote` now uses the universal `id` param (`@footnote id=<id>`); `@doodle` drawing area params renamed `width`/`height` → `cols`/`rows`.
+- Web deploy workflow is manual-only until M1 (no Cloudflare project or secrets yet).
+
+### Added (going public)
+- `LICENSE` (MIT, © 2026 Semilore-James); `license` and `repository` fields in manifests.
+- Schema invariant tests (Vitest, 8 tests).
+
 ### Fixed
+- Param name collisions between primitive-specific and universal params (`@footnote` `id`, `@doodle` `width`), caught by the new schema tests.
 - Duplicate type re-export in `@jotstak/schema` (TS2484), caught by the first real `tsc -b`.
 - Playground script is now null-safe and typed for strict `astro check`.
 
