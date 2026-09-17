@@ -1,0 +1,21 @@
+name: Feature request
+description: Suggest an improvement to Jotstak
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem would this solve?
+      description: Describe the situation you hit, not the solution you have in mind.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What did you have in mind?
+      description: Optional. A rough idea is fine.
+  - type: textarea
+    id: today
+    attributes:
+      label: How do you handle this today?
+      description: Another tool, a workaround, or you just live with it.

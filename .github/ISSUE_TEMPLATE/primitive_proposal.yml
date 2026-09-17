@@ -1,0 +1,36 @@
+name: Primitive proposal
+description: Propose a new @primitive for the .jot language
+labels: ["primitive-proposal"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Jotstak keeps its primitive set deliberately small. Proposals are judged on whether the shape is genuinely PM-work-shaped and whether it needs its own rendering mechanic, rather than on whether it would be nice to have.
+  - type: input
+    id: name
+    attributes:
+      label: Proposed name
+      placeholder: "@retro"
+    validations:
+      required: true
+  - type: textarea
+    id: purpose
+    attributes:
+      label: What document does this appear in, and what does it capture?
+    validations:
+      required: true
+  - type: textarea
+    id: syntax
+    attributes:
+      label: Sketch the syntax
+      description: Follow the existing principles — no pipe tables, indentation is structure, arrangement is expressed as intent rather than coordinates.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: existing
+    attributes:
+      label: Why can't an existing primitive do this?
+      description: For example, a keyed-field card or a table.
+    validations:
+      required: true

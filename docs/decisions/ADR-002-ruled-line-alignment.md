@@ -1,6 +1,6 @@
 # ADR-002: Aligning ruled lines with text baselines
 
-- **Status:** Proposed — awaiting decision by Semilore-James
+- **Status:** **Accepted** — Option A on top of C's grid discipline, 2026-09-17
 - **Date:** 2026-09-17
 - **Stage:** 11 (Technical design) in [go_to_jotstak.md](../go_to_jotstak.md)
 
