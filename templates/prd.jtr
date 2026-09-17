@@ -1,0 +1,27 @@
+// Starter template — Product Requirements Document
+// Copy this file, rename it, and fill it in. Every block below is a Jotter primitive.
+
+@banner Product Requirements — <Feature name>
+
+@heading Overview
+Problem, who it is for, and why now.
+>> keep this to a paragraph you would say out loud
+
+@decision title="The core bet"
+  context: what is true today that makes this worth doing
+  choice: the approach we are committing to
+  consequences: what this makes easy, and what it makes hard
+
+@heading Goals and non-goals
+@table style=ruled
+  In scope, Out of scope
+  <goal>, <explicit non-goal>
+
+@heading Success metrics
+@metric name="Primary metric" target="<value>"
+
+@heading Risks and assumptions
+@risk level=high
+  ...
+@assumption
+  ...

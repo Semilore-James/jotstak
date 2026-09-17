@@ -1,0 +1,56 @@
+{
+  "name": "@jotter/extension",
+  "displayName": "Jotter",
+  "version": "0.0.0",
+  "description": "Write PM documents in .jtr and render them as a warm, hand-kept notebook.",
+  "publisher": "TBD",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": ["Programming Languages", "Visualization", "Other"],
+  "keywords": ["product management", "prd", "notebook", "markdown alternative", "spec"],
+  "main": "./dist/extension.js",
+  "activationEvents": ["onLanguage:jtr"],
+  "contributes": {
+    "languages": [
+      {
+        "id": "jtr",
+        "aliases": ["Jotter", "jtr"],
+        "extensions": [".jtr"],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "jtr",
+        "scopeName": "source.jtr",
+        "path": "./syntaxes/jtr.tmLanguage.json"
+      }
+    ],
+    "commands": [
+      { "command": "jotter.openPreview", "title": "Jotter: Open Preview" },
+      { "command": "jotter.toggleMode", "title": "Jotter: Toggle Notebook / Doc Mode" },
+      { "command": "jotter.exportHtml", "title": "Jotter: Export as HTML" },
+      { "command": "jotter.copyMarkdown", "title": "Jotter: Copy as Markdown" },
+      { "command": "jotter.learnSyntax", "title": "Jotter: Learn the Syntax" }
+    ]
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "watch": "tsc -b --watch",
+    "typecheck": "tsc -b --noEmit",
+    "package": "vsce package",
+    "publish:vsce": "vsce publish",
+    "publish:ovsx": "ovsx publish"
+  },
+  "dependencies": {
+    "@jotter/renderer": "workspace:*",
+    "@jotter/schema": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.90.0",
+    "@vscode/vsce": "^3.0.0",
+    "ovsx": "^0.9.0",
+    "typescript": "^5.6.0"
+  }
+}

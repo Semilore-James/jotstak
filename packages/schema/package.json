@@ -1,0 +1,22 @@
+{
+  "name": "@jotter/schema",
+  "version": "0.0.0",
+  "description": "Single source of truth for .jtr primitives — consumed by the LSP (autocomplete) and the docs reference generator.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc -b --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0"
+  }
+}

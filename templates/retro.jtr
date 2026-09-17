@@ -1,0 +1,22 @@
+// Starter template — Weekly / sprint retro
+
+@banner Retro — <sprint or week>
+
+@heading What went well
+@sticky color=green
+  ...
+
+@heading What did not
+@sticky color=coral
+  ...
+
+@heading What we will change
+@decision title="One concrete change"
+  context: ...
+  choice: ...
+  consequences: ...
+
+@heading Action items
+@table style=sketch
+  Action, Owner, By when
+  <what>, <who>, <when>
