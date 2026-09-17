@@ -1,4 +1,4 @@
-# Jotter
+# Jotstak
 
 *Write product documents in a small structured language and render them as a warm, hand-kept notebook.*
 
@@ -6,7 +6,7 @@
 
 ## What it does
 
-Open a `.jtr` file, type `@` to pick a primitive (decision blocks, star models, journey maps, tables, personas, and more), and watch a live preview render your document on ruled cream paper. Two modes: **notebook** (the handmade feel) and **doc** (clean A4 for stakeholders). Same source, both surfaces.
+Open a `.jot` file, type `@` to pick a primitive (decision blocks, star models, journey maps, tables, personas, and more), and watch a live preview render your document on ruled cream paper. Two modes: **notebook** (the handmade feel) and **doc** (clean A4 for stakeholders). Same source, both surfaces.
 
 - Plain text, Git-versioned, diffable — no lock-in.
 - Export to self-contained HTML or copy as clean Markdown.
@@ -14,11 +14,11 @@ Open a `.jtr` file, type `@` to pick a primitive (decision blocks, star models, 
 
 ## Commands
 
-- `Jotter: Open Preview`
-- `Jotter: Toggle Notebook / Doc Mode`
-- `Jotter: Export as HTML`
-- `Jotter: Copy as Markdown`
-- `Jotter: Learn the Syntax`
+- `Jotstak: Open Preview`
+- `Jotstak: Toggle Notebook / Doc Mode`
+- `Jotstak: Export as HTML`
+- `Jotstak: Copy as Markdown`
+- `Jotstak: Learn the Syntax`
 
 ## Install
 

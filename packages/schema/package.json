@@ -1,7 +1,7 @@
 {
-  "name": "@jotter/schema",
+  "name": "@jotstak/schema",
   "version": "0.0.0",
-  "description": "Single source of truth for .jtr primitives — consumed by the LSP (autocomplete) and the docs reference generator.",
+  "description": "Single source of truth for .jot primitives — consumed by the LSP (autocomplete) and the docs reference generator.",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

@@ -1,4 +1,4 @@
-// @jotter/schema — the definitive list of .jtr primitives.
+// @jotstak/schema — the definitive list of .jot primitives.
 // The LSP reads this for autocomplete + hover; the docs site generates the
 // reference pages from it. One edit here propagates to editor and docs alike.
 //
@@ -320,7 +320,7 @@ const journey: PrimitiveSpec = {
   bodyShape: "indented",
   breaksRuling: true,
   examples: [
-    '@journey title="Onboarding"\n  stage Discover feeling=happy\n    Finds the landing page\n    Tries the playground\n  stage Install feeling=neutral\n    Copies the command\n    Waits for download\n  stage First doc feeling=happy\n    Opens welcome.jtr\n    Edits and sees it render',
+    '@journey title="Onboarding"\n  stage Discover feeling=happy\n    Finds the landing page\n    Tries the playground\n  stage Install feeling=neutral\n    Copies the command\n    Waits for download\n  stage First doc feeling=happy\n    Opens welcome.jot\n    Edits and sees it render',
     '@journey title="Support request"\n  track Customer\n    stage Report feeling=frustrated\n      Hits a bug\n    stage Wait feeling=frustrated\n      Checks email\n  track Support\n    stage Triage feeling=neutral\n      Reads the ticket\n    stage Fix feeling=happy\n      Ships patch',
   ],
 };
@@ -495,7 +495,7 @@ const assumption: PrimitiveSpec = {
   bodyShape: "mixed",
   breaksRuling: false,
   examples: [
-    '@assumption title="PMs will learn a syntax" confidence=medium\n  Code-adjacent PMs will invest an afternoon to learn .jtr if the output is good enough.\n  validation: 3 real PMs try the welcome file unaided; 2/3 produce a usable doc.',
+    '@assumption title="PMs will learn a syntax" confidence=medium\n  Code-adjacent PMs will invest an afternoon to learn .jot if the output is good enough.\n  validation: 3 real PMs try the welcome file unaided; 2/3 produce a usable doc.',
   ],
 };
 
@@ -514,7 +514,7 @@ const banner: PrimitiveSpec = {
   bodyShape: "plain",
   breaksRuling: true,
   examples: [
-    "@banner Product Requirements — Jotter v1",
+    "@banner Product Requirements — Jotstak v1",
     "@banner Discovery phase",
   ],
 };

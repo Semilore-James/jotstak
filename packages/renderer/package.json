@@ -1,7 +1,7 @@
 {
-  "name": "@jotter/renderer",
+  "name": "@jotstak/renderer",
   "version": "0.0.0",
-  "description": "Framework-free .jtr parser and HTML renderer. Shared by the extension preview and the web playground.",
+  "description": "Framework-free .jot parser and HTML renderer. Shared by the extension preview and the web playground.",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -18,7 +18,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@jotter/schema": "workspace:*"
+    "@jotstak/schema": "*"
   },
   "devDependencies": {
     "typescript": "^5.6.0",

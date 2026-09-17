@@ -1,4 +1,4 @@
-# @jotter/icons
+# @jotstak/icons
 
 Icon set bundled into the extension and web renderer so `@icon` works offline.
 
@@ -12,7 +12,7 @@ Icon set bundled into the extension and web renderer so `@icon` works offline.
 
 ## The treatment: mode-aware, like everything else
 
-Jotter already renders two ways from one source. Icons follow the same rule:
+Jotstak already renders two ways from one source. Icons follow the same rule:
 
 | Mode | Treatment | Why |
 | --- | --- | --- |
@@ -43,7 +43,7 @@ A build-time script samples each SVG path and applies controlled jitter (the app
 Two ways to ask:
 
 ### 1. `icon=` on any primitive
-A universal optional param (see `UNIVERSAL_PARAMS` in `@jotter/schema`). Opts that one block in.
+A universal optional param (see `UNIVERSAL_PARAMS` in `@jotstak/schema`). Opts that one block in.
 
 ```
 @decision title="Use Astro" icon=git-branch

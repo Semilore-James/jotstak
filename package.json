@@ -1,16 +1,19 @@
 {
-  "name": "jotter",
+  "name": "jotstak",
   "version": "0.0.0",
   "private": true,
   "description": "A code-first document tool for product managers, rendered as a warm, hand-kept notebook.",
-  "packageManager": "pnpm@9.0.0",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
   "scripts": {
-    "build": "pnpm -r build",
-    "dev:web": "pnpm --filter @jotter/web dev",
-    "dev:ext": "pnpm --filter @jotter/extension watch",
-    "typecheck": "pnpm -r typecheck",
-    "lint": "pnpm -r lint",
-    "test": "pnpm -r test"
+    "build": "npm run build --workspaces --if-present",
+    "dev:web": "npm run dev -w @jotstak/web",
+    "dev:ext": "npm run watch -w @jotstak/extension",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present"
   },
   "engines": {
     "node": ">=20"

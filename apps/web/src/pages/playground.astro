@@ -1,6 +1,6 @@
 ---
-// Live playground: type .jtr on the left, see it render on the right.
-// Renders entirely client-side using the SAME @jotter/renderer the extension uses.
+// Live playground: type .jot on the left, see it render on the right.
+// Renders entirely client-side using the SAME @jotstak/renderer the extension uses.
 // No backend, no API call — this is the whole point of the local-first architecture.
 const starter = "@decision title=\"Use Astro for the site\"\n  context: local-first, content-heavy\n  choice: Astro on Cloudflare Pages\n  consequences: near-zero hosting cost";
 ---
@@ -9,7 +9,7 @@ const starter = "@decision title=\"Use Astro for the site\"\n  context: local-fi
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Jotter Playground</title>
+    <title>Jotstak Playground</title>
   </head>
   <body>
     <main>
@@ -18,7 +18,7 @@ const starter = "@decision title=\"Use Astro for the site\"\n  context: local-fi
     </main>
 
     <script>
-      import { render } from "@jotter/renderer";
+      import { render } from "@jotstak/renderer";
       const src = document.getElementById("src");
       const out = document.getElementById("out");
       const paint = () => {

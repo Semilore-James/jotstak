@@ -1,5 +1,5 @@
-// @jotter/renderer — the shared heart.
-// Parses .jtr source into an AST and renders it to HTML in one of two modes.
+// @jotstak/renderer — the shared heart.
+// Parses .jot source into an AST and renders it to HTML in one of two modes.
 // This same module is imported by the VS Code preview webview and the web playground,
 // so it must stay framework-free and DOM-agnostic (returns HTML strings, not nodes).
 
@@ -27,7 +27,7 @@ export interface Diagnostic {
 // --- Pipeline: source -> tokens -> AST -> HTML -----------------------------
 // parse()   lives in ./parser
 // render()  lives in ./render
-// Primitive definitions come from @jotter/schema so behavior and docs never drift.
+// Primitive definitions come from @jotstak/schema so behavior and docs never drift.
 
 export function render(_source: string, _options: RenderOptions): RenderResult {
   // TODO(v1): tokenize, parse to AST, walk primitives, emit HTML for the mode.

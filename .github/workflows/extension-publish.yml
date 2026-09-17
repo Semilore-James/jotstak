@@ -10,20 +10,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 9
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter @jotter/extension build
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build -w @jotstak/extension
       - name: Publish to VS Code Marketplace
-        run: pnpm --filter @jotter/extension publish:vsce
+        run: npm run publish:vsce -w @jotstak/extension
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
       - name: Publish to Open VSX
-        run: pnpm --filter @jotter/extension publish:ovsx
+        run: npm run publish:ovsx -w @jotstak/extension
         env:
           OVSX_PAT: ${{ secrets.OVSX_PAT }}

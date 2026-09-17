@@ -1,9 +1,9 @@
 {
-  "name": "@jotter/web",
+  "name": "@jotstak/web",
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "Jotter marketing site, live playground, and docs (Starlight). Deploys to Cloudflare Pages.",
+  "description": "Jotstak marketing site, live playground, and docs (Starlight). Deploys to Cloudflare Pages.",
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "@astrojs/starlight": "^0.28.0",
-    "@jotter/renderer": "workspace:*",
+    "@jotstak/renderer": "*",
     "astro": "^4.15.0"
   }
 }

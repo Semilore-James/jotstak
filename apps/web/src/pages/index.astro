@@ -1,14 +1,14 @@
 ---
-// Landing page. Must render a real Jotter document above the fold within 3s of scroll.
+// Landing page. Must render a real Jotstak document above the fold within 3s of scroll.
 // Cream, terracotta, Lora serif, hand-drawn accents. No generic SaaS layout.
-const installCmd = "code --install-extension jotter.jotter";
+// TODO(M4): install command, once the Marketplace publisher ID exists.
 ---
 
 <html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Jotter — documents worth re-reading</title>
+    <title>Jotstak — documents worth re-reading</title>
     <meta
       name="description"
       content="Write PM documents in a small structured language and render them as a warm, hand-kept notebook."
@@ -16,13 +16,12 @@ const installCmd = "code --install-extension jotter.jotter";
   </head>
   <body>
     <main>
-      <!-- TODO(v1): hero with a rendered .jtr sample above the fold -->
-      <h1>Jotter</h1>
+      <!-- TODO(v1): hero with a rendered .jot sample above the fold -->
+      <h1>Jotstak</h1>
       <p>Documents worth re-reading.</p>
       <a href="/playground">Try the playground</a>
       <a href="/docs">Read the docs</a>
-      <code>{installCmd}</code>
-      <!-- TODO(v1): gallery, "why Jotter", Buttondown email capture -->
+      <!-- TODO(v1): gallery, "why Jotstak", Buttondown email capture -->
     </main>
   </body>
 </html>

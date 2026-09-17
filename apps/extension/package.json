@@ -1,8 +1,8 @@
 {
-  "name": "@jotter/extension",
-  "displayName": "Jotter",
+  "name": "@jotstak/extension",
+  "displayName": "Jotstak",
   "version": "0.0.0",
-  "description": "Write PM documents in .jtr and render them as a warm, hand-kept notebook.",
+  "description": "Write PM documents in .jot and render them as a warm, hand-kept notebook.",
   "publisher": "TBD",
   "engines": {
     "vscode": "^1.90.0"
@@ -10,29 +10,29 @@
   "categories": ["Programming Languages", "Visualization", "Other"],
   "keywords": ["product management", "prd", "notebook", "markdown alternative", "spec"],
   "main": "./dist/extension.js",
-  "activationEvents": ["onLanguage:jtr"],
+  "activationEvents": ["onLanguage:jot"],
   "contributes": {
     "languages": [
       {
-        "id": "jtr",
-        "aliases": ["Jotter", "jtr"],
-        "extensions": [".jtr"],
+        "id": "jot",
+        "aliases": ["Jotstak", "jot"],
+        "extensions": [".jot"],
         "configuration": "./language-configuration.json"
       }
     ],
     "grammars": [
       {
-        "language": "jtr",
-        "scopeName": "source.jtr",
-        "path": "./syntaxes/jtr.tmLanguage.json"
+        "language": "jot",
+        "scopeName": "source.jot",
+        "path": "./syntaxes/jot.tmLanguage.json"
       }
     ],
     "commands": [
-      { "command": "jotter.openPreview", "title": "Jotter: Open Preview" },
-      { "command": "jotter.toggleMode", "title": "Jotter: Toggle Notebook / Doc Mode" },
-      { "command": "jotter.exportHtml", "title": "Jotter: Export as HTML" },
-      { "command": "jotter.copyMarkdown", "title": "Jotter: Copy as Markdown" },
-      { "command": "jotter.learnSyntax", "title": "Jotter: Learn the Syntax" }
+      { "command": "jotstak.openPreview", "title": "Jotstak: Open Preview" },
+      { "command": "jotstak.toggleMode", "title": "Jotstak: Toggle Notebook / Doc Mode" },
+      { "command": "jotstak.exportHtml", "title": "Jotstak: Export as HTML" },
+      { "command": "jotstak.copyMarkdown", "title": "Jotstak: Copy as Markdown" },
+      { "command": "jotstak.learnSyntax", "title": "Jotstak: Learn the Syntax" }
     ]
   },
   "scripts": {
@@ -44,8 +44,8 @@
     "publish:ovsx": "ovsx publish"
   },
   "dependencies": {
-    "@jotter/renderer": "workspace:*",
-    "@jotter/schema": "workspace:*"
+    "@jotstak/renderer": "*",
+    "@jotstak/schema": "*"
   },
   "devDependencies": {
     "@types/vscode": "^1.90.0",
