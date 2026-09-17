@@ -14,6 +14,16 @@ All notable changes to Jotstak are recorded here. Format loosely follows [Keep a
 - **Renamed Jotter → Jotstak.** Document extension `.jtr` → `.jot`; TextMate grammar is now `jot.tmLanguage.json` with scope `source.jot`; extension commands are `jotstak.*`; packages are `@jotstak/*`.
 - **pnpm → npm workspaces.** Root scripts, CI, deploy and publish workflows updated; internal deps use `"*"`.
 - Milestones reordered playground-first (see PRD §14).
+- Dependencies moved to current majors: Astro 7, Starlight 0.42, Vitest 5, vsce 4, ovsx 1; TypeScript 6.0.3 (7 blocked by `@astrojs/check`). `@types/vscode` pinned to 1.90.0 to match the engine floor.
+- Docs content moved to `src/content/docs/docs/` so Starlight serves `/docs` instead of claiming `/`.
+
+### Fixed
+- Duplicate type re-export in `@jotstak/schema` (TS2484), caught by the first real `tsc -b`.
+- Playground script is now null-safe and typed for strict `astro check`.
+
+### Build
+- Root solution `tsconfig.json`; `npm run typecheck` = `tsc -b` + `astro check`; `npm run build` = `tsc -b` + `astro build`.
+- `package-lock.json` committed; `*.tsbuildinfo` ignored.
 
 ### Removed
 - Placeholder site URL, placeholder GitHub link, and made-up install command from the web app.

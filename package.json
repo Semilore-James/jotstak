@@ -8,14 +8,17 @@
     "apps/*"
   ],
   "scripts": {
-    "build": "npm run build --workspaces --if-present",
+    "build": "tsc -b && npm run build -w @jotstak/web",
+    "typecheck": "tsc -b && npm run typecheck -w @jotstak/web",
     "dev:web": "npm run dev -w @jotstak/web",
     "dev:ext": "npm run watch -w @jotstak/extension",
-    "typecheck": "npm run typecheck --workspaces --if-present",
-    "lint": "npm run lint --workspaces --if-present",
-    "test": "npm run test --workspaces --if-present"
+    "test": "npm run test --workspaces --if-present",
+    "clean": "tsc -b --clean"
+  },
+  "devDependencies": {
+    "typescript": "~6.0.3"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=22.12.0"
   }
 }

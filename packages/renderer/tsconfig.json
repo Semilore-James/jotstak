@@ -12,5 +12,6 @@
     "composite": true,
     "skipLibCheck": true
   },
+  "references": [{ "path": "../schema" }],
   "include": ["src"]
 }

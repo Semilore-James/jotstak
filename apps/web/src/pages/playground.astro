@@ -19,14 +19,16 @@ const starter = "@decision title=\"Use Astro for the site\"\n  context: local-fi
 
     <script>
       import { render } from "@jotstak/renderer";
-      const src = document.getElementById("src");
-      const out = document.getElementById("out");
-      const paint = () => {
-        const { html } = render(src.value, { mode: "notebook" });
-        out.innerHTML = html;
-      };
-      src.addEventListener("input", paint);
-      paint();
+      const src = document.querySelector<HTMLTextAreaElement>("#src");
+      const out = document.querySelector<HTMLDivElement>("#out");
+      if (src && out) {
+        const paint = () => {
+          const { html } = render(src.value, { mode: "notebook" });
+          out.innerHTML = html;
+        };
+        src.addEventListener("input", paint);
+        paint();
+      }
     </script>
   </body>
 </html>

@@ -685,5 +685,3 @@ export function getSuggestedIcon(name: string): string | undefined {
 export function getPrimitivesByGroup(group: PrimitiveGroup): PrimitiveSpec[] {
   return PRIMITIVES.filter((p) => p.group === group);
 }
-
-export type { PrimitiveGroup, ParamSpec, PrimitiveSpec };

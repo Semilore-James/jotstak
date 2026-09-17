@@ -11,8 +11,12 @@
     "typecheck": "astro check"
   },
   "dependencies": {
-    "@astrojs/starlight": "^0.28.0",
+    "@astrojs/starlight": "^0.42.1",
     "@jotstak/renderer": "*",
-    "astro": "^4.15.0"
+    "astro": "^7.3.3"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.10",
+    "typescript": "~6.0.3"
   }
 }
