@@ -35,3 +35,7 @@ export function render(_source: string, _options: RenderOptions): RenderResult {
 }
 
 export const RENDERER_VERSION = "0.0.0";
+
+export { FONT_FACES, renderThemeCss } from "./css.js";
+export type { FontFace, ThemeCssOptions } from "./css.js";
+export * as tokens from "./tokens.js";

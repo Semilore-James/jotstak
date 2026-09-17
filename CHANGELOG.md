@@ -20,6 +20,12 @@ All notable changes to Jotstak are recorded here. Format loosely follows [Keep a
 - `@footnote` now uses the universal `id` param (`@footnote id=<id>`); `@doodle` drawing area params renamed `width`/`height` → `cols`/`rows`.
 - Web deploy workflow is manual-only until M1 (no Cloudflare project or secrets yet).
 
+### Added (M0 step 2)
+- `renderThemeCss({ assetBase?, scope? })`: generates scoped CSS variables from the design tokens, semantic aliases re-pointed per `data-mode`, and `@font-face` rules for bundled fonts.
+- `FONT_FACES` manifest: Lora (400, 400 italic, 500, 600), IBM Plex Mono (400, 500), Caveat (600), Inter (500, 600) via Fontsource, SIL OFL 1.1.
+- `tokens` namespace export from `@jotstak/renderer`.
+- Renderer tests (9) including a reviewed CSS snapshot.
+
 ### Added (going public)
 - `LICENSE` (MIT, © 2026 Semilore-James); `license` and `repository` fields in manifests.
 - Schema invariant tests (Vitest, 8 tests).
