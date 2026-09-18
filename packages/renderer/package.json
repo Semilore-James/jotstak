@@ -17,7 +17,8 @@
   ],
   "scripts": {
     "build": "tsc -b",
-    "test": "vitest run"
+    "test": "vitest run",
+    "metrics": "node scripts/extract-font-metrics.mjs"
   },
   "dependencies": {
     "@fontsource/caveat": "^5.3.0",
@@ -29,6 +30,7 @@
   },
   "devDependencies": {
     "@types/markdown-it": "^14.2.0",
+    "fontkit": "^2.0.4",
     "typescript": "~6.0.3",
     "vitest": "^5.0.1"
   }

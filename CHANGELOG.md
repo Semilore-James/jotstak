@@ -18,6 +18,21 @@ All notable changes to Jotstak are recorded here. Format loosely follows [Keep a
 - `@footnote` now uses the universal `id` param (`@footnote id=<id>`); `@doodle` drawing area params renamed `width`/`height` → `cols`/`rows`.
 - Web deploy workflow is manual-only until M1 (no Cloudflare project or secrets yet).
 
+### Added (M0 step 6 — closes M0)
+- `scripts/extract-font-metrics.mjs` reads the shipped woff2 files and generates `src/font-metrics.ts`. The baseline offset is now **derived** from real metrics (19.856px) rather than hand-written. ADR-002 satisfied.
+- Metric-matched fallback face: `"Lora Fallback"` overrides Georgia's ascent/descent/size to Lora's, so the baseline does not jump when the webfont finishes loading. Ships even when no webfonts are served.
+- Styling for fenced code and Markdown tables, both on the 28px grid.
+- 34 further tests: real repository `.md` files render with zero diagnostics and no content lost, Markdown constructs survive, font metrics still match the font file, and the ruled-line contract is machine-checked.
+
+### Fixed (M0 step 6)
+- **Fenced code blocks were destroyed.** A `#` inside a shell example became a heading and `- ` became a bullet, silently and with no diagnostic. The lexer now tracks fence state. This broke the superset promise on the project's own README and CONTRIBUTING.
+- Unclosed code fences now warn instead of silently swallowing the rest of the document.
+- Four-space indented code with no enclosing block is kept as an indented code block rather than warned about.
+- **Inline `<code>` grew its line to 30px**, so any paragraph mentioning a filename drifted 2px per line. Its line box is now capped below the line strut.
+- Long code lines wrapped instead of scrolling: `overflow-x: auto` added a ~15px scrollbar that is not a row multiple.
+- **The margin channel was not row-disciplined.** A grid row is as tall as its tallest cell, so notes on browser-default margins pushed the body column off the ruling even when every block was correctly sized.
+- Measured phase drift is now **0** across `README.md`, `CONTRIBUTING.md` and the sample `.jot` document.
+
 ### Added (M0 step 5)
 - `render(source, { mode })` now does real work: lex → parse → HTML, in `notebook` or `doc` mode from one source.
 - `renderLayoutCss(scope)`: the ruled-line contract as a stylesheet — 28px rows, rules painted at the **baseline offset** (19.63px, derived from Lora's metrics) so text sits *on* the line rather than between lines.

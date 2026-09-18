@@ -256,21 +256,21 @@ export function parseTokens(
       }
 
       case "body": {
-        // An indented line with no block above it. Treat as prose rather than
-        // dropping it, and say so.
-        flushMarkdown();
-        diagnostics.push({
-          severity: "warning",
-          message:
-            "Indented line does not belong to any block; treated as ordinary text.",
-          line: t.line,
-          column: t.column,
-        });
-        children.push({
-          type: "markdown",
-          text: t.content,
-          position: posOf(t),
-        });
+        // An indented line with no block above it. Four or more spaces is a
+        // Markdown indented code block, so keep the indentation and let
+        // markdown-it read it as code. Two or three is more likely a mis-indented
+        // block body, so it still gets flagged — but either way nothing is lost.
+        if (markdownBuf.length === 0) markdownStart = posOf(t);
+        markdownBuf.push(" ".repeat(t.indent) + t.content);
+        if (t.indent < 4) {
+          diagnostics.push({
+            severity: "warning",
+            message:
+              "Indented line does not belong to any block; treated as ordinary text.",
+            line: t.line,
+            column: t.column,
+          });
+        }
         i++;
         break;
       }

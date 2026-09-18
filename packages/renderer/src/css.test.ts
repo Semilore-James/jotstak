@@ -17,13 +17,19 @@ describe("fonts", () => {
     }
   });
 
-  it("emits no @font-face without an assetBase", () => {
-    expect(renderThemeCss()).not.toContain("@font-face");
+  it("emits no webfont @font-face without an assetBase", () => {
+    const css = renderThemeCss();
+    // The metric-matched fallback always ships — it is what prevents a baseline
+    // jump, and a host serving no fonts is exactly when it carries the page.
+    expect(css.match(/@font-face/g)).toHaveLength(1);
+    expect(css).toContain('font-family: "Lora Fallback"');
+    expect(css).not.toContain("url(");
   });
 
   it("emits one @font-face per file under assetBase/fonts, trimming trailing slashes", () => {
     const css = renderThemeCss({ assetBase: "https://example.test/assets///" });
-    expect(css.match(/@font-face/g)).toHaveLength(FONT_FACES.length);
+    // +1 for the fallback face.
+    expect(css.match(/@font-face/g)).toHaveLength(FONT_FACES.length + 1);
     for (const f of FONT_FACES) {
       expect(css).toContain(`url("https://example.test/assets/fonts/${f.file}")`);
     }

@@ -2,6 +2,16 @@
 
 exports[`tokens > matches the reviewed snapshot 1`] = `
 "@font-face {
+  font-family: "Lora Fallback";
+  src: local("Georgia"), local("Times New Roman"), local("Liberation Serif");
+  ascent-override: 100.60%;
+  descent-override: 27.40%;
+  line-gap-override: 0.00%;
+  size-adjust: 105.99%;
+}
+
+
+@font-face {
   font-family: "Lora";
   font-style: normal;
   font-weight: 400;
@@ -172,8 +182,8 @@ exports[`tokens > matches the reviewed snapshot 1`] = `
   --jot-layout-margin-tick-dot-radius: 3px;
   --jot-layout-margin-tick-line-width: 1.5px;
   --jot-layout-margin-tick-color: #c67139;
-  --jot-font-body: "Lora", Georgia, "Times New Roman", serif;
-  --jot-font-heading: "Lora", Georgia, "Times New Roman", serif;
+  --jot-font-body: "Lora", "Lora Fallback", Georgia, "Times New Roman", serif;
+  --jot-font-heading: "Lora", "Lora Fallback", Georgia, "Times New Roman", serif;
   --jot-font-mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
   --jot-font-margin: "Caveat", "Segoe Print", "Bradley Hand", cursive;
   --jot-font-label: "Inter", system-ui, "Segoe UI", sans-serif;

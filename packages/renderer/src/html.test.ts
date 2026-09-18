@@ -130,8 +130,11 @@ describe("render — the ruled-line contract", () => {
     expect(css).toContain('[data-mode="doc"] .jot-body { background-image: none; }');
   });
 
-  it("uses whole-row line heights for every text element", () => {
-    const css = renderLayoutCss();
+  it("uses whole-row line heights for every block element", () => {
+    // Inline code is the one deliberate exception: its box must stay BELOW the
+    // strut, not on the grid, or it grows the line it sits in. It is asserted
+    // separately in the regressions block.
+    const css = renderLayoutCss().replace(/\.jot-body code \{[^}]*\}/, "");
     for (const [, value] of css.matchAll(/line-height:\s*(\d+)px/g)) {
       expect(Number(value) % ROW).toBe(0);
     }
@@ -184,5 +187,56 @@ describe("render — plain Markdown", () => {
     expect(html).toContain("<em>italic</em>");
     expect(html).toContain('href="https://example.com"');
     expect(html).toContain("Nested item");
+  });
+});
+
+describe("render — regressions found by rendering real documents", () => {
+  const css = renderLayoutCss();
+
+  it("keeps fenced code literal instead of parsing its contents", () => {
+    const src = ["Intro.", "", "```bash", "# not a heading", "- not a bullet", "```", "", "After."].join("\n");
+    const { html, diagnostics } = render(src, { mode: "notebook" });
+    expect(diagnostics).toEqual([]);
+    expect(html).toContain("<pre>");
+    expect(html).toContain("# not a heading");
+    expect(html).not.toMatch(/<h1[^>]*>.*not a heading/);
+    expect(html).not.toContain("<li>not a bullet</li>");
+  });
+
+  it("warns about an unclosed fence rather than silently eating the document", () => {
+    const { diagnostics } = render("text\n\n```js\nconst a = 1;", { mode: "notebook" });
+    expect(diagnostics.some((d) => d.message.includes("Unclosed"))).toBe(true);
+  });
+
+  it("wraps long code lines rather than scrolling them", () => {
+    // A horizontal scrollbar is ~15px tall and is not a row multiple, so it
+    // knocks every line below the block off the ruling.
+    const declarations = /\.jot-body pre \{[^}]*\}/
+      .exec(css)![0]
+      .replace(/\/\*[\s\S]*?\*\//g, ""); // the rationale comment names the property
+    expect(declarations).toContain("white-space: pre-wrap");
+    expect(declarations).not.toContain("overflow-x");
+  });
+
+  it("caps inline code below the line strut so it cannot grow the row", () => {
+    const code = /\.jot-body code \{[^}]*\}/.exec(css)![0];
+    const lh = Number(/line-height:\s*(\d+)px/.exec(code)![1]);
+    expect(lh).toBeLessThan(ROW);
+  });
+
+  it("row-disciplines the margin channel, not just the body column", () => {
+    // A grid row is as tall as its tallest cell, so an undisciplined note sets
+    // the row height and pushes everything below it off the ruling.
+    expect(css).toContain(".jot-aside { display: flow-root; }");
+    expect(css).toMatch(/\.jot-aside > \* \{[^}]*margin-bottom: 28px/);
+  });
+
+  it("styles Markdown tables onto the grid", () => {
+    const { html } = render("| a | b |\n| --- | --- |\n| 1 | 2 |", { mode: "notebook" });
+    expect(html).toContain("<table>");
+    const table = /\.jot-body table \{[^}]*\}/.exec(css)![0];
+    expect(table).toContain("border-collapse: collapse");
+    // A header border would add 1px and break the row; an inset shadow does not.
+    expect(/\.jot-body thead th \{[^}]*\}/.exec(css)![0]).toContain("box-shadow: inset");
   });
 });

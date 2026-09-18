@@ -15,25 +15,48 @@
 // borders + padding total exactly one row, and inner content is always row-multiples.
 
 import { spacing, typography } from "./tokens.js";
+import { FONT_METRICS } from "./font-metrics.js";
 
 const ROW = spacing.baselineGrid; // 28
 
 /**
  * Distance from the top of a line box down to the text baseline, for body text.
  *
- *   half-leading   = (lineHeight - fontSize * (ascent + descent)) / 2
- *   baseline       = half-leading + fontSize * ascent
+ *   half-leading = (lineHeight - fontSize * (ascent + descent + lineGap)) / 2
+ *   baseline     = half-leading + fontSize * ascent
  *
- * Lora's ascent/descent are 1.006 / 0.302 em. At 16px in a 28px row that puts the
- * baseline at 19.63px. ADR-002 calls for reading these from the font file at build
- * time rather than hard-coding them; until that tooling exists this is the measured
- * value for the shipped face, exposed as a variable so a host can correct it.
+ * The metrics come from the shipped woff2 (see scripts/extract-font-metrics.mjs),
+ * not from a hand-written constant. That distinction is the whole of ADR-002: the
+ * first hand-written attempt put Lora's descent at 0.302 when it is 0.274, which
+ * moved every baseline a quarter-pixel off its rule.
  */
-const LORA_ASCENT = 1.006;
-const LORA_DESCENT = 0.302;
+const LORA = FONT_METRICS.lora;
 const BODY_PX = parseFloat(typography.body.lg.size);
-const halfLeading = (ROW - BODY_PX * (LORA_ASCENT + LORA_DESCENT)) / 2;
-export const BASELINE_OFFSET = +(halfLeading + BODY_PX * LORA_ASCENT).toFixed(2);
+const halfLeading = (ROW - BODY_PX * (LORA.ascent + LORA.descent + LORA.lineGap)) / 2;
+export const BASELINE_OFFSET = +(halfLeading + BODY_PX * LORA.ascent).toFixed(3);
+
+/**
+ * A fallback face that OCCUPIES THE SAME SPACE as Lora.
+ *
+ * Without this the page renders in Georgia until the webfont arrives, Georgia has
+ * different metrics, so the baseline sits somewhere else — and every line visibly
+ * jumps off its rule and back the instant Lora loads. The overrides force the
+ * fallback to report Lora's ascent and descent, and `size-adjust` matches mean
+ * glyph width so the text does not reflow either. The swap becomes invisible.
+ */
+export function renderFallbackFaceCss(): string {
+  const GEORGIA_MEAN_ADVANCE = 0.4944; // a–z mean, Georgia 400
+  const sizeAdjust = ((LORA.meanLowercaseAdvance / GEORGIA_MEAN_ADVANCE) * 100).toFixed(2);
+  return `@font-face {
+  font-family: "Lora Fallback";
+  src: local("Georgia"), local("Times New Roman"), local("Liberation Serif");
+  ascent-override: ${(LORA.ascent * 100).toFixed(2)}%;
+  descent-override: ${(LORA.descent * 100).toFixed(2)}%;
+  line-gap-override: ${(LORA.lineGap * 100).toFixed(2)}%;
+  size-adjust: ${sizeAdjust}%;
+}
+`;
+}
 
 /** Round a pixel height up to a whole number of baseline rows. */
 export function toWholeRows(px: number): number {
@@ -80,6 +103,12 @@ ${scope} .jot-aside { grid-column: 2; min-width: 0; }
    so the phase cannot slip no matter how long the document is. */
 ${scope} .jot-body { display: flow-root; }
 ${scope} .jot-body > * { margin-top: 0; margin-bottom: ${ROW}px; }
+/* The margin channel needs the same discipline. A grid row is as tall as its
+   TALLEST cell, so a note left on browser-default paragraph margins sets the row
+   height to a non-multiple and pushes everything below it off the ruling — even
+   when every block in the main column is perfectly sized. */
+${scope} .jot-aside { display: flow-root; }
+${scope} .jot-aside > * { margin-top: 0; margin-bottom: ${ROW}px; }
 /* A trailing margin inside a container would escape the row maths. */
 ${scope} .jot-quote > :last-child,
 ${scope} .jot-card > :last-child,
@@ -120,6 +149,65 @@ ${scope} .jot-body code {
   background: var(--jot-surface-elevated);
   border-radius: var(--jot-shape-border-radius-sm);
   padding: 0 4px;
+  /* An inline box taller than the line's strut GROWS the line. The mono face at
+     ${typography.code.md.size} inheriting a ${ROW}px line-height did exactly that: every line
+     containing inline code became ${ROW + 2}px, so a paragraph mentioning a filename
+     drifted 2px per line. Capping it below the strut keeps the row at ${ROW}px
+     while leaving the highlight tall enough to read as a token. */
+  line-height: 20px;
+}
+
+/* ── Fenced code ────────────────────────────────────────────────────── */
+/* A drawn block like any other: it clears the ruling and its chrome totals one
+   row. Code lines get a full ${ROW}px each rather than the token's 20px, because
+   a 20px line inside a ${ROW}px grid desynchronises everything below it. The
+   size is nudged up to suit the looser leading. */
+${scope} .jot-body pre {
+  background: var(--jot-surface-elevated);
+  border: 1px solid var(--jot-rule);
+  border-radius: var(--jot-shape-border-radius-base);
+  padding: 13px 18px;
+  /* Wrap rather than scroll. \`overflow-x: auto\` adds a ~15px horizontal
+     scrollbar when a line is long, which is not a row multiple and knocks
+     everything below it off the ruling. Wrapping keeps every line ${ROW}px. */
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+${scope} .jot-body pre code {
+  background: none;
+  border-radius: 0;
+  padding: 0;
+  font-size: 15px;
+  line-height: ${ROW}px;
+  display: block;
+}
+
+/* ── Markdown tables ────────────────────────────────────────────────── */
+/* \`.jot\` has no pipe-table syntax of its own, but a pasted .md file may well
+   contain one, and the superset promise covers it. Collapsed borders and zero
+   vertical padding keep each row a whole number of ${ROW}px lines; the header
+   underline is an inset shadow rather than a border so it costs no height. */
+${scope} .jot-body table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: ${typography.body.lg.size};
+}
+${scope} .jot-body th,
+${scope} .jot-body td {
+  padding: 0 ${ROW / 2}px 0 0;
+  line-height: ${ROW}px;
+  vertical-align: top;
+  text-align: left;
+  border: 0;
+}
+${scope} .jot-body thead th {
+  font-family: var(--jot-font-label);
+  font-size: ${typography.label.md.size};
+  font-weight: 600;
+  letter-spacing: ${typography.label.md.letterSpacing};
+  text-transform: uppercase;
+  color: var(--jot-ink-muted);
+  box-shadow: inset 0 -1px 0 var(--jot-rule);
 }
 
 /* ── Lists ──────────────────────────────────────────────────────────── */

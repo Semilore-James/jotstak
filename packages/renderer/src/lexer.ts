@@ -156,10 +156,14 @@ function measureIndent(raw: string): { indent: number; stripped: string } {
   return { indent, stripped: raw.slice(i) };
 }
 
+/** An opening or closing code fence: three or more backticks or tildes. */
+const FENCE_RE = /^(`{3,}|~{3,})\s*(.*)$/;
+
 function classifyLine(
   raw: string,
   lineNum: number,
   diagnostics: Diagnostic[],
+  fence: FenceState,
 ): LineToken {
   const { indent, stripped } = measureIndent(raw);
   const column = raw.length - raw.trimStart().length;
@@ -170,6 +174,25 @@ function classifyLine(
     indent,
     raw,
   };
+
+  // Fenced code is literal. Everything between the fences is handed through as
+  // text so markdown-it sees an intact block: without this a `# comment` inside
+  // a shell example becomes a heading and a `- item` becomes a bullet, silently
+  // destroying the block and breaking the "any .md renders unchanged" promise.
+  const fenceMatch = FENCE_RE.exec(stripped);
+  if (fence.marker !== null) {
+    const closes =
+      fenceMatch !== null &&
+      fenceMatch[1]![0] === fence.marker[0] &&
+      fenceMatch[1]!.length >= fence.marker.length &&
+      (fenceMatch[2] ?? "").trim() === "";
+    if (closes) fence.marker = null;
+    return { ...base, kind: "text", content: raw };
+  }
+  if (fenceMatch) {
+    fence.marker = fenceMatch[1]!;
+    return { ...base, kind: "text", content: raw };
+  }
 
   if (stripped.length === 0) {
     return { ...base, kind: "blank", content: "" };
@@ -287,9 +310,24 @@ export interface LexResult {
   diagnostics: Diagnostic[];
 }
 
+/** Carries fence state across lines; a fence spans many of them. */
+interface FenceState {
+  marker: string | null;
+}
+
 export function lex(source: string): LexResult {
   const diagnostics: Diagnostic[] = [];
   const lines = source.split(/\r?\n/);
-  const tokens = lines.map((raw, i) => classifyLine(raw, i, diagnostics));
+  const fence: FenceState = { marker: null };
+  const tokens = lines.map((raw, i) => classifyLine(raw, i, diagnostics, fence));
+
+  if (fence.marker !== null) {
+    diagnostics.push({
+      severity: "warning",
+      message: `Unclosed \`${fence.marker}\` code fence; everything after it is treated as code.`,
+      line: lines.length - 1,
+      column: 0,
+    });
+  }
   return { tokens, diagnostics };
 }

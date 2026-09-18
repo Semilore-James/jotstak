@@ -9,6 +9,7 @@
 // restyle its host, so nothing here targets :root, html or body.
 
 import { colors, notebookLayout, shapes, spacing, typography } from "./tokens.js";
+import { renderFallbackFaceCss } from "./layout.js";
 
 export interface ThemeCssOptions {
   /**
@@ -67,8 +68,8 @@ function flatten(prefix: string, obj: object, out: string[] = []): string[] {
 }
 
 const stack = {
-  serif: `"${typography.body.family}", Georgia, "Times New Roman", serif`,
-  heading: `"${typography.headline.family}", Georgia, "Times New Roman", serif`,
+  serif: `"${typography.body.family}", "Lora Fallback", Georgia, "Times New Roman", serif`,
+  heading: `"${typography.headline.family}", "Lora Fallback", Georgia, "Times New Roman", serif`,
   mono: `"${typography.code.family}", ui-monospace, "Cascadia Mono", Consolas, monospace`,
   margin: `"${typography.margin.family}", "Segoe Print", "Bradley Hand", cursive`,
   label: `"${typography.label.family}", system-ui, "Segoe UI", sans-serif`,
@@ -129,6 +130,10 @@ export function renderThemeCss(options: ThemeCssOptions = {}): string {
   ];
 
   return [
+    // The metric-matched fallback ships unconditionally: it costs nothing when
+    // the webfonts are present and prevents a visible baseline jump when they
+    // are still loading, or blocked, or the host serves no fonts at all.
+    renderFallbackFaceCss(),
     ...fontFaces,
     `${scope} {\n${[...tokenVars, ...semantic].join("\n")}\n}`,
     `${scope}[data-mode="notebook"] {\n${notebookMode.join("\n")}\n}`,
