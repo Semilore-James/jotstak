@@ -20,6 +20,16 @@ All notable changes to Jotstak are recorded here. Format loosely follows [Keep a
 - `@footnote` now uses the universal `id` param (`@footnote id=<id>`); `@doodle` drawing area params renamed `width`/`height` → `cols`/`rows`.
 - Web deploy workflow is manual-only until M1 (no Cloudflare project or secrets yet).
 
+### Added (M0 step 3)
+- `lex(source)` in `@jotstak/renderer`: line-by-line lexer that classifies `.jot` source into 11 token types (directive, heading, bullet, numbered, divider, blockquote, margin_note, comment, body, blank, text).
+- Inline param parsing on `@primitive` lines: validates types (enum, number, boolean) against `@jotstak/schema`, reports unknown params and missing required params.
+- Source position tracking (line, column, indent) on every token for future LSP diagnostics.
+- 26 lexer tests: line classification, param parsing, validation, multi-line documents, Windows line endings, and the invariant that a plain `.md` file produces zero diagnostics.
+
+### Changed (deployment)
+- Site now deploys via GitHub Actions (`cloudflare/wrangler-action@v4`) instead of Cloudflare's Git integration. Workflow auto-creates the Pages project on first run.
+- `site` set to `https://jotstak.pages.dev` in `astro.config.mjs`; sitemap now generates; GitHub link added to docs sidebar.
+
 ### Added (M0 step 2)
 - `renderThemeCss({ assetBase?, scope? })`: generates scoped CSS variables from the design tokens, semantic aliases re-pointed per `data-mode`, and `@font-face` rules for bundled fonts.
 - `FONT_FACES` manifest: Lora (400, 400 italic, 500, 600), IBM Plex Mono (400, 500), Caveat (600), Inter (500, 600) via Fontsource, SIL OFL 1.1.
