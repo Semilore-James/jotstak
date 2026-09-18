@@ -2,8 +2,7 @@
 
 - **Status:** **Accepted** — Option 3 (hybrid), 2026-09-17
 - **Date:** 2026-09-17
-- **Decision note:** Semilore-James leaned toward writing everything from scratch for the portfolio value, and chose the hybrid after weighing it. That instinct is preserved where it pays: the block scanner, params, body shapes, positions and error recovery are all hand-written and are the genuinely novel work. Markdown itself is delegated, because reimplementing hundreds of CommonMark edge cases would risk the "any `.md` renders" promise without demonstrating anything new. The case study should record this trade-off explicitly — choosing where to build from scratch *is* the engineering judgement.
-- **Stage:** 11 (Technical design) in [go_to_jotstak.md](../go_to_jotstak.md)
+- **Decision note:** Writing the whole parser from scratch was seriously considered and rejected. The hand-written half is kept where it pays: the block scanner, params, body shapes, source positions and error recovery are all ours, and are the genuinely novel work. Markdown itself is delegated, because reimplementing hundreds of CommonMark edge cases would risk the "any `.md` renders unchanged" promise without demonstrating anything new.
 
 ## Context
 

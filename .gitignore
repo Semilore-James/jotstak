@@ -12,3 +12,17 @@ coverage/
 *.log
 .turbo/
 *.tsbuildinfo
+
+# --- Private working material (deliberately not published) ---------------
+# Build journal, PM tracker, strategy docs, portfolio case study, personal
+# ops runbooks and research. These live on disk and are backed up separately;
+# the public repo carries only the product itself plus the docs a contributor
+# needs (README, CONTRIBUTING, CHANGELOG, ADRs, design reference).
+brag/
+docs/setup/
+docs/research/
+docs/CASE_STUDY.md
+docs/go_to_jotstak.md
+docs/PREMORTEM.md
+PRD.md
+jotter-overview.md

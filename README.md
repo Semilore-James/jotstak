@@ -4,7 +4,7 @@
 
 Write documents in a small structured language (`.jot`) and render them as a spatial notebook on ruled cream paper. Notebook mode for the handmade feel; doc mode for clean A4 output. Same source, two surfaces. Plain text, Git-versioned, no lock-in.
 
-See [jotter-overview.md](jotter-overview.md) for the full product thesis and [PRD.md](PRD.md) for v1 requirements. Build progress is journaled in [brag/JOURNAL.md](brag/JOURNAL.md).
+Start with [CONTRIBUTING.md](CONTRIBUTING.md) to get a dev environment running, and [`docs/decisions`](docs/decisions) for the reasoning behind the parser architecture and the ruled-line layout.
 
 ## Monorepo layout
 

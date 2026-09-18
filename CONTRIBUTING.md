@@ -41,7 +41,7 @@ Commit messages say what changed and why. CI runs typecheck, build and tests on 
 
 ## Decisions
 
-Significant technical choices are recorded in [`docs/decisions`](docs/decisions) as decision records, and the day-by-day reasoning lives in [`brag/JOURNAL.md`](brag/JOURNAL.md). If you're proposing something that contradicts an accepted decision, argue with the decision record.
+Significant technical choices are recorded in [`docs/decisions`](docs/decisions) as decision records. If you're proposing something that contradicts an accepted decision, argue with the decision record.
 
 ## License
 

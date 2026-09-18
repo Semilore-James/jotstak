@@ -6,8 +6,6 @@ All notable changes to Jotstak are recorded here. Format loosely follows [Keep a
 
 ### Added
 - Monorepo skeleton: `packages/{renderer,schema,icons}`, `apps/{extension,web}`, `templates/`, CI workflows.
-- Product requirements document (`PRD.md`), premortem, case-study skeleton.
-- Build journal (`brag/JOURNAL.md`).
 - `.gitattributes` enforcing LF line endings.
 
 ### Changed

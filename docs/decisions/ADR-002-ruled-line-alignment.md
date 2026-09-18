@@ -2,7 +2,6 @@
 
 - **Status:** **Accepted** — Option A on top of C's grid discipline, 2026-09-17
 - **Date:** 2026-09-17
-- **Stage:** 11 (Technical design) in [go_to_jotstak.md](../go_to_jotstak.md)
 
 ## Context
 

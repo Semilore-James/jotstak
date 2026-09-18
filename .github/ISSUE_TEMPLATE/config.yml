@@ -3,6 +3,6 @@ contact_links:
   - name: Read the docs
     url: https://github.com/Semilore-James/jotstak#readme
     about: Start with the README while the documentation site is being built.
-  - name: Follow the build
-    url: https://github.com/Semilore-James/jotstak/blob/main/brag/JOURNAL.md
-    about: The build journal records every decision as it was made.
+  - name: Why things are built this way
+    url: https://github.com/Semilore-James/jotstak/tree/main/docs/decisions
+    about: Decision records covering the parser architecture and the ruled-line layout.
