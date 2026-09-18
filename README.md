@@ -1,8 +1,12 @@
 # Jotstak
 
-*A code-first document tool for product managers, rendered as a warm, hand-kept notebook.*
+*A code-first document tool for product managers: prose, tables and diagrams in one plain-text file, rendered as a warm, hand-kept notebook.*
 
-Write documents in a small structured language (`.jot`) and render them as a spatial notebook on ruled cream paper. Notebook mode for the handmade feel; doc mode for clean A4 output. Same source, two surfaces. Plain text, Git-versioned, no lock-in.
+Writing a single PRD usually means scattering it across five tools — one for prose, another for tables, another for diagrams, another for tasks. Context gets lost, versions drift, and nobody joining later can reconstruct where anything lives.
+
+Jotstak puts all of it in one `.jot` file and renders it as a spatial notebook on ruled cream paper. Notebook mode for the handmade feel; doc mode for clean A4 output. Same source, two surfaces. Plain text, Git-versioned, no lock-in.
+
+`.jot` is a **superset of Markdown** — any `.md` file renders unchanged, so there's nothing to learn before you start.
 
 Start with [CONTRIBUTING.md](CONTRIBUTING.md) to get a dev environment running, and [`docs/decisions`](docs/decisions) for the reasoning behind the parser architecture and the ruled-line layout.
 
