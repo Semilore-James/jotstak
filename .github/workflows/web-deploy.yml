@@ -16,7 +16,14 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build
-      - name: Publish to Cloudflare Pages
+      - name: Create Pages project if missing
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages project create jotstak --production-branch=main
+        continue-on-error: true
+      - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v4
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
