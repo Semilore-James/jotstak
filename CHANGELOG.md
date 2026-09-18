@@ -18,6 +18,12 @@ All notable changes to Jotstak are recorded here. Format loosely follows [Keep a
 - `@footnote` now uses the universal `id` param (`@footnote id=<id>`); `@doodle` drawing area params renamed `width`/`height` → `cols`/`rows`.
 - Web deploy workflow is manual-only until M1 (no Cloudflare project or secrets yet).
 
+### Added (M0 step 4)
+- `parse(source)` in `@jotstak/renderer`: builds an AST from the lexer's token stream. Groups indented lines under their block, shapes each body per the schema's `bodyShape` (`none`/`plain`/`keyed`/`indented`/`mixed`), nests lists by indentation, and carries source positions on every node.
+- AST in `ast.ts` representing **meaning rather than syntax**: `# Overview` and `@heading Overview` produce the same `HeadingNode`, so the renderer has one code path per concept. Same for `---`/`@divider`, `> `/`@quote`, `>> `/`@note`, `- `/`@bullet`.
+- Shortcode sugar resolved at parse time: `@warn` → `callout` with `flavor=warn` (alias onto an enum param), and `@callout warn` → the same, by consuming a leading bare word that matches the primitive's first enum param.
+- 26 parser tests covering all five body shapes, shorthand/directive equivalence, list nesting, prose grouping, source positions, recovery from unknown primitives, and a plain `.md` file parsing with zero diagnostics.
+
 ### Added (M0 step 3)
 - `lex(source)` in `@jotstak/renderer`: line-by-line lexer that classifies `.jot` source into 11 token types (directive, heading, bullet, numbered, divider, blockquote, margin_note, comment, body, blank, text).
 - Inline param parsing on `@primitive` lines: validates types (enum, number, boolean) against `@jotstak/schema`, reports unknown params and missing required params.

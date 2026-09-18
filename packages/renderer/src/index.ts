@@ -39,3 +39,25 @@ export const RENDERER_VERSION = "0.0.0";
 export { FONT_FACES, renderThemeCss } from "./css.js";
 export type { FontFace, ThemeCssOptions } from "./css.js";
 export * as tokens from "./tokens.js";
+
+export { lex } from "./lexer.js";
+export type { LineKind, LineToken, LexResult, DirectiveParams } from "./lexer.js";
+
+export { parse, parseTokens } from "./parser.js";
+export type { ParseResult } from "./parser.js";
+
+export type {
+  Position,
+  Field,
+  TreeNode,
+  BlockBody,
+  DocumentNode,
+  BlockNode,
+  HeadingNode,
+  ListNode,
+  DividerNode,
+  QuoteNode,
+  MarginNoteNode,
+  MarkdownNode,
+  Node,
+} from "./ast.js";
