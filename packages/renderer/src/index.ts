@@ -3,12 +3,17 @@
 // This same module is imported by the VS Code preview webview and the web playground,
 // so it must stay framework-free and DOM-agnostic (returns HTML strings, not nodes).
 
+import { parse } from "./parser.js";
+import { renderDocument } from "./html.js";
+
 export type RenderMode = "notebook" | "doc";
 
 export interface RenderOptions {
   mode: RenderMode;
   /** Base URL for bundled assets (icons, fonts) so both surfaces can resolve them. */
   assetBase?: string;
+  /** Selector the document is scoped under. Must match the CSS scope. */
+  scope?: string;
 }
 
 export interface RenderResult {
@@ -29,15 +34,20 @@ export interface Diagnostic {
 // render()  lives in ./render
 // Primitive definitions come from @jotstak/schema so behavior and docs never drift.
 
-export function render(_source: string, _options: RenderOptions): RenderResult {
-  // TODO(v1): tokenize, parse to AST, walk primitives, emit HTML for the mode.
-  return { html: "", diagnostics: [] };
+export function render(source: string, options: RenderOptions): RenderResult {
+  const { ast, diagnostics } = parse(source);
+  const html = renderDocument(ast, { mode: options.mode, scope: options.scope }, diagnostics);
+  return { html, diagnostics };
 }
 
 export const RENDERER_VERSION = "0.0.0";
 
 export { FONT_FACES, renderThemeCss } from "./css.js";
 export type { FontFace, ThemeCssOptions } from "./css.js";
+
+export { renderLayoutCss, BASELINE_OFFSET, toWholeRows } from "./layout.js";
+export { renderDocument } from "./html.js";
+export type { HtmlOptions } from "./html.js";
 export * as tokens from "./tokens.js";
 
 export { lex } from "./lexer.js";

@@ -286,3 +286,21 @@ describe("parser — whole documents", () => {
     expect(n.body.fields.map((f) => f.key)).toEqual(["context", "choice"]);
   });
 });
+
+describe("parser — list continuation lines", () => {
+  it("treats an unmarked wrapped line as continuation, not a child", () => {
+    const n = first("- Context is lost on the seams. The diagram lives in\n  a different tool from the paragraph.") as ListNode;
+    expect(n.items).toHaveLength(1);
+    expect(n.items[0]!.children).toHaveLength(0);
+    expect(n.items[0]!.text).toBe(
+      "Context is lost on the seams. The diagram lives in a different tool from the paragraph.",
+    );
+  });
+
+  it("still nests a genuinely marked sub-bullet", () => {
+    const n = first("- Parent wraps\n  onto a second line\n  - Real child") as ListNode;
+    expect(n.items).toHaveLength(1);
+    expect(n.items[0]!.text).toBe("Parent wraps onto a second line");
+    expect(n.items[0]!.children.map((c) => c.text)).toEqual(["Real child"]);
+  });
+});

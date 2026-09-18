@@ -18,6 +18,20 @@ All notable changes to Jotstak are recorded here. Format loosely follows [Keep a
 - `@footnote` now uses the universal `id` param (`@footnote id=<id>`); `@doodle` drawing area params renamed `width`/`height` → `cols`/`rows`.
 - Web deploy workflow is manual-only until M1 (no Cloudflare project or secrets yet).
 
+### Added (M0 step 5)
+- `render(source, { mode })` now does real work: lex → parse → HTML, in `notebook` or `doc` mode from one source.
+- `renderLayoutCss(scope)`: the ruled-line contract as a stylesheet — 28px rows, rules painted at the **baseline offset** (19.63px, derived from Lora's metrics) so text sits *on* the line rather than between lines.
+- Drawn blocks clear the ruling, carry half a row of clearance, and are sized so border + padding total exactly one row — keeping every block a whole number of rows tall.
+- Grid layout pairs each block with its margin notes in the same row, so a note aligns with its anchor without any measurement or absolute positioning.
+- Markdown delegated to markdown-it per ADR-001, with `html: false` so a `.jot` file can never inject markup into the preview or playground.
+- First render pass covers headings, prose, lists, quotes, dividers, margin notes and `@decision`. Other primitives degrade to readable text with an info diagnostic rather than disappearing.
+- `samples/problem-statement.jot` — the PRD's problem section, dogfooded as a real document.
+- 20 render tests, including HTML-injection escaping and machine checks on the ruled-line contract.
+
+### Fixed
+- Wrapped list lines were becoming nested sub-bullets. A line without a list marker is now a lazy continuation of the item above, as in Markdown.
+- Vertical rhythm drifted 8px after a blockquote and never recovered, because margins collapsed out of grid cells and gaps stopped being row multiples. Cells are now `flow-root`, so measured phase drift across the sample document is 0.
+
 ### Added (M0 step 4)
 - `parse(source)` in `@jotstak/renderer`: builds an AST from the lexer's token stream. Groups indented lines under their block, shapes each body per the schema's `bodyShape` (`none`/`plain`/`keyed`/`indented`/`mixed`), nests lists by indentation, and carries source positions on every node.
 - AST in `ast.ts` representing **meaning rather than syntax**: `# Overview` and `@heading Overview` produce the same `HeadingNode`, so the renderer has one code path per concept. Same for `---`/`@divider`, `> `/`@quote`, `>> `/`@note`, `- `/`@bullet`.

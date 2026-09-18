@@ -310,11 +310,21 @@ export function parseTokens(
             const nested = collectBody(tokens, i);
             for (const n of nested.body) {
               if (n.kind === "blank") continue;
-              entries.push({
-                indent: n.indent,
-                text: n.content.replace(/^(?:[-*]\s+|\d+\.\s+)/, ""),
-                position: posOf(n),
-              });
+              const marker = /^(?:[-*]\s+|\d+\.\s+)/.exec(n.content);
+              if (marker) {
+                entries.push({
+                  indent: n.indent,
+                  text: n.content.slice(marker[0].length),
+                  position: posOf(n),
+                });
+              } else {
+                // No marker: a wrapped continuation of the item above, not a
+                // child of it. Markdown's lazy continuation — losing this makes
+                // every line-wrapped bullet sprout a phantom sub-bullet.
+                const prev = entries[entries.length - 1];
+                if (prev) prev.text = `${prev.text} ${n.content}`;
+                else entries.push({ indent: n.indent, text: n.content, position: posOf(n) });
+              }
             }
             i = nested.next;
             continue;
