@@ -11,6 +11,15 @@ export default defineConfig({
   integrations: [
     starlight({
       title: "Jotstak Docs",
+      logo: { src: "./src/assets/lockup.svg", alt: "Jotstak", replacesTitle: true },
+      favicon: "/favicon.svg",
+      head: [
+        { tag: "link", attrs: { rel: "icon", href: "/favicon-32.png", sizes: "32x32", type: "image/png" } },
+        { tag: "link", attrs: { rel: "apple-touch-icon", href: "/apple-touch-icon.png" } },
+        { tag: "meta", attrs: { name: "theme-color", content: "#c67139" } },
+        { tag: "meta", attrs: { property: "og:image", content: "https://jotstak.pages.dev/og.png" } },
+        { tag: "meta", attrs: { name: "twitter:card", content: "summary_large_image" } },
+      ],
       social: [
         { icon: "github", label: "GitHub", href: "https://github.com/Semilore-James/jotstak" },
       ],
