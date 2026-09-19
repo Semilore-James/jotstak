@@ -31,4 +31,7 @@ jotter-overview.md
 apps/web/public/fonts/
 
 # Generated from the schema at build time by apps/web/scripts/generate-reference.mjs
-apps/web/src/content/docs/docs/reference.mdx
+apps/web/src/content/docs/docs/functions/
+
+# Generated at build time alongside the function pages
+apps/web/public/jotstak-demo.css

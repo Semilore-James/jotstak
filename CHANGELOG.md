@@ -18,6 +18,16 @@ All notable changes to Jotstak are recorded here. Format loosely follows [Keep a
 - `@footnote` now uses the universal `id` param (`@footnote id=<id>`); `@doodle` drawing area params renamed `width`/`height` → `cols`/`rows`.
 - Web deploy workflow is manual-only until M1 (no Cloudflare project or secrets yet).
 
+### Added (documentation)
+- **Getting started** and **Recipes** pages. Getting started leads with "paste a `.md` in, there is nothing to learn", then climbs one rung at a time, with a section on indentation because that is the one rule that changes meaning if you get it wrong.
+- **Reference renamed to Functions**, split one page per function with prev/next navigation, and an index leading on **18 functions across 27 names**.
+- **Live examples in the docs.** A remark plugin renders ```jot-demo fences at build time using the real renderer, so every example is actual output rather than a screenshot that rots. Source beside result, one per primitive.
+- `@panel` is called out up front on both the start page and the panel page: it does almost everything the named cards do and takes matching parameters.
+
+### Changed (build)
+- Docs demos render in the **Markdown pipeline, not as components**. An Astro component costs compiler work per instance, and 38 of them exhausted a 4GB heap; a remark plugin is one function call per fence. Docs pages are now plain `.md` producing static HTML with **no renderer JavaScript shipped to the browser** — the playground is the only live renderer.
+- Build runs through a small wrapper that pins the heap ceiling, so it behaves the same locally and in CI.
+
 ### Changed (the primitive cut, redone for composition)
 - **`@panel` and `@columns` added as the general forms.** `@decision`, `@risk`, `@assumption`, `@persona`, `@metric` and `@callout` are now presets over `@panel` — identical output, different defaults. PM vocabulary is available but never required, and `@panel` is there when it does not fit.
 - **Removed `@banner`** (a duplicate of `@cover`, which absorbed its `style`), **`@evidence`** (folded into `@quote`, which gained `date` and `tag`), **`@spread` and `@pillars`** (both became `@columns`), and **`@sprint`**, which contradicted the PRD's stated non-goal of not being a project tracker.
