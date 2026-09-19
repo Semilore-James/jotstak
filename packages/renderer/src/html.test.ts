@@ -13,10 +13,26 @@ const ROW = spacing.baselineGrid;
  */
 function gridLineHeights(): string {
   return renderLayoutCss()
-    .replace(/\.jot-body code \{[^}]*\}/, "")
-    .replace(/\.jot-body \.jot-metric-value \{[^}]*\}/, "")
-    .replace(/\.jot-body \.jot-metric-target,[\s\S]*?\}/, "")
-    .replace(/\.jot-badge \{[^}]*\}/, "");
+    .replace(/\.jot-body code \{[^}]*\}/g, "")
+    .replace(/\.jot-body \.jot-metric-value \{[^}]*\}/g, "")
+    .replace(/\.jot-body \.jot-metric-target,[\s\S]*?\}/g, "")
+    .replace(/\.jot-badge \{[^}]*\}/g, "");
+}
+
+/**
+ * The declaration block of a BASE rule (no `[data-mode=...]` prefix).
+ * Needed because doc-mode rules also contain `.jot-card {`, so a bare regex
+ * happily matches the wrong one.
+ */
+function baseRule(sel: string): string {
+  const css = renderLayoutCss();
+  const needle = `
+.jotstak ${sel} {`;
+  const at = css.indexOf(needle);
+  if (at === -1) return "";
+  const open = css.indexOf("{", at);
+  const close = css.indexOf("}", open);
+  return css.slice(open, close + 1);
 }
 
 describe("render — document shell", () => {
@@ -114,23 +130,18 @@ describe("render — the ruled-line contract", () => {
   });
 
   it("sizes card chrome so border plus padding is exactly one row", () => {
-    const css = renderLayoutCss();
-    const card = /\.jot-card \{[^}]*\}/.exec(css)![0];
+    const card = baseRule(".jot-card");
     const padding = Number(/padding:\s*(\d+)px/.exec(card)![1]);
     const border = Number(/border:\s*(\d+)px/.exec(card)![1]);
     expect((padding + border) * 2).toBe(ROW);
   });
 
   it("gives drawn blocks half a row of clearance each side", () => {
-    const css = renderLayoutCss();
-    const card = /\.jot-card \{[^}]*\}/.exec(css)![0];
-    expect(card).toContain(`margin: ${ROW / 2}px 0`);
+    expect(baseRule(".jot-card")).toContain(`margin: ${ROW / 2}px 0`);
   });
 
   it("makes drawn blocks opaque so they clear the ruling", () => {
-    const css = renderLayoutCss();
-    const card = /\.jot-card \{[^}]*\}/.exec(css)![0];
-    expect(card).toContain("background: var(--jot-surface-elevated)");
+    expect(baseRule(".jot-card")).toContain("background: var(--jot-surface-elevated)");
   });
 
   it("contains cell margins so the phase cannot drift", () => {
@@ -225,16 +236,13 @@ describe("render — regressions found by rendering real documents", () => {
   it("wraps long code lines rather than scrolling them", () => {
     // A horizontal scrollbar is ~15px tall and is not a row multiple, so it
     // knocks every line below the block off the ruling.
-    const declarations = /\.jot-body pre \{[^}]*\}/
-      .exec(css)![0]
-      .replace(/\/\*[\s\S]*?\*\//g, ""); // the rationale comment names the property
+    const declarations = baseRule(".jot-body pre").replace(/\/\*[\s\S]*?\*\//g, "");
     expect(declarations).toContain("white-space: pre-wrap");
     expect(declarations).not.toContain("overflow-x");
   });
 
   it("caps inline code below the line strut so it cannot grow the row", () => {
-    const code = /\.jot-body code \{[^}]*\}/.exec(css)![0];
-    const lh = Number(/line-height:\s*(\d+)px/.exec(code)![1]);
+    const lh = Number(/line-height:\s*(\d+)px/.exec(baseRule(".jot-body code"))![1]);
     expect(lh).toBeLessThan(ROW);
   });
 
@@ -378,5 +386,66 @@ describe("render — body prose is prose, not a list", () => {
     });
     expect((html.match(/<li>/g) ?? []).length).toBe(2);
     expect(html).toContain("<p>Prose.</p>");
+  });
+});
+
+describe("render — doc mode is designed, not just undecorated", () => {
+  const css = renderLayoutCss();
+  /** The declaration block of the first doc-mode rule mentioning `sel`. */
+  const docRule = (sel: string): string => {
+    const needle = `[data-mode="doc"] ${sel} {`;
+    const at = css.indexOf(needle);
+    if (at === -1) return "";
+    const open = css.indexOf("{", at);
+    const close = css.indexOf("}", open);
+    return open === -1 || close === -1 ? "" : css.slice(open, close + 1);
+  };
+
+  it("gives doc mode a sheet on a backing, not a bare page", () => {
+    expect(css).toContain('[data-mode="doc"] .jot-doc');
+    expect(docRule(".jot-doc")).toContain("--jot-color-doc-sheet");
+  });
+
+  it("keeps cards legible as cards rather than deleting them", () => {
+    // The structure the author wrote must still read in doc mode, or writing
+    // .jot instead of Markdown buys nothing on export.
+    const card = docRule(".jot-card");
+    expect(card).toContain("border-top");
+    expect(card).not.toContain("display: none");
+  });
+
+  it("keeps doc-mode chrome on the row contract", () => {
+    // A redesign that forgets the arithmetic breaks the rhythm just as surely
+    // as a maths error: border-top 1px + 13 + 14 padding is one row.
+    const card = docRule(".jot-card");
+    const pad = /padding:\s*(\d+)px 0 (\d+)px/.exec(card);
+    const border = /border-top:\s*(\d+)px/.exec(card);
+    expect(pad).not.toBeNull();
+    expect(Number(pad![1]) + Number(pad![2]) + Number(border![1])).toBe(ROW);
+  });
+
+  it("sets margin notes in the body face rather than handwriting", () => {
+    expect(docRule(".jot-note")).toContain("border-left");
+  });
+});
+
+describe("render — nested blocks keep the row contract", () => {
+  it("normalises nested children's margins", () => {
+    // `.jot-body > *` only reaches DIRECT children, so a nested blockquote kept
+    // its browser-default 16px margin and pushed its parent 2px off a row.
+    const css = renderLayoutCss();
+    expect(css).toMatch(/\.jot-nested \{[^}]*display: flow-root/);
+    expect(css).toMatch(/\.jot-nested > \* \{[^}]*margin-bottom: 28px/);
+  });
+
+  it("renders a nested block inside its parent's markup", () => {
+    const { html } = render(
+      '@decision(title="Outer")\n  context: a\n\n  @metric(name="Inner" value="1")',
+      { mode: "notebook" },
+    );
+    const card = /<section class="jot-card"[^>]*data-primitive="decision"[\s\S]*?<\/section>/.exec(html);
+    expect(card).not.toBeNull();
+    expect(card![0]).toContain("jot-nested");
+    expect(card![0]).toContain('data-primitive="metric"');
   });
 });

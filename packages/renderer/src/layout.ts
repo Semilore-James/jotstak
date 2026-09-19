@@ -91,6 +91,74 @@ ${scope}[data-mode="notebook"] .jot-body {
 }
 ${scope}[data-mode="doc"] .jot-body { background-image: none; }
 
+/* ── Doc mode ───────────────────────────────────────────────────────── */
+/* Doc mode is not "notebook with the rules switched off" — that reads as a
+   generic web page and makes writing .jot look pointless. It is the same
+   document in an editorial register: a white sheet on a grey backing, hairline
+   rules instead of filled cards, quieter labels. The STRUCTURE still shows —
+   a card is still a card, a metric is still prominent — because that structure
+   is what the author wrote, and it is the reason to use the tool at all.
+   The grid is unchanged; only the surface treatment differs. */
+${scope}[data-mode="doc"] {
+  background: var(--jot-color-doc-viewport);
+  padding: ${ROW}px 0;
+}
+${scope}[data-mode="doc"] .jot-doc {
+  background: var(--jot-color-doc-sheet);
+  border: 1px solid var(--jot-color-doc-sheet-border);
+  box-shadow: var(--jot-shape-elevation-doc-sheet);
+  padding: ${ROW * 2}px ${ROW * 2}px;
+  border-radius: 2px;
+}
+/* Cards lose their fill and keep a single hairline: on a white sheet a filled
+   panel reads as a UI widget, not as part of a document. */
+${scope}[data-mode="doc"] .jot-card {
+  background: none;
+  border: 0;
+  border-top: 1px solid var(--jot-color-doc-sheet-border);
+  border-radius: 0;
+  /* One border plus 13 + 14 padding is exactly one row. Redesigning the chrome
+     for doc mode without redoing this arithmetic is what broke it the first
+     time — every surface treatment has to satisfy the same row contract. */
+  padding: 13px 0 14px;
+}
+${scope}[data-mode="doc"] .jot-card[data-alert="true"] {
+  border-top-color: var(--jot-color-accent-terracotta);
+}
+${scope}[data-mode="doc"] .jot-card-kicker {
+  color: var(--jot-color-doc-ink-muted);
+}
+${scope}[data-mode="doc"] .jot-badge {
+  background: none;
+  padding: 0;
+  color: var(--jot-color-doc-ink-muted);
+}
+${scope}[data-mode="doc"] .jot-badge::before { content: "— "; }
+${scope}[data-mode="doc"] .jot-callout,
+${scope}[data-mode="doc"] .jot-evidence,
+${scope}[data-mode="doc"] .jot-body pre {
+  background: none;
+  border: 0;
+  border-left: 2px solid var(--jot-color-doc-sheet-border);
+  border-radius: 0;
+  /* No horizontal borders here, so the padding alone carries the row. */
+  padding: ${ROW / 2}px 0 ${ROW / 2}px ${ROW - 2}px;
+}
+${scope}[data-mode="doc"] .jot-body table th { color: var(--jot-color-doc-ink-muted); }
+${scope}[data-mode="doc"] .jot-chip-key { color: var(--jot-color-doc-ink-muted); }
+${scope}[data-mode="doc"] .jot-nested .jot-card { border-top-style: dotted; }
+
+/* Margin notes become true sidenotes: still in the margin, still the author's
+   aside, but set in the body face rather than handwriting, because handwriting
+   on a printed sheet reads as a mistake. */
+${scope}[data-mode="doc"] .jot-note::before { display: none; }
+${scope}[data-mode="doc"] .jot-note {
+  padding-left: 0;
+  border-left: 1px solid var(--jot-color-doc-sheet-border);
+  padding-inline-start: ${ROW / 2}px;
+  color: var(--jot-color-doc-ink-muted);
+}
+
 ${scope} .jot-body { grid-column: 1; min-width: 0; }
 ${scope} .jot-aside { grid-column: 2; min-width: 0; }
 
@@ -360,6 +428,24 @@ ${scope} .jot-body .jot-trend {
 }
 ${scope} .jot-trend[data-trend="up"] { color: var(--jot-color-accent-sage); }
 ${scope} .jot-trend[data-trend="down"] { color: var(--jot-color-accent-terracotta); }
+
+/* ── Nested blocks ──────────────────────────────────────────────────── */
+/* A block inside a block. Chrome is deliberately lighter at depth: a card
+   inside a card with the same border and shadow reads as clutter. The nested
+   container adds a half-row above so the child is visibly inside its parent,
+   and the child's own half-row margin completes the row. */
+/* Same discipline as a body cell, for the same reason. \`.jot-body > *\` only
+   normalises DIRECT children, so a nested blockquote kept its browser-default
+   16px margin and pushed its parent card 2px off a whole row. flow-root also
+   stops the children's margins collapsing out of the container. */
+${scope} .jot-nested { display: flow-root; margin-top: ${ROW}px; }
+${scope} .jot-nested > * { margin-top: 0; margin-bottom: ${ROW}px; }
+${scope} .jot-nested > :last-child { margin-bottom: 0; }
+${scope} .jot-nested .jot-card {
+  box-shadow: none;
+  background: var(--jot-surface);
+}
+${scope} .jot-nested .jot-card-kicker { font-size: ${typography.label.sm.size}; }
 
 /* ── @evidence: a quotation with structured attribution ─────────────── */
 ${scope} .jot-evidence {

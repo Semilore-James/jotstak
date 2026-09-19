@@ -83,6 +83,78 @@ function collectBody(
   return { body, next: i };
 }
 
+/**
+ * Pull nested `@blocks` out of a body before it is shaped.
+ *
+ * A directive at the body's base indent starts a child block, which owns every
+ * deeper-indented line under it. The chunk is dedented and run back through the
+ * lexer and parser, so nesting is recursive and costs no new grammar — a nested
+ * block behaves exactly like a top-level one.
+ *
+ * Line numbers are mapped back to the original document as the tokens come out,
+ * so diagnostics and LSP positions still point at the real file.
+ */
+function extractNested(
+  body: LineToken[],
+  baseIndent: number,
+  diagnostics: Diagnostic[],
+): { own: LineToken[]; children: Node[] } {
+  const own: LineToken[] = [];
+  const children: Node[] = [];
+
+  let i = 0;
+  while (i < body.length) {
+    const t = body[i]!;
+    const isNested =
+      t.kind !== "blank" && t.indent === baseIndent && /^@[a-zA-Z_][a-zA-Z0-9_]*/.test(t.content);
+
+    if (!isNested) {
+      own.push(t);
+      i++;
+      continue;
+    }
+
+    const chunk: LineToken[] = [t];
+    let j = i + 1;
+    while (j < body.length) {
+      const c = body[j]!;
+      if (c.kind === "blank") {
+        chunk.push(c);
+        j++;
+        continue;
+      }
+      if (c.indent <= baseIndent) break;
+      chunk.push(c);
+      j++;
+    }
+    while (chunk.length > 0 && chunk[chunk.length - 1]!.kind === "blank") chunk.pop();
+
+    const text = chunk
+      .map((c) => (c.kind === "blank" ? "" : " ".repeat(Math.max(0, c.indent - baseIndent)) + c.content))
+      .join("\n");
+
+    const sub = lex(text);
+    // Map the sub-document's line numbers back onto the real file.
+    const remap = (line: number): Position => {
+      const origin = chunk[line];
+      return origin ? posOf(origin) : posOf(t);
+    };
+    for (const tok of sub.tokens) {
+      const p = remap(tok.line);
+      tok.line = p.line;
+      tok.column = p.column;
+    }
+    for (const d of sub.diagnostics) {
+      const p = remap(d.line);
+      diagnostics.push({ ...d, line: p.line, column: p.column });
+    }
+    children.push(...parseTokens(sub.tokens, diagnostics).children);
+    i = j;
+  }
+
+  return { own, children };
+}
+
 /** Split body lines into base-indent fields and everything else, per body shape. */
 function shapeBody(
   body: LineToken[],
@@ -392,7 +464,10 @@ export function parseTokens(
           t.directive?.params ?? {},
           t.directive?.rest ?? "",
         );
-        const body = shapeBody(collected.body, spec.bodyShape);
+        const realLines = collected.body.filter((b) => b.kind !== "blank");
+        const baseIndent = realLines.length > 0 ? Math.min(...realLines.map((b) => b.indent)) : 2;
+        const { own, children: nested } = extractNested(collected.body, baseIndent, diagnostics);
+        const body = shapeBody(own, spec.bodyShape);
 
         // Normalise onto the node type that matches the concept, so the
         // renderer never has to care which spelling was used.
@@ -455,6 +530,7 @@ export function parseTokens(
               params: resolved.params,
               title: resolved.title,
               body,
+              children: nested,
               position: startPos,
             });
           }

@@ -56,15 +56,76 @@ const extraCss = `
 .pg-bar { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 14px; }
 .pg-bar h1 { font-family: var(--jot-font-heading); font-size: 22px; margin: 0; font-weight: 600; }
 .pg-tools { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-.pg-tools label { font-family: var(--jot-font-label); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--jot-ink-muted); }
-.pg-tools select, .pg-tools button {
-  font-family: var(--jot-font-label); font-size: 13px;
-  padding: 7px 12px; border-radius: 4px;
-  border: 1px solid var(--jot-color-notebook-rule-lines);
-  background: var(--jot-color-notebook-paper); color: var(--jot-color-notebook-ink);
-  cursor: pointer;
+.pg-tools > span {
+  font-family: var(--jot-font-label); font-size: 10px; font-weight: 600;
+  letter-spacing: 0.08em; text-transform: uppercase; color: var(--jot-ink-muted);
 }
-.pg-tools button[aria-pressed="true"] { background: var(--jot-accent); color: var(--jot-color-notebook-paper); border-color: var(--jot-accent); }
+
+/* Segmented control rather than two loose buttons. The moving indicator is a
+   single element that slides, so the label text never re-renders mid-transition
+   and there is no flicker. */
+.seg {
+  position: relative; display: inline-flex; padding: 3px; border-radius: 6px;
+  background: var(--jot-color-notebook-paper-elevated);
+  border: 1px solid var(--jot-color-notebook-rule-lines);
+}
+.seg-thumb {
+  position: absolute; top: 3px; bottom: 3px; left: 3px;
+  border-radius: 4px; background: var(--jot-accent);
+  transition: transform 220ms cubic-bezier(.22,.61,.36,1), width 220ms cubic-bezier(.22,.61,.36,1);
+  pointer-events: none;
+}
+.seg button {
+  position: relative; z-index: 1; border: 0; background: none; cursor: pointer;
+  font-family: var(--jot-font-label); font-size: 13px; padding: 6px 14px;
+  color: var(--jot-ink-muted); border-radius: 4px;
+  transition: color 160ms ease;
+}
+.seg button[aria-pressed="true"] { color: var(--jot-color-notebook-paper); }
+.seg button:focus-visible { outline: 2px solid var(--jot-accent); outline-offset: 2px; }
+
+/* Custom select: a native one cannot be styled consistently across platforms,
+   and its default chrome is the single most off-brand thing on the page. */
+.picker { position: relative; }
+.picker-btn {
+  display: inline-flex; align-items: center; gap: 10px;
+  font-family: var(--jot-font-label); font-size: 13px;
+  padding: 7px 12px; border-radius: 6px; cursor: pointer;
+  border: 1px solid var(--jot-color-notebook-rule-lines);
+  background: var(--jot-color-notebook-paper);
+  color: var(--jot-color-notebook-ink);
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+.picker-btn:hover { border-color: var(--jot-accent); }
+.picker-btn:focus-visible { outline: 2px solid var(--jot-accent); outline-offset: 2px; }
+.picker-btn svg { transition: transform 200ms cubic-bezier(.22,.61,.36,1); }
+.picker[data-open="true"] .picker-btn svg { transform: rotate(180deg); }
+
+.picker-menu {
+  position: absolute; top: calc(100% + 6px); right: 0; z-index: 20;
+  min-width: 230px; padding: 4px; margin: 0; list-style: none;
+  border-radius: 8px;
+  border: 1px solid var(--jot-color-notebook-rule-lines);
+  background: var(--jot-color-notebook-paper);
+  box-shadow: 0 10px 24px -8px rgba(44,37,35,.28);
+  opacity: 0; transform: translateY(-6px) scale(.98); transform-origin: top right;
+  pointer-events: none;
+  transition: opacity 160ms ease, transform 200ms cubic-bezier(.22,.61,.36,1);
+}
+.picker[data-open="true"] .picker-menu { opacity: 1; transform: none; pointer-events: auto; }
+.picker-menu button {
+  display: block; width: 100%; text-align: left; border: 0; background: none;
+  font-family: var(--jot-font-label); font-size: 13px; line-height: 20px;
+  padding: 8px 10px; border-radius: 5px; cursor: pointer;
+  color: var(--jot-color-notebook-ink);
+}
+.picker-menu button small { display: block; color: var(--jot-ink-muted); font-size: 11px; }
+.picker-menu button:hover { background: var(--jot-color-notebook-paper-elevated); }
+.picker-menu button[aria-selected="true"] { color: var(--jot-accent); }
+
+@media (prefers-reduced-motion: reduce) {
+  .seg-thumb, .picker-btn svg, .picker-menu { transition: none; }
+}
 
 .pg-grid { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1.15fr); gap: 20px; align-items: stretch; }
 .pane { display: flex; flex-direction: column; min-height: 68vh; }
@@ -111,15 +172,28 @@ const extraCss = `
     <div class="pg-bar">
       <h1>Playground</h1>
       <div class="pg-tools">
-        <label for="sample">Sample</label>
-        <select id="sample">
-          <option value="starter">A real PM document</option>
-          <option value="markdown">Plain Markdown (no .jot at all)</option>
-          <option value="empty">Empty</option>
-        </select>
-        <label>Mode</label>
-        <button id="m-notebook" aria-pressed="true">Notebook</button>
-        <button id="m-doc" aria-pressed="false">Doc</button>
+        <span>Sample</span>
+        <div class="picker" id="picker" data-open="false">
+          <button class="picker-btn" id="picker-btn" aria-haspopup="listbox" aria-expanded="false">
+            <span id="picker-label">A real PM document</span>
+            <svg width="10" height="6" viewBox="0 0 10 6" aria-hidden="true">
+              <path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+            </svg>
+          </button>
+          <ul class="picker-menu" id="picker-menu" role="listbox">
+            <li><button role="option" data-value="starter" aria-selected="true">A real PM document<small>Seven primitives, composed</small></button></li>
+            <li><button role="option" data-value="markdown" aria-selected="false">Plain Markdown<small>No .jot syntax at all</small></button></li>
+            <li><button role="option" data-value="nested" aria-selected="false">Nested blocks<small>A metric inside a decision</small></button></li>
+            <li><button role="option" data-value="empty" aria-selected="false">Empty<small>Start from nothing</small></button></li>
+          </ul>
+        </div>
+
+        <span>Mode</span>
+        <div class="seg" id="seg">
+          <span class="seg-thumb" id="seg-thumb"></span>
+          <button id="m-notebook" aria-pressed="true">Notebook</button>
+          <button id="m-doc" aria-pressed="false">Doc</button>
+        </div>
       </div>
     </div>
 
@@ -164,17 +238,39 @@ const extraCss = `
       "| Docs | Prose |",
       "| Miro | Diagrams |",
     ].join("\n"),
+    nested: [
+      "# Blocks compose",
+      "",
+      "Indent a block inside another and it nests. Nothing is a special case:",
+      "a metric, a quote or a table can live inside any container.",
+      "",
+      "@decision(title=\"Move to usage-based pricing\" status=accepted)",
+      "  context: Seat pricing punishes the teams who adopt fastest",
+      "",
+      "  @metric(name=\"Weekly active teams\" value=\"1,240\" target=\"2,000\" trend=up)",
+      "    Growing 8% week-over-week.",
+      "",
+      "  @quote(by=\"User P7\" source=\"Interview 3\")",
+      "    We stopped adding people because every new seat cost money.",
+    ].join("\n"),
     empty: "",
   };
 
-  const src = document.querySelector<HTMLTextAreaElement>("#src");
-  const out = document.querySelector<HTMLDivElement>("#out");
-  const diags = document.querySelector<HTMLDivElement>("#diags");
-  const picker = document.querySelector<HTMLSelectElement>("#sample");
-  const nbBtn = document.querySelector<HTMLButtonElement>("#m-notebook");
-  const docBtn = document.querySelector<HTMLButtonElement>("#m-doc");
+  const $ = <T extends HTMLElement>(sel: string): T | null => document.querySelector<T>(sel);
 
-  if (src && out && diags && picker && nbBtn && docBtn) {
+  const src = $<HTMLTextAreaElement>("#src");
+  const out = $<HTMLDivElement>("#out");
+  const diags = $<HTMLDivElement>("#diags");
+  const picker = $<HTMLDivElement>("#picker");
+  const pickerBtn = $<HTMLButtonElement>("#picker-btn");
+  const pickerLabel = $<HTMLSpanElement>("#picker-label");
+  const pickerMenu = $<HTMLUListElement>("#picker-menu");
+  const seg = $<HTMLDivElement>("#seg");
+  const thumb = $<HTMLSpanElement>("#seg-thumb");
+  const nbBtn = $<HTMLButtonElement>("#m-notebook");
+  const docBtn = $<HTMLButtonElement>("#m-doc");
+
+  if (src && out && diags && picker && pickerBtn && pickerLabel && pickerMenu && seg && thumb && nbBtn && docBtn) {
     SAMPLES.starter = src.value;
     let mode: "notebook" | "doc" = "notebook";
 
@@ -184,27 +280,59 @@ const extraCss = `
       diags.innerHTML = diagnostics
         .map((d) => {
           const text = `${d.severity} · line ${d.line + 1} — ${d.message}`;
-          const esc = text.replace(/&/g, "&amp;").replace(/</g, "&lt;");
-          return `<div class="d ${d.severity}">${esc}</div>`;
+          return `<div class="d ${d.severity}">${text.replace(/&/g, "&amp;").replace(/</g, "&lt;")}</div>`;
         })
         .join("");
+    };
+
+    // The sliding indicator is positioned from the real button geometry, so it
+    // stays correct when the labels wrap or the font loads late.
+    const moveThumb = (): void => {
+      const active = mode === "notebook" ? nbBtn : docBtn;
+      thumb.style.width = `${active.offsetWidth}px`;
+      thumb.style.transform = `translateX(${active.offsetLeft - nbBtn.offsetLeft}px)`;
     };
 
     const setMode = (next: "notebook" | "doc"): void => {
       mode = next;
       nbBtn.setAttribute("aria-pressed", String(next === "notebook"));
       docBtn.setAttribute("aria-pressed", String(next === "doc"));
+      moveThumb();
       paint();
     };
 
-    src.addEventListener("input", paint);
-    picker.addEventListener("change", () => {
-      src.value = SAMPLES[picker.value] ?? "";
+    const setOpen = (open: boolean): void => {
+      picker.dataset.open = String(open);
+      pickerBtn.setAttribute("aria-expanded", String(open));
+    };
+
+    pickerBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      setOpen(picker.dataset.open !== "true");
+    });
+    document.addEventListener("click", () => setOpen(false));
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") setOpen(false);
+    });
+    pickerMenu.addEventListener("click", (e) => {
+      const btn = (e.target as HTMLElement).closest<HTMLButtonElement>("button[role=option]");
+      if (!btn) return;
+      for (const o of pickerMenu.querySelectorAll("button[role=option]")) {
+        o.setAttribute("aria-selected", String(o === btn));
+      }
+      pickerLabel.textContent = btn.childNodes[0]?.textContent?.trim() ?? "";
+      src.value = SAMPLES[btn.dataset.value ?? "empty"] ?? "";
+      setOpen(false);
       paint();
     });
+
+    src.addEventListener("input", paint);
     nbBtn.addEventListener("click", () => setMode("notebook"));
     docBtn.addEventListener("click", () => setMode("doc"));
+    window.addEventListener("resize", moveThumb);
+    if (document.fonts?.ready) void document.fonts.ready.then(moveThumb);
 
+    moveThumb();
     paint();
   }
 </script>

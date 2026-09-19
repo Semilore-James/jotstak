@@ -74,7 +74,7 @@ function renderNote(n: MarginNoteNode): string {
   return `<p class="jot-note">${inline(n.lines.join(" "))}</p>`;
 }
 
-function renderCard(n: BlockNode): string {
+function renderCard(n: BlockNode, diagnostics: Diagnostic[]): string {
   const card = CARDS[n.name] ?? {};
   const spec = getPrimitive(n.name);
   const title = (card.titleParam ? n.params[card.titleParam] : undefined) ?? n.title;
@@ -105,7 +105,7 @@ function renderCard(n: BlockNode): string {
     }
   }
 
-  parts.push(bodyParts(n));
+  parts.push(bodyParts(n, diagnostics));
 
   return `<section class="jot-card" data-primitive="${escapeHtml(n.name)}"${alert ? ' data-alert="true"' : ""}${attr("id", n.params.id)}>${parts.filter(Boolean).join("")}</section>`;
 }
@@ -129,12 +129,12 @@ function renderEvidence(n: BlockNode): string {
 }
 
 /** Callouts: the flavor is the shortcode, so it drives the colour and the label. */
-function renderCallout(n: BlockNode): string {
+function renderCallout(n: BlockNode, diagnostics: Diagnostic[]): string {
   const flavor = n.params.flavor ?? "info";
   return (
     `<aside class="jot-callout" data-flavor="${escapeHtml(flavor)}"${attr("id", n.params.id)}>` +
     `<p class="jot-callout-label">${escapeHtml(flavor)}</p>` +
-    (bodyParts(n) || `<p>${inline(n.title)}</p>`) +
+    (bodyParts(n, diagnostics) || `<p>${inline(n.title)}</p>`) +
     `</aside>`
   );
 }
@@ -219,12 +219,22 @@ function renderNested(r: TreeNode, depth = 0): string {
   return [here, ...kids].join("\n");
 }
 
-function bodyParts(n: BlockNode): string {
-  if (n.body.shape === "keyed") return fieldRows(n.body.fields);
-  if (n.body.shape === "mixed") return fieldRows(n.body.fields) + looseProse(n.body.roots);
-  if (n.body.shape === "plain" && n.body.lines.length > 0) return block(n.body.lines.join("\n"));
-  if (n.body.shape === "indented") return looseProse(n.body.roots);
-  return "";
+function bodyParts(n: BlockNode, diagnostics: Diagnostic[] = []): string {
+  const own =
+    n.body.shape === "keyed"
+      ? fieldRows(n.body.fields)
+      : n.body.shape === "mixed"
+        ? fieldRows(n.body.fields) + looseProse(n.body.roots)
+        : n.body.shape === "plain" && n.body.lines.length > 0
+          ? block(n.body.lines.join("\n"))
+          : n.body.shape === "indented"
+            ? looseProse(n.body.roots)
+            : "";
+
+  // Nested blocks render after the body's own content. This is what lets a table
+  // sit inside a card, or a metric inside a diagram node.
+  const nested = n.children.map((c) => renderNode(c, diagnostics)).join("");
+  return nested ? `${own}<div class="jot-nested">${nested}</div>` : own;
 }
 
 /** Primitives without a renderer yet: show the content, flag it, lose nothing. */
@@ -250,9 +260,9 @@ function renderUnsupported(n: BlockNode, diagnostics: Diagnostic[]): string {
 }
 
 function renderBlock(n: BlockNode, diagnostics: Diagnostic[]): string {
-  if (n.name in CARDS) return renderCard(n);
+  if (n.name in CARDS) return renderCard(n, diagnostics);
   if (n.name === "evidence") return renderEvidence(n);
-  if (n.name === "callout") return renderCallout(n);
+  if (n.name === "callout") return renderCallout(n, diagnostics);
   if (n.name === "meta") return renderMeta(n);
   // @page configures the document rather than rendering; handled by the shell.
   if (n.name === "page") return "";

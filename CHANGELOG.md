@@ -18,6 +18,22 @@ All notable changes to Jotstak are recorded here. Format loosely follows [Keep a
 - `@footnote` now uses the universal `id` param (`@footnote id=<id>`); `@doodle` drawing area params renamed `width`/`height` → `cols`/`rows`.
 - Web deploy workflow is manual-only until M1 (no Cloudflare project or secrets yet).
 
+### Added (composition)
+- **Blocks nest.** A directive indented inside another block's body becomes a child block, parsed recursively through the same lexer and parser — so a `@metric` can live inside a `@decision`, and a table inside a card. Nothing is a special case. This is the change that stops the primitive set growing every time two ideas need to appear together.
+- Nested diagnostics map back to real file lines, so an error inside a nested block still points at the right place.
+
+### Changed (doc mode)
+- **Doc mode is designed rather than undecorated.** It was "notebook with the rules switched off", which reads as a generic web page and makes writing `.jot` look pointless. It is now the same document in an editorial register: a white sheet on a grey backing, hairline rules instead of filled panels, quieter labels, sidenotes in the body face. The structure the author wrote still reads — that structure is the reason to use the tool.
+
+### Changed (playground)
+- Replaced the native `<select>` and loose buttons with a designed picker and a segmented control. The mode indicator slides from measured button geometry, so it stays correct when labels wrap or the webfont loads late, and it respects `prefers-reduced-motion`.
+- Added a "Nested blocks" sample demonstrating composition.
+
+### Fixed (composition and doc mode)
+- Body prose rendered as a bulleted list: three sentences under `@risk` became three bullets and a wrapped line became a bullet of its own. Loose lines now go to markdown-it, so prose stays prose and `- item` becomes a list only when asked for.
+- A nested blockquote kept its browser-default 16px margin, because `.jot-body > *` only reaches direct children. Nested containers are now row-disciplined too.
+- Doc-mode card chrome summed to 27px where a row needs 28. Redesigning a surface without redoing the row arithmetic breaks the rhythm exactly as a maths error would.
+
 ### Added (M2 — cards, callouts, metadata)
 - **The card mechanic is generalised**, described as data rather than written six times. `@risk`, `@assumption`, `@decision`, `@metric`, `@persona` and `@sprint` now render from one table — adding a seventh is an entry, not a renderer, and they stay visually consistent by construction.
 - Status badges on cards, with dangerous values (`critical`, `high`, `off-track`, `deprecated`) marked as alerts.

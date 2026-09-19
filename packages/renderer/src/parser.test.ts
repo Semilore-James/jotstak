@@ -354,3 +354,54 @@ describe("parser — parenthesised param lists", () => {
     expect(diagnostics.filter((d) => d.severity === "error")).toEqual([]);
   });
 });
+
+describe("parser — nested blocks", () => {
+  it("parses a block inside a block", () => {
+    const n = first(
+      '@decision(title="Pricing")\n  context: seats punish adopters\n\n  @metric(name="WAU" value="1,240")\n    Growing 8%.',
+    ) as BlockNode;
+
+    expect(n.name).toBe("decision");
+    expect(n.children).toHaveLength(1);
+    const child = n.children[0] as BlockNode;
+    expect(child.type).toBe("block");
+    expect(child.name).toBe("metric");
+    expect(child.params.value).toBe("1,240");
+  });
+
+  it("keeps the parent's own fields separate from its children", () => {
+    const n = first(
+      '@decision(title="Pricing")\n  context: a\n  choice: b\n\n  @quote(by="P7")\n    it cost money',
+    ) as BlockNode;
+    if (n.body.shape !== "keyed") throw new Error("wrong shape");
+    expect(n.body.fields.map((f) => f.key)).toEqual(["context", "choice"]);
+    expect(n.children).toHaveLength(1);
+  });
+
+  it("nests more than one level deep", () => {
+    const n = first(
+      '@decision(title="Outer")\n  @risk(level=high title="Middle")\n    @metric(name="Inner" value="1")',
+    ) as BlockNode;
+    const mid = n.children[0] as BlockNode;
+    expect(mid.name).toBe("risk");
+    const inner = mid.children[0] as BlockNode;
+    expect(inner.name).toBe("metric");
+    expect(inner.params.name).toBe("Inner");
+  });
+
+  it("reports a nested block's diagnostics against the real file line", () => {
+    const { diagnostics } = parse(
+      '@decision(title="X")\n  context: a\n\n  @nonexistent\n    body',
+    );
+    const unknown = diagnostics.find((d) => d.message.includes("Unknown primitive"));
+    expect(unknown).toBeDefined();
+    // The @nonexistent line is line 4 of the document (index 3), not line 0 of
+    // the extracted sub-document.
+    expect(unknown!.line).toBe(3);
+  });
+
+  it("leaves a block with no nested children with an empty array", () => {
+    const n = first('@decision(title="X")\n  context: a') as BlockNode;
+    expect(n.children).toEqual([]);
+  });
+});

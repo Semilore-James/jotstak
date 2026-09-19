@@ -51,6 +51,13 @@ export interface BlockNode {
   /** Bare text after the shortcode and params. */
   title: string;
   body: BlockBody;
+  /**
+   * Blocks nested inside this one's body. This is what makes primitives
+   * COMPOSE rather than each being a special case: a table can sit inside a
+   * card, a metric inside a diagram node. Without it every combination would
+   * need its own primitive, which is how a language ends up with thirty.
+   */
+  children: Node[];
   position: Position;
 }
 
