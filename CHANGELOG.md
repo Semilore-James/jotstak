@@ -18,6 +18,20 @@ All notable changes to Jotstak are recorded here. Format loosely follows [Keep a
 - `@footnote` now uses the universal `id` param (`@footnote id=<id>`); `@doodle` drawing area params renamed `width`/`height` → `cols`/`rows`.
 - Web deploy workflow is manual-only until M1 (no Cloudflare project or secrets yet).
 
+### Added (M2 — cards, callouts, metadata)
+- **The card mechanic is generalised**, described as data rather than written six times. `@risk`, `@assumption`, `@decision`, `@metric`, `@persona` and `@sprint` now render from one table — adding a seventh is an entry, not a renderer, and they stay visually consistent by construction.
+- Status badges on cards, with dangerous values (`critical`, `high`, `off-track`, `deprecated`) marked as alerts.
+- `@metric` leads with the figure and a trend arrow; `@evidence` renders as a quotation with structured attribution; `@callout` (and `@info`/`@warn`/`@tip`/`@question`) is coloured by its flavour; `@meta` renders as a chip row.
+- **Parenthesised param lists** — `@primitive( ... )` may span lines (ADR-003). The inline form is unchanged.
+- **Contextual spacing**: dividers and consecutive same-type blocks no longer pay a full row gap. Rows carry `data-kind` so spacing can depend on what a block is.
+- `samples/showcase.jot`, a realistic PM document using seven primitives, now the playground's default sample.
+
+### Fixed (M2)
+- `@meta`'s chip row used a 7px row-gap; when the chips wrapped, that gap sat between wrapped lines and knocked the rest of the document off the ruling.
+- `@metric`'s figure stretched its line: flex baseline alignment grows a row when a child's inline ascent exceeds the strut. The figure is a plain line box with a capped inline height now.
+- `@evidence` had 26px of vertical padding where a row needs 28; it has no horizontal borders to make up the difference.
+- `.jot-body p` out-specified `.jot-metric`, silently overriding its line-height — a cascade collision, not a maths error.
+
 ### Added (M1 — web playground)
 - **The design system now reaches the website.** `renderThemeCss()` and `renderLayoutCss()` are injected by a shared `Base.astro` layout, so the site and the extension preview are styled from one set of tokens and cannot drift.
 - `apps/web/scripts/copy-fonts.mjs` copies the bundled woff2 files into `public/fonts/` at build time, driven by the renderer's `FONT_FACES` list, and ships the SIL OFL licence text alongside them.

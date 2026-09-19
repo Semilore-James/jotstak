@@ -109,6 +109,18 @@ ${scope} .jot-body > * { margin-top: 0; margin-bottom: ${ROW}px; }
    when every block in the main column is perfectly sized. */
 ${scope} .jot-aside { display: flow-root; }
 ${scope} .jot-aside > * { margin-top: 0; margin-bottom: ${ROW}px; }
+
+/* Contextual spacing. A uniform gap after every block reads as double-spacing:
+   a run of quotes gets a blank line between each, and a horizontal rule costs
+   three rows — the previous block's margin, its own row, and its own margin.
+   These exceptions stay whole-row, so the phase is unaffected. */
+${scope} .jot-body[data-kind="divider"] > * { margin-bottom: 0; }
+${scope} .jot-body[data-kind="quote"] + .jot-aside:empty + .jot-body[data-kind="quote"] > *,
+${scope} .jot-body[data-kind="list"] + .jot-aside:empty + .jot-body[data-kind="list"] > *,
+${scope} .jot-body[data-primitive="sticky"] + .jot-aside:empty + .jot-body[data-primitive="sticky"] > * { margin-top: 0; }
+${scope} .jot-body[data-kind="quote"]:has(+ .jot-aside:empty + .jot-body[data-kind="quote"]) > * { margin-bottom: 0; }
+/* @meta sits tight under the title it describes. */
+${scope} .jot-body[data-primitive="meta"] > * { margin-bottom: ${ROW}px; }
 /* A trailing margin inside a container would escape the row maths. */
 ${scope} .jot-quote > :last-child,
 ${scope} .jot-card > :last-child,
@@ -298,6 +310,118 @@ ${scope} .jot-field-key {
   color: var(--jot-ink-muted);
 }
 ${scope} .jot-field-value { font-size: ${typography.body.lg.size}; }
+${scope} .jot-field-list { margin: 0; padding-left: ${ROW}px; }
+${scope} .jot-field-list li { line-height: ${ROW}px; }
+
+/* Badge beside the kicker: the card's status at a glance. Inline-block with a
+   capped line-height so it cannot grow the row it sits in. */
+${scope} .jot-badge {
+  display: inline-block;
+  margin-left: ${ROW / 4}px;
+  padding: 0 7px;
+  border-radius: var(--jot-shape-border-radius-full);
+  background: var(--jot-color-accent-terracotta-pale);
+  color: var(--jot-color-accent-sepia);
+  font-family: var(--jot-font-label);
+  font-size: ${typography.label.sm.size};
+  font-weight: 600;
+  letter-spacing: ${typography.label.sm.letterSpacing};
+  text-transform: uppercase;
+  line-height: 18px;
+  vertical-align: baseline;
+}
+${scope} .jot-badge[data-alert="true"] { background: #f7d9d4; color: #8c1d18; }
+${scope} .jot-card[data-alert="true"] { border-color: var(--jot-color-accent-terracotta); }
+
+/* @metric leads with the number. */
+/* A ${typography.headline.lg.size} number does not fit a ${ROW}px line box — Lora's content height is
+   about 1.28em — so the figure takes two rows rather than overflowing by 6px. */
+/* Two rows for the figure, as a plain line box rather than flex.
+   Flex baseline alignment stretched the row: a ${typography.headline.lg.size} number's inline ascent
+   exceeds the strut's, and the line grows to fit it. Capping the number's own
+   line-height keeps its inline box inside the strut, so the row stays exactly
+   two. Scoped under .jot-body to out-specify the generic \`.jot-body p\` rule. */
+${scope} .jot-body p.jot-metric { line-height: ${ROW * 2}px; }
+${scope} .jot-body .jot-metric > * + * { margin-left: ${ROW / 2}px; }
+${scope} .jot-body .jot-metric-value {
+  font-family: var(--jot-font-heading);
+  font-size: ${typography.headline.lg.size};
+  font-weight: 600;
+  /* line-height 1 keeps this inline box smaller than the surrounding strut,
+     so a large figure cannot stretch the line it sits on. */
+  line-height: 1;
+}
+${scope} .jot-body .jot-metric-target,
+${scope} .jot-body .jot-trend {
+  font-family: var(--jot-font-label);
+  font-size: ${typography.label.md.size};
+  color: var(--jot-ink-muted);
+  line-height: 1;
+}
+${scope} .jot-trend[data-trend="up"] { color: var(--jot-color-accent-sage); }
+${scope} .jot-trend[data-trend="down"] { color: var(--jot-color-accent-terracotta); }
+
+/* ── @evidence: a quotation with structured attribution ─────────────── */
+${scope} .jot-evidence {
+  margin: 0;
+  /* No horizontal borders here, so the padding alone carries the row. */
+  padding: ${ROW / 2}px 18px;
+  background: var(--jot-surface-elevated);
+  border-left: 2px solid var(--jot-color-accent-slate-blue);
+  border-radius: var(--jot-shape-border-radius-base);
+}
+${scope} .jot-evidence blockquote { margin: 0; font-style: italic; }
+${scope} .jot-evidence figcaption {
+  font-family: var(--jot-font-label);
+  font-size: ${typography.label.md.size};
+  line-height: ${ROW}px;
+  color: var(--jot-ink-muted);
+}
+
+/* ── Callouts: the flavor is the shortcode, so it drives the colour ─── */
+${scope} .jot-callout {
+  padding: 13px 18px;
+  border-radius: var(--jot-shape-border-radius-base);
+  border: 1px solid var(--jot-rule);
+  border-left-width: 3px;
+  background: var(--jot-surface-elevated);
+}
+${scope} .jot-callout-label {
+  font-family: var(--jot-font-label);
+  font-size: ${typography.label.sm.size};
+  font-weight: 600;
+  letter-spacing: ${typography.label.sm.letterSpacing};
+  text-transform: uppercase;
+  line-height: ${ROW}px;
+  margin: 0;
+}
+${scope} .jot-callout[data-flavor="info"]     { border-left-color: var(--jot-color-accent-slate-blue); }
+${scope} .jot-callout[data-flavor="info"] .jot-callout-label { color: var(--jot-color-accent-slate-blue); }
+${scope} .jot-callout[data-flavor="tip"]      { border-left-color: var(--jot-color-accent-sage); }
+${scope} .jot-callout[data-flavor="tip"] .jot-callout-label { color: var(--jot-color-accent-sage); }
+${scope} .jot-callout[data-flavor="warn"]     { border-left-color: var(--jot-color-accent-terracotta); }
+${scope} .jot-callout[data-flavor="warn"] .jot-callout-label { color: var(--jot-color-accent-terracotta); }
+${scope} .jot-callout[data-flavor="question"] { border-left-color: var(--jot-color-accent-sepia); }
+${scope} .jot-callout[data-flavor="question"] .jot-callout-label { color: var(--jot-color-accent-sepia); }
+
+/* ── @meta: a chip row of document metadata ─────────────────────────── */
+/* Row-gap must be 0: when the chips wrap, any gap is added BETWEEN the wrapped
+   lines and is not a row multiple, so the whole document below slips off the
+   ruling. The ${ROW}px line-height already separates the lines. */
+${scope} .jot-meta { display: flex; flex-wrap: wrap; gap: 0 ${ROW / 2}px; line-height: ${ROW}px; }
+${scope} .jot-chip {
+  font-family: var(--jot-font-label);
+  font-size: ${typography.label.md.size};
+  color: var(--jot-ink);
+  line-height: ${ROW}px;
+}
+${scope} .jot-chip-key {
+  color: var(--jot-ink-muted);
+  text-transform: uppercase;
+  letter-spacing: ${typography.label.sm.letterSpacing};
+  font-size: ${typography.label.sm.size};
+  margin-right: 6px;
+}
 
 /* ── Margin notes ───────────────────────────────────────────────────── */
 /* Placed in the grid's second column on the same row as their anchor, so
