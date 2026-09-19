@@ -18,6 +18,19 @@ All notable changes to Jotstak are recorded here. Format loosely follows [Keep a
 - `@footnote` now uses the universal `id` param (`@footnote id=<id>`); `@doodle` drawing area params renamed `width`/`height` → `cols`/`rows`.
 - Web deploy workflow is manual-only until M1 (no Cloudflare project or secrets yet).
 
+### Added (M1 — web playground)
+- **The design system now reaches the website.** `renderThemeCss()` and `renderLayoutCss()` are injected by a shared `Base.astro` layout, so the site and the extension preview are styled from one set of tokens and cannot drift.
+- `apps/web/scripts/copy-fonts.mjs` copies the bundled woff2 files into `public/fonts/` at build time, driven by the renderer's `FONT_FACES` list, and ships the SIL OFL licence text alongside them.
+- **Playground**: split source/preview, live rendering in the browser, notebook/doc toggle, sample picker, and diagnostics surfaced per line. No backend — the same renderer the extension uses, running locally.
+- **Landing page** rebuilt around the agreed positioning, with a hero that renders a real `.jot` document using the real renderer at build time rather than a mockup.
+- Site header, footer and navigation styled from the tokens.
+- Integration tests asserting the site actually consumes the design system and serves every font the CSS references.
+
+### Fixed (M1)
+- **The website was never styled.** The CSS generators were built, tested and snapshot-reviewed in step 2, and no page ever called them — the live site rendered in browser-default serif. Unit tests on a generator prove it generates; they say nothing about whether anything consumes the output.
+- The docs logo was invisible on Starlight's dark theme (near-black wordmark). A cream-ink variant is now swapped in for dark mode.
+- Footer text ran together where a JSX newline collapsed without a space.
+
 ### Added (M0 step 6 — closes M0)
 - `scripts/extract-font-metrics.mjs` reads the shipped woff2 files and generates `src/font-metrics.ts`. The baseline offset is now **derived** from real metrics (19.856px) rather than hand-written. ADR-002 satisfied.
 - Metric-matched fallback face: `"Lora Fallback"` overrides Georgia's ascent/descent/size to Lora's, so the baseline does not jump when the webfont finishes loading. Ships even when no webfonts are served.

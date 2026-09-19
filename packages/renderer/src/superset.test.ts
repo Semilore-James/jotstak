@@ -6,7 +6,7 @@
 //   2. The baseline is derived from font metrics, not guessed, and stays derived.
 
 import { describe, it, expect } from "vitest";
-import { readFileSync } from "node:fs";
+import { readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import * as fontkit from "fontkit";
 import { createRequire } from "node:module";
@@ -169,5 +169,41 @@ describe("font loading — the fallback must not move the baseline", () => {
     // must still get the fallback — that is exactly when it matters most.
     expect(renderThemeCss()).toContain("Lora Fallback");
     expect(renderThemeCss()).not.toContain("lora-latin-400-normal.woff2");
+  });
+});
+
+describe("integration — the website actually consumes the design system", () => {
+  // This suite exists because of a real bug: renderThemeCss and renderLayoutCss
+  // were fully built, tested and snapshot-reviewed, and no page ever called them.
+  // The site shipped in browser-default serif for days. Unit tests on a generator
+  // prove it generates; they say nothing about whether anyone uses the output.
+  const layout = readFileSync(join(REPO, "apps", "web", "src", "layouts", "Base.astro"), "utf8");
+
+  it("imports both CSS generators", () => {
+    expect(layout).toMatch(/import \{[^}]*renderThemeCss[^}]*\} from "@jotstak\/renderer"/);
+    expect(layout).toContain("renderLayoutCss");
+  });
+
+  it("injects them into the document head", () => {
+    expect(layout).toMatch(/<style[^>]*set:html=\{themeCss\}/);
+    expect(layout).toMatch(/<style[^>]*set:html=\{layoutCss\}/);
+  });
+
+  it("passes an assetBase so @font-face rules are emitted at all", () => {
+    // Without assetBase the generator emits no webfont faces and the page falls
+    // back to system serif — which is exactly how it looked when this broke.
+    expect(layout).toMatch(/renderThemeCss\(\{\s*assetBase:/);
+  });
+
+  it("serves every font file the CSS references", async () => {
+    const { FONT_FACES } = await import("./css.js");
+    for (const face of FONT_FACES) {
+      const served = join(REPO, "apps", "web", "public", "fonts", face.file);
+      expect(existsSync(served), `missing public/fonts/${face.file}`).toBe(true);
+    }
+  });
+
+  it("ships the OFL licence text alongside the bundled fonts", () => {
+    expect(existsSync(join(REPO, "apps", "web", "public", "fonts", "LICENSES.txt"))).toBe(true);
   });
 });

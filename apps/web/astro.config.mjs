@@ -11,7 +11,14 @@ export default defineConfig({
   integrations: [
     starlight({
       title: "Jotstak Docs",
-      logo: { src: "./src/assets/lockup.svg", alt: "Jotstak", replacesTitle: true },
+      // The wordmark is near-black ink; on Starlight's dark theme it vanishes.
+      // A cream-ink variant is swapped in for dark mode.
+      logo: {
+        light: "./src/assets/lockup.svg",
+        dark: "./src/assets/lockup-dark.svg",
+        alt: "Jotstak",
+        replacesTitle: true,
+      },
       favicon: "/favicon.svg",
       head: [
         { tag: "link", attrs: { rel: "icon", href: "/favicon-32.png", sizes: "32x32", type: "image/png" } },

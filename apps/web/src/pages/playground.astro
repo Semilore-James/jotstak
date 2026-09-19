@@ -1,34 +1,187 @@
 ---
-// Live playground: type .jot on the left, see it render on the right.
-// Renders entirely client-side using the SAME @jotstak/renderer the extension uses.
-// No backend, no API call — this is the whole point of the local-first architecture.
-const starter = "@decision title=\"Use Astro for the site\"\n  context: local-first, content-heavy\n  choice: Astro on Cloudflare Pages\n  consequences: near-zero hosting cost";
+// The playground. Type .jot on the left, see it render on the right.
+//
+// It imports the SAME @jotstak/renderer the extension preview uses, and runs it
+// entirely in the browser. No API call, nothing uploaded, no backend to pay for.
+// That is the local-first architecture paying off twice: it is the reason the
+// tool works offline, and the reason this page costs nothing to host.
+import Base from "../layouts/Base.astro";
+
+const starter = `# Q3 pricing review
+
+Three tools, one decision. Everything lives here.
+
+>> ask Ana before Friday
+
+- Usage-based beat seat-based in 4 of 5 interviews
+- Finance needs 30 days' notice to change billing
+
+@decision title="Move to usage-based pricing" status=accepted
+  context: Seat pricing punishes the teams who adopt fastest
+  choice: Usage-based, billed monthly, with a floor
+  consequences: Revenue is lumpier; forecasting needs rework
+
+> Pricing is the fastest lever we have and the one we touch least.
+
 ---
 
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Jotstak Playground</title>
-  </head>
-  <body>
-    <main>
-      <textarea id="src" spellcheck="false">{starter}</textarea>
-      <div id="out"></div>
-    </main>
+Any Markdown works too — **bold**, *italic*, \`code\`, [links](https://example.com).
+`;
 
-    <script>
-      import { render } from "@jotstak/renderer";
-      const src = document.querySelector<HTMLTextAreaElement>("#src");
-      const out = document.querySelector<HTMLDivElement>("#out");
-      if (src && out) {
-        const paint = () => {
-          const { html } = render(src.value, { mode: "notebook" });
-          out.innerHTML = html;
-        };
-        src.addEventListener("input", paint);
-        paint();
-      }
-    </script>
-  </body>
-</html>
+const extraCss = `
+.pg { max-width: 1400px; margin: 0 auto; padding: 20px 28px 40px; width: 100%; box-sizing: border-box; }
+.pg-bar { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 14px; }
+.pg-bar h1 { font-family: var(--jot-font-heading); font-size: 22px; margin: 0; font-weight: 600; }
+.pg-tools { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.pg-tools label { font-family: var(--jot-font-label); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--jot-ink-muted); }
+.pg-tools select, .pg-tools button {
+  font-family: var(--jot-font-label); font-size: 13px;
+  padding: 7px 12px; border-radius: 4px;
+  border: 1px solid var(--jot-color-notebook-rule-lines);
+  background: var(--jot-color-notebook-paper); color: var(--jot-color-notebook-ink);
+  cursor: pointer;
+}
+.pg-tools button[aria-pressed="true"] { background: var(--jot-accent); color: var(--jot-color-notebook-paper); border-color: var(--jot-accent); }
+
+.pg-grid { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1.15fr); gap: 20px; align-items: stretch; }
+.pane { display: flex; flex-direction: column; min-height: 68vh; }
+.pane-label { font-family: var(--jot-font-label); font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--jot-ink-muted); margin: 0 0 8px; }
+
+#src {
+  flex: 1; width: 100%; box-sizing: border-box; resize: none;
+  font-family: var(--jot-font-mono); font-size: 13.5px; line-height: 22px;
+  padding: 18px 20px; tab-size: 2;
+  background: var(--jot-color-notebook-paper-elevated);
+  color: var(--jot-color-notebook-ink);
+  border: 1px solid var(--jot-color-notebook-rule-lines); border-radius: 4px;
+}
+#src:focus { outline: 2px solid var(--jot-accent); outline-offset: -1px; }
+
+#out-wrap {
+  flex: 1; overflow: auto; border-radius: 4px;
+  border: 1px solid var(--jot-color-notebook-rule-lines);
+  box-shadow: 2px 2px 0 var(--jot-color-notebook-rule-lines);
+}
+#out { min-height: 100%; }
+#out .jot-doc { padding: 14px 24px; max-width: none; }
+
+#diags { margin-top: 10px; font-family: var(--jot-font-mono); font-size: 12px; line-height: 20px; }
+#diags:empty { display: none; }
+#diags .d { padding: 4px 10px; border-radius: 3px; margin-bottom: 4px; }
+#diags .error   { background: #fdecea; color: #8c1d18; border-left: 2px solid #b3261e; }
+#diags .warning { background: #fff4e5; color: #7a4b00; border-left: 2px solid #c67139; }
+#diags .info    { background: #eef2f5; color: #3d5666; border-left: 2px solid #436475; }
+
+@media (max-width: 900px) {
+  .pg-grid { grid-template-columns: 1fr; }
+  .pane { min-height: 46vh; }
+}
+`;
+---
+
+<Base
+  title="Jotstak playground — write .jot, see it render"
+  description="Type .jot in your browser and watch it render as a notebook. Nothing is uploaded; the renderer runs entirely on your machine."
+  extraCss={extraCss}
+>
+  <main class="pg">
+    <div class="pg-bar">
+      <h1>Playground</h1>
+      <div class="pg-tools">
+        <label for="sample">Sample</label>
+        <select id="sample">
+          <option value="starter">Pricing review</option>
+          <option value="markdown">Plain Markdown</option>
+          <option value="empty">Empty</option>
+        </select>
+        <label>Mode</label>
+        <button id="m-notebook" aria-pressed="true">Notebook</button>
+        <button id="m-doc" aria-pressed="false">Doc</button>
+      </div>
+    </div>
+
+    <div class="pg-grid">
+      <section class="pane">
+        <p class="pane-label">Source</p>
+        <textarea id="src" spellcheck="false" aria-label="Jotstak source">{starter}</textarea>
+        <div id="diags" role="status" aria-live="polite"></div>
+      </section>
+      <section class="pane">
+        <p class="pane-label">Rendered</p>
+        <div id="out-wrap"><div id="out"></div></div>
+      </section>
+    </div>
+  </main>
+</Base>
+
+<script>
+  import { render } from "@jotstak/renderer";
+
+  const SAMPLES: Record<string, string> = {
+    starter: "",
+    markdown: [
+      "# A plain Markdown file",
+      "",
+      "This document contains **no Jotstak syntax at all** — it is ordinary",
+      "Markdown, and it renders unchanged. That is the whole on-ramp.",
+      "",
+      "- Nested lists work",
+      "  - like this",
+      "1. So do numbered ones",
+      "",
+      "> And block quotes.",
+      "",
+      "```js",
+      "// fenced code is left alone",
+      "const x = 1;",
+      "```",
+      "",
+      "| Tool | Used for |",
+      "| --- | --- |",
+      "| Docs | Prose |",
+      "| Miro | Diagrams |",
+    ].join("\n"),
+    empty: "",
+  };
+
+  const src = document.querySelector<HTMLTextAreaElement>("#src");
+  const out = document.querySelector<HTMLDivElement>("#out");
+  const diags = document.querySelector<HTMLDivElement>("#diags");
+  const picker = document.querySelector<HTMLSelectElement>("#sample");
+  const nbBtn = document.querySelector<HTMLButtonElement>("#m-notebook");
+  const docBtn = document.querySelector<HTMLButtonElement>("#m-doc");
+
+  if (src && out && diags && picker && nbBtn && docBtn) {
+    SAMPLES.starter = src.value;
+    let mode: "notebook" | "doc" = "notebook";
+
+    const paint = (): void => {
+      const { html, diagnostics } = render(src.value, { mode });
+      out.innerHTML = html;
+      diags.innerHTML = diagnostics
+        .map((d) => {
+          const text = `${d.severity} · line ${d.line + 1} — ${d.message}`;
+          const esc = text.replace(/&/g, "&amp;").replace(/</g, "&lt;");
+          return `<div class="d ${d.severity}">${esc}</div>`;
+        })
+        .join("");
+    };
+
+    const setMode = (next: "notebook" | "doc"): void => {
+      mode = next;
+      nbBtn.setAttribute("aria-pressed", String(next === "notebook"));
+      docBtn.setAttribute("aria-pressed", String(next === "doc"));
+      paint();
+    };
+
+    src.addEventListener("input", paint);
+    picker.addEventListener("change", () => {
+      src.value = SAMPLES[picker.value] ?? "";
+      paint();
+    });
+    nbBtn.addEventListener("click", () => setMode("notebook"));
+    docBtn.addEventListener("click", () => setMode("doc"));
+
+    paint();
+  }
+</script>
