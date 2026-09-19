@@ -304,3 +304,53 @@ describe("parser — list continuation lines", () => {
     expect(n.items[0]!.children.map((c) => c.text)).toEqual(["Real child"]);
   });
 });
+
+describe("parser — parenthesised param lists", () => {
+  it("accepts params in parentheses on one line", () => {
+    const n = first('@decision(title="Use Astro" status=accepted)\n  context: local-first') as BlockNode;
+    expect(n.params.title).toBe("Use Astro");
+    expect(n.params.status).toBe("accepted");
+  });
+
+  it("accepts params spanning several lines", () => {
+    const n = first(
+      '@decision(\n  title="Move to usage-based pricing"\n  status=deprecated\n  date=2026-09-19\n)\n  context: Seat pricing punishes fast adopters\n  choice: Usage-based',
+    ) as BlockNode;
+    expect(n.params).toEqual({
+      title: "Move to usage-based pricing",
+      status: "deprecated",
+      date: "2026-09-19",
+    });
+    if (n.body.shape !== "keyed") throw new Error("wrong shape");
+    expect(n.body.fields.map((f) => f.key)).toEqual(["context", "choice"]);
+  });
+
+  it("means exactly the same as the inline form", () => {
+    const inline = first('@decision title="Use Astro" status=accepted\n  context: local-first') as BlockNode;
+    const parens = first('@decision(title="Use Astro" status=accepted)\n  context: local-first') as BlockNode;
+    expect(parens.params).toEqual(inline.params);
+    expect(parens.body).toEqual(inline.body);
+  });
+
+  it("does not let a parenthesis inside a quoted value unbalance the list", () => {
+    const n = first('@decision(title="Pricing (Q3) review" status=accepted)\n  context: x') as BlockNode;
+    expect(n.params.title).toBe("Pricing (Q3) review");
+    expect(n.params.status).toBe("accepted");
+  });
+
+  it("treats text after the closing paren as the title", () => {
+    const n = first("@banner(style=bold) Discovery phase") as BlockNode;
+    expect(n.params.style).toBe("bold");
+    expect(n.title).toBe("Discovery phase");
+  });
+
+  it("reports an unclosed parameter list", () => {
+    const { diagnostics } = parse('@decision(\n  title="oops"\n  context: y');
+    expect(diagnostics.some((d) => d.severity === "error" && d.message.includes("Unclosed `(`"))).toBe(true);
+  });
+
+  it("leaves `@name(` inside a code fence alone", () => {
+    const { diagnostics } = parse('```js\n@decision(\n```\n\nAfter.');
+    expect(diagnostics.filter((d) => d.severity === "error")).toEqual([]);
+  });
+});

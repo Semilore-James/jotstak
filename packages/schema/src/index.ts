@@ -7,7 +7,9 @@
 //      (dir=, layout=, at 12, at top-left, >/< for sides) — never pixel positions.
 //      The renderer places things. The only free-placement escape hatch is @doodle.
 //   2. Minimal punctuation. No pipe tables. Body content uses indentation + key:value
-//      or plain lines. Commas only in compact table rows.
+//      or plain lines. Commas only in compact table rows. Params are written inline
+//      after the shortcode, or in a parenthesised list that may span lines when there
+//      are enough of them to hurt readability (ADR-003) — both forms mean the same.
 //   3. Indentation is structure. Trees, nested lists, and record-form tables
 //      derive hierarchy from indentation so they diff cleanly.
 //   4. No automatic decoration. Nothing renders that the author did not ask for.

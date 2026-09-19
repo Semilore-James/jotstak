@@ -56,6 +56,35 @@ export interface LineToken {
 
 const PARAM_RE = /([a-zA-Z_][a-zA-Z0-9_]*)=(?:"([^"]*?)"|'([^']*?)'|(\S+))/g;
 
+/**
+ * Splits `(a=1 b=2) trailing text` into the param region and whatever follows.
+ * Returns null when the text does not use the parenthesised form.
+ */
+function splitParenRegion(text: string): { inside: string; after: string } | null {
+  const trimmed = text.trimStart();
+  if (!trimmed.startsWith("(")) return null;
+
+  let depth = 0;
+  let quote: string | null = null;
+  for (let i = 0; i < trimmed.length; i++) {
+    const ch = trimmed[i]!;
+    if (quote !== null) {
+      if (ch === quote) quote = null;
+      continue;
+    }
+    if (ch === '"' || ch === "'") quote = ch;
+    else if (ch === "(") depth++;
+    else if (ch === ")") {
+      depth--;
+      if (depth === 0) {
+        return { inside: trimmed.slice(1, i), after: trimmed.slice(i + 1).trim() };
+      }
+    }
+  }
+  // Unbalanced — the lexer has already reported it; take everything as params.
+  return { inside: trimmed.slice(1), after: "" };
+}
+
 function parseInlineParams(
   text: string,
   primitiveName: string,
@@ -65,9 +94,14 @@ function parseInlineParams(
   const params: Record<string, string> = {};
   let lastIndex = 0;
 
+  // `@name(...)` keeps params and trailing text explicitly separated, so a
+  // title containing an `=` cannot be misread as a param and vice versa.
+  const paren = splitParenRegion(text);
+  const scan = paren ? paren.inside : text;
+
   PARAM_RE.lastIndex = 0;
   let match: RegExpExecArray | null;
-  while ((match = PARAM_RE.exec(text)) !== null) {
+  while ((match = PARAM_RE.exec(scan)) !== null) {
     const key = match[1]!;
     const value = match[2] ?? match[3] ?? match[4] ?? "";
     params[key] = value;
@@ -89,7 +123,7 @@ function parseInlineParams(
     validateParamValue(spec, params[key]!, primitiveName, lineNum, diagnostics);
   }
 
-  const rest = text.slice(lastIndex).trim();
+  const rest = paren ? paren.after : text.slice(lastIndex).trim();
   return { params, rest };
 }
 
@@ -315,11 +349,70 @@ interface FenceState {
   marker: string | null;
 }
 
+/** A directive opening a parenthesised param list: `@name(` possibly with params after. */
+const PAREN_OPEN_RE = /^@[a-zA-Z_][a-zA-Z0-9_]*\s*\(/;
+
+/**
+ * Net parenthesis depth of a line, ignoring parens inside quoted values so a
+ * title like "Pricing (Q3)" does not unbalance the list.
+ */
+function parenDelta(text: string): number {
+  let depth = 0;
+  let quote: string | null = null;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i]!;
+    if (quote !== null) {
+      if (ch === quote) quote = null;
+      continue;
+    }
+    if (ch === '"' || ch === "'") quote = ch;
+    else if (ch === "(") depth++;
+    else if (ch === ")") depth--;
+  }
+  return depth;
+}
+
 export function lex(source: string): LexResult {
   const diagnostics: Diagnostic[] = [];
   const lines = source.split(/\r?\n/);
   const fence: FenceState = { marker: null };
-  const tokens = lines.map((raw, i) => classifyLine(raw, i, diagnostics, fence));
+  const tokens: LineToken[] = [];
+
+  let i = 0;
+  while (i < lines.length) {
+    const raw = lines[i]!;
+
+    // A parenthesised param list may span lines. Join it back into one logical
+    // line before classifying, so the rest of the lexer never has to know that
+    // params can wrap. Not applied inside a code fence, where `@name(` is text.
+    if (fence.marker === null && PAREN_OPEN_RE.test(raw.trimStart())) {
+      let depth = parenDelta(raw);
+      if (depth > 0) {
+        const parts = [raw];
+        let j = i + 1;
+        while (j < lines.length && depth > 0) {
+          parts.push(lines[j]!);
+          depth += parenDelta(lines[j]!);
+          j++;
+        }
+        if (depth > 0) {
+          diagnostics.push({
+            severity: "error",
+            message: "Unclosed `(` in the param list; expected a matching `)`.",
+            line: i,
+            column: raw.length - raw.trimStart().length,
+          });
+        }
+        const joined = parts.map((p, k) => (k === 0 ? p : p.trim())).join(" ");
+        tokens.push(classifyLine(joined, i, diagnostics, fence));
+        i = j;
+        continue;
+      }
+    }
+
+    tokens.push(classifyLine(raw, i, diagnostics, fence));
+    i++;
+  }
 
   if (fence.marker !== null) {
     diagnostics.push({
