@@ -18,6 +18,11 @@ All notable changes to Jotstak are recorded here. Format loosely follows [Keep a
 - `@footnote` now uses the universal `id` param (`@footnote id=<id>`); `@doodle` drawing area params renamed `width`/`height` → `cols`/`rows`.
 - Web deploy workflow is manual-only until M1 (no Cloudflare project or secrets yet).
 
+### Changed (dir=split arranges itself)
+- **The renderer now balances a mind map's branches.** Unmarked branches used to all take the right-hand treatment, leaving the hub off-centre and the diagram lopsided — the author had to hand-place every branch with `<`, which breaks the "intent, not coordinates" principle the language is built on.
+- Balance is by **subtree weight, not branch count**: one branch with five nodes is offset by several light ones rather than by a single one. Explicit `<` and `>` still win, as an override rather than the mechanism.
+- Split is now **three columns — left group, hub, right group** — rather than one column per branch. Four branches used to produce four columns; the hub is now measurably centred and each side connects inward to it.
+
 ### Fixed (tree connectors and dividers)
 - **Connectors had a visible one-pixel seam.** The spine was a border on the `<li>` patched by a third element for the last child, and the two did not quite meet. One pseudo-element per direction now, sharing the elbow row, so a seam is not possible.
 - **`dir=split` rendered as two bare columns.** The connector rules were scoped to `right` and `down`, so split matched none of them: no lines, no trunk, no centring. It now has a centred root, a trunk, and mirrored connectors on left-marked branches.

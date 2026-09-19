@@ -574,6 +574,290 @@ ${scope} .jot-tree > .jot-tree-root > .jot-tree-node > .jot-tree-label {
 }
 
 /* ── @tree dir=split — a bilateral mind map ─────────────────────────── */
+/* Three columns: left branches, the hub, right branches. Not one column per
+   branch — that gave four columns for four branches instead of two sides, and
+   left the hub off-centre. The renderer decides which side each branch takes,
+   balancing by subtree weight; \`<\` and \`>\` override it. */
+${scope} .jot-tree-split {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: start;
+  column-gap: ${ROW}px;
+}
+${scope} .jot-tree-hub { display: flex; justify-content: center; }
+${scope} .jot-tree-hub > .jot-tree-label {
+  font-weight: 600;
+  background: var(--jot-surface-elevated);
+  border-radius: var(--jot-shape-border-radius-sm);
+  border: 1px solid var(--jot-rule);
+  padding: 0 ${ROW / 2}px;
+}
+${scope} .jot-tree-side > .jot-tree-kids { padding: 0; }
+
+/* Right side: spine on the left of the group, elbows reaching right. */
+${scope} .jot-tree-side[data-side="right"] > .jot-tree-kids { padding-left: ${ROW}px; }
+/* Left side mirrors completely — text, spine and elbow all flip. */
+${scope} .jot-tree-side[data-side="left"] { text-align: right; }
+${scope} .jot-tree-side[data-side="left"] > .jot-tree-kids { padding-right: ${ROW}px; }
+${scope} .jot-tree-side[data-side="left"] .jot-tree-kids > .jot-tree-node {
+  padding-left: 0;
+  padding-right: ${ROW / 2}px;
+}
+${scope} .jot-tree-side[data-side="left"] .jot-tree-kids > .jot-tree-node::before,
+${scope} .jot-tree-side[data-side="left"] .jot-tree-kids > .jot-tree-node::after {
+  left: auto;
+  right: 0;
+}
+${scope} .jot-tree-side[data-side="left"] .jot-tree-kids { padding-left: 0; }
+/* Each side connects inward to the hub's row, so the hub visibly joins both. */
+${scope} .jot-tree-side { position: relative; }
+${scope} .jot-tree-side::after {
+  content: "";
+  position: absolute;
+  top: ${ROW / 2}px;
+  width: ${ROW}px;
+  border-top: 1px solid var(--jot-color-accent-slate-blue);
+}
+${scope} .jot-tree-side[data-side="right"]::after { left: 0; }
+${scope} .jot-tree-side[data-side="left"]::after { right: 0; }
+${scope} .jot-tree-side:empty::after,
+${scope} .jot-tree-side:has(.jot-tree-kids:empty)::after { display: none; }
+
+/* ── Divider ────────────────────────────────────────────────────────── */
+/* A full-width line drawn ON a ruled line is invisible by construction — it
+   just makes one rule slightly darker. A section break has to read as
+   deliberate, so it is a SHORT CENTRED mark instead: clearly not part of the
+   ruling, while still sitting on the grid. The schema offers three styles and
+   all three are implemented rather than falling through to the same line. */
+${scope} .jot-divider {
+  border: 0;
+  height: ${ROW}px;
+  background: none;
+  position: relative;
+}
+${scope} .jot-divider::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  top: calc(var(--jot-rule-offset) - 1px);
+  width: 18%;
+  min-width: 84px;
+  border-top: 2px solid var(--jot-accent);
+}
+${scope} .jot-divider[data-style="dots"]::after {
+  border-top: 0;
+  height: 3px;
+  width: 64px;
+  min-width: 0;
+  top: calc(var(--jot-rule-offset) - 3px);
+  background-image: radial-gradient(circle, var(--jot-accent) 2px, transparent 2.1px);
+  background-size: 18px 4px;
+  background-repeat: repeat-x;
+}
+${scope} .jot-divider[data-style="wave"]::after {
+  border-top: 0;
+  height: 8px;
+  width: 96px;
+  min-width: 0;
+  top: calc(var(--jot-rule-offset) - 5px);
+  background-image:
+    radial-gradient(circle at 50% 100%, transparent 5px, var(--jot-accent) 5px, var(--jot-accent) 6.4px, transparent 6.5px),
+    radial-gradient(circle at 50% 0%,   transparent 5px, var(--jot-accent) 5px, var(--jot-accent) 6.4px, transparent 6.5px);
+  background-size: 24px 8px, 24px 8px;
+  background-position: 0 0, 12px 0;
+  background-repeat: repeat-x;
+}
+
+/* ── Drawn blocks ───────────────────────────────────────────────────── */
+/* Rule 2: opaque background masks the ruling so the card breathes.
+   Rule 3: 1px border + 13px padding, top and bottom, totals exactly ${ROW}px of
+   chrome. Inner content is row-multiples, so the card's height is always a whole
+   number of rows and the text after it resumes in phase.
+   Rule 4: ${ROW / 2}px margin top and bottom is the half-row clearance. */
+${scope} .jot-card {
+  background: var(--jot-surface-elevated);
+  border: 1px solid var(--jot-rule);
+  border-radius: var(--jot-shape-border-radius-base);
+  box-shadow: var(--jot-card-shadow);
+  padding: 13px 18px;
+  margin: 0 0 ${ROW}px;
+}
+${scope} .jot-card-title {
+  font-family: var(--jot-font-heading);
+  font-size: ${typography.headline.sm.size};
+  font-weight: 600;
+  line-height: ${ROW}px;
+  margin: 0;
+  color: var(--jot-ink);
+}
+${scope} .jot-card-kicker {
+  font-family: var(--jot-font-label);
+  font-size: ${typography.label.sm.size};
+  font-weight: 600;
+  letter-spacing: ${typography.label.sm.letterSpacing};
+  text-transform: uppercase;
+  line-height: ${ROW}px;
+  color: var(--jot-accent);
+  margin: 0;
+}
+${scope} .jot-fields { margin: 0; }
+${scope} .jot-field {
+  display: grid;
+  grid-template-columns: 7rem 1fr;
+  column-gap: ${ROW / 2}px;
+  line-height: ${ROW}px;
+}
+${scope} .jot-field-key {
+  font-family: var(--jot-font-label);
+  font-size: ${typography.label.md.size};
+  font-weight: 600;
+  letter-spacing: ${typography.label.md.letterSpacing};
+  text-transform: uppercase;
+  color: var(--jot-ink-muted);
+}
+${scope} .jot-field-value { font-size: ${typography.body.lg.size}; }
+${scope} .jot-field-list { margin: 0; padding-left: ${ROW}px; }
+${scope} .jot-field-list li { line-height: ${ROW}px; }
+
+/* Badge beside the kicker: the card's status at a glance. Inline-block with a
+   capped line-height so it cannot grow the row it sits in. */
+${scope} .jot-badge {
+  display: inline-block;
+  margin-left: ${ROW / 4}px;
+  padding: 0 7px;
+  border-radius: var(--jot-shape-border-radius-full);
+  background: var(--jot-color-accent-terracotta-pale);
+  color: var(--jot-color-accent-sepia);
+  font-family: var(--jot-font-label);
+  font-size: ${typography.label.sm.size};
+  font-weight: 600;
+  letter-spacing: ${typography.label.sm.letterSpacing};
+  text-transform: uppercase;
+  line-height: 18px;
+  vertical-align: baseline;
+}
+${scope} .jot-badge[data-alert="true"] { background: #f7d9d4; color: #8c1d18; }
+${scope} .jot-card[data-alert="true"] { border-color: var(--jot-color-accent-terracotta); }
+
+/* @metric leads with the number. */
+/* A ${typography.headline.lg.size} number does not fit a ${ROW}px line box — Lora's content height is
+   about 1.28em — so the figure takes two rows rather than overflowing by 6px. */
+/* Two rows for the figure, as a plain line box rather than flex.
+   Flex baseline alignment stretched the row: a ${typography.headline.lg.size} number's inline ascent
+   exceeds the strut's, and the line grows to fit it. Capping the number's own
+   line-height keeps its inline box inside the strut, so the row stays exactly
+   two. Scoped under .jot-body to out-specify the generic \`.jot-body p\` rule. */
+${scope} .jot-body p.jot-metric { line-height: ${ROW * 2}px; }
+${scope} .jot-body .jot-metric > * + * { margin-left: ${ROW / 2}px; }
+${scope} .jot-body .jot-metric-value {
+  font-family: var(--jot-font-heading);
+  font-size: ${typography.headline.lg.size};
+  font-weight: 600;
+  /* line-height 1 keeps this inline box smaller than the surrounding strut,
+     so a large figure cannot stretch the line it sits on. */
+  line-height: 1;
+}
+${scope} .jot-body .jot-metric-target,
+${scope} .jot-body .jot-trend {
+  font-family: var(--jot-font-label);
+  font-size: ${typography.label.md.size};
+  color: var(--jot-ink-muted);
+  line-height: 1;
+}
+${scope} .jot-trend[data-trend="up"] { color: var(--jot-color-accent-sage); }
+${scope} .jot-trend[data-trend="down"] { color: var(--jot-color-accent-terracotta); }
+
+/* ── @columns ───────────────────────────────────────────────────────── */
+/* One mechanic for what used to be two primitives: a two-page spread and a row
+   of feature pillars are both "regions side by side". Gaps are whole rows so a
+   column that wraps on a narrow screen cannot break the ruling. */
+${scope} .jot-columns { display: flex; flex-wrap: wrap; gap: 0 ${ROW}px; }
+/* A small basis so columns actually sit side by side in a narrow preview pane;
+   they still wrap on a phone, where stacking is the right answer. */
+${scope} .jot-col { flex: 1 1 150px; min-width: 0; }
+${scope} .jot-col > :last-child { margin-bottom: 0; }
+${scope} .jot-col-heading {
+  font-family: var(--jot-font-label);
+  font-size: ${typography.label.md.size};
+  font-weight: 600;
+  letter-spacing: ${typography.label.md.letterSpacing};
+  text-transform: uppercase;
+  color: var(--jot-ink-muted);
+  line-height: ${ROW}px;
+  margin: 0;
+}
+
+/* ── Panel accents ──────────────────────────────────────────────────── */
+/* The accent is what makes a panel read as what it IS before the label is
+   read. Presets set it; @panel takes it directly. */
+${scope} .jot-card[data-accent="alert"]    { border-left: 3px solid var(--jot-color-accent-terracotta); }
+${scope} .jot-card[data-accent="positive"] { border-left: 3px solid var(--jot-color-accent-sage); }
+${scope} .jot-card[data-accent="info"]     { border-left: 3px solid var(--jot-color-accent-slate-blue); }
+${scope} .jot-card[data-accent="quiet"] {
+  background: none;
+  box-shadow: none;
+  border-style: dashed;
+}
+
+/* ── @tree ──────────────────────────────────────────────────────────── */
+/* Connectors are borders on pseudo-elements of each node, not an SVG overlay:
+   a border cannot drift from the box it belongs to. Every label is one row
+   tall, so a tree of any depth is a whole number of rows.
+
+   Two pseudo-elements per node, never three. ::before draws the vertical
+   spine, ::after the horizontal elbow, and they MEET at the elbow row. An
+   earlier version drew the spine as a border on the <li> and patched the last
+   child with a second element, which left a visible one-pixel seam where the
+   two did not quite touch. */
+${scope} .jot-tree { background: var(--jot-surface); }
+${scope} .jot-tree ul { list-style: none; margin: 0; padding: 0; }
+${scope} .jot-tree-label {
+  display: inline-block;
+  line-height: ${ROW}px;
+  padding: 0 ${ROW / 4}px;
+}
+${scope} .jot-tree-node { position: relative; line-height: ${ROW}px; }
+${scope} .jot-tree-kids { padding-left: ${ROW}px; }
+
+${scope} .jot-tree-kids > .jot-tree-node { padding-left: ${ROW / 2}px; }
+/* Vertical spine: full height, so it reaches the next sibling's elbow. */
+${scope} .jot-tree-kids > .jot-tree-node::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  border-left: 1px solid var(--jot-color-accent-slate-blue);
+}
+/* The last child's spine stops AT the elbow rather than running past it —
+   \`bottom: auto\` plus an exact height, so the two borders share a pixel. */
+${scope} .jot-tree-kids > .jot-tree-node:last-child::before {
+  bottom: auto;
+  height: ${ROW / 2}px;
+}
+/* Horizontal elbow, landing on the label's own row. */
+${scope} .jot-tree-kids > .jot-tree-node::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: ${ROW / 2}px;
+  width: ${ROW / 2}px;
+  border-top: 1px solid var(--jot-color-accent-slate-blue);
+}
+${scope} .jot-tree[data-style="dashed"] .jot-tree-node::before,
+${scope} .jot-tree[data-style="dashed"] .jot-tree-node::after { border-style: dashed; }
+${scope} .jot-tree[data-style="rounded"] .jot-tree-kids > .jot-tree-node::after {
+  border-bottom-left-radius: ${ROW / 4}px;
+}
+
+${scope} .jot-tree > .jot-tree-root > .jot-tree-node > .jot-tree-label {
+  font-weight: 600;
+  background: var(--jot-surface-elevated);
+  border-radius: var(--jot-shape-border-radius-sm);
+}
+
+/* ── @tree dir=split — a bilateral mind map ─────────────────────────── */
 /* The root sits centred with branches either side. Nodes marked \`<\` go left,
    and their connectors mirror: spine on the right, elbow pointing back in.
    Without this the split direction rendered as two bare columns with no

@@ -552,3 +552,84 @@ describe("render — tree connectors and dividers", () => {
     }
   });
 });
+
+describe("render — dir=split arranges itself", () => {
+  /**
+   * Top-level branch labels per side. Depth-aware on purpose: a flat regex
+   * also catches every descendant's label, which made the first version of
+   * these tests assert on grandchildren.
+   */
+  const sides = (html: string): Record<string, string[]> => {
+    const out: Record<string, string[]> = { left: [], right: [] };
+    for (const m of html.matchAll(/<div class="jot-tree-side" data-side="(left|right)">/g)) {
+      const from = m.index! + m[0].length;
+      let depth = 0;
+      const labels: string[] = [];
+      const token = /<ul class="jot-tree-kids">|<\/ul>|<span class="jot-tree-label">([^<]*)</g;
+      token.lastIndex = from;
+      let t: RegExpExecArray | null;
+      while ((t = token.exec(html)) !== null) {
+        if (t[0].startsWith("<ul")) { depth += 1; continue; }
+        if (t[0] === "</ul>") { depth -= 1; if (depth === 0) break; continue; }
+        if (depth === 1) labels.push(t[1]!);
+      }
+      out[m[1]!] = labels;
+    }
+    return out;
+  };
+
+  it("balances unmarked branches without being told", () => {
+    // "Intent, not coordinates": the author says split, the renderer arranges.
+    // Before this, unmarked branches all took the right-hand treatment and the
+    // hub sat off-centre between them.
+    const { html } = render(
+      "@tree(dir=split)\n  Central\n    A\n      a1\n      a2\n    B\n      b1\n    C\n    D",
+      { mode: "notebook" },
+    );
+    const s = sides(html);
+    expect(s.left!.length).toBeGreaterThan(0);
+    expect(s.right!.length).toBeGreaterThan(0);
+    expect([...s.left!, ...s.right!].sort()).toEqual(["A", "B", "C", "D"]);
+  });
+
+  it("balances by subtree weight rather than branch count", () => {
+    // One branch with five nodes against three with one each: splitting by
+    // count would put the heavy one opposite a single light one.
+    const { html } = render(
+      "@tree(dir=split)\n  Central\n    Heavy\n      one\n      two\n      three\n      four\n    L1\n    L2\n    L3",
+      { mode: "notebook" },
+    );
+    const s = sides(html);
+    const heavySide = s.left!.includes("Heavy") ? s.left! : s.right!;
+    const otherSide = s.left!.includes("Heavy") ? s.right! : s.left!;
+    expect(heavySide).toEqual(["Heavy"]);
+    expect(otherSide.sort()).toEqual(["L1", "L2", "L3"]);
+  });
+
+  it("lets an explicit marker override the balancing", () => {
+    const { html } = render("@tree(dir=split)\n  Central\n    < Forced left\n    < Also left\n    Free", {
+      mode: "notebook",
+    });
+    const s = sides(html);
+    expect(s.left).toContain("Forced left");
+    expect(s.left).toContain("Also left");
+    expect(s.right).toContain("Free");
+  });
+
+  it("consumes the marker instead of printing it", () => {
+    const { html } = render("@tree(dir=split)\n  Central\n    > Right one\n    < Left one", {
+      mode: "notebook",
+    });
+    expect(html).not.toContain("&gt; Right one");
+    expect(html).not.toContain("&lt; Left one");
+    expect(html).toContain(">Right one<");
+  });
+
+  it("puts the hub between the two sides, not beside them", () => {
+    const { html } = render("@tree(dir=split)\n  Central\n    A\n    B", { mode: "notebook" });
+    expect(html).toMatch(/data-side="left"[\s\S]*jot-tree-hub[\s\S]*data-side="right"/);
+    // Three columns total, not one per branch — four branches used to produce
+    // four columns and an off-centre hub.
+    expect(renderLayoutCss()).toMatch(/\.jot-tree-split \{[^}]*grid-template-columns: 1fr auto 1fr/);
+  });
+});
