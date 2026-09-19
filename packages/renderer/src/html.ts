@@ -198,18 +198,32 @@ function fieldRows(fields: { key: string; value: string; children: TreeNode[] }[
   return `<div class="jot-fields">${rows}</div>`;
 }
 
+/**
+ * Lines in a body that are not `key: value` are PROSE, not list items.
+ *
+ * They used to be emitted as `<li>`, which meant writing three sentences under
+ * `@risk` produced three bullets — and a wrapped line became a bullet of its own.
+ * Handing the text to markdown-it instead means ordinary prose stays prose,
+ * wrapped lines join up, and `- item` becomes a list because the author asked
+ * for one. Markdown's rules rather than ours (ADR-001).
+ */
+function looseProse(roots: TreeNode[]): string {
+  if (roots.length === 0) return "";
+  const lines = roots.map((r) => (r.children.length > 0 ? renderNested(r) : r.text));
+  return block(lines.join("\n"));
+}
+
+function renderNested(r: TreeNode, depth = 0): string {
+  const here = `${"  ".repeat(depth)}${r.text}`;
+  const kids = r.children.map((c) => renderNested(c, depth + 1));
+  return [here, ...kids].join("\n");
+}
+
 function bodyParts(n: BlockNode): string {
   if (n.body.shape === "keyed") return fieldRows(n.body.fields);
-  if (n.body.shape === "mixed") {
-    const loose = n.body.roots.length > 0
-      ? `<ul class="jot-field-list">${n.body.roots.map((r) => `<li>${inline(r.text)}</li>`).join("")}</ul>`
-      : "";
-    return fieldRows(n.body.fields) + loose;
-  }
+  if (n.body.shape === "mixed") return fieldRows(n.body.fields) + looseProse(n.body.roots);
   if (n.body.shape === "plain" && n.body.lines.length > 0) return block(n.body.lines.join("\n"));
-  if (n.body.shape === "indented" && n.body.roots.length > 0) {
-    return `<ul class="jot-field-list">${n.body.roots.map((r) => `<li>${inline(r.text)}</li>`).join("")}</ul>`;
-  }
+  if (n.body.shape === "indented") return looseProse(n.body.roots);
   return "";
 }
 

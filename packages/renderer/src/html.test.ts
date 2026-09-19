@@ -352,3 +352,31 @@ describe("render — the showcase document", () => {
     expect(nb).toBe(doc);
   });
 });
+
+describe("render — body prose is prose, not a list", () => {
+  it("does not turn sentences in a card body into bullets", () => {
+    const { html } = render(
+      '@risk(level=high title="Churn")\n  mitigation: Grandfather plans.\n  Small teams pay less, but they are also the loudest\n  segment and the first to post.',
+      { mode: "notebook" },
+    );
+    expect(html).not.toContain("<li>Small teams");
+    expect(html).toContain("<p>Small teams");
+  });
+
+  it("joins a wrapped line instead of making it a second item", () => {
+    const { html } = render(
+      '@risk(level=low title="X")\n  A sentence that wraps onto\n  a second line.',
+      { mode: "notebook" },
+    );
+    expect(html).toMatch(/A sentence that wraps onto\s*\n?\s*a second line\./);
+    expect((html.match(/<li>/g) ?? []).length).toBe(0);
+  });
+
+  it("still makes a real list when the author writes one", () => {
+    const { html } = render('@risk(level=low title="X")\n  Prose.\n  - a bullet\n  - another', {
+      mode: "notebook",
+    });
+    expect((html.match(/<li>/g) ?? []).length).toBe(2);
+    expect(html).toContain("<p>Prose.</p>");
+  });
+});
