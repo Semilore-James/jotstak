@@ -339,7 +339,12 @@ ${scope} .jot-quote cite {
   color: var(--jot-ink-muted);
 }
 
-/* ── Divider: sits ON a rule, occupying exactly one row ─────────────── */
+/* ── Divider ────────────────────────────────────────────────────────── */
+/* A full-width line drawn ON a ruled line is invisible by construction — it
+   just makes one rule slightly darker. A section break has to read as
+   deliberate, so it is a SHORT CENTRED mark instead: clearly not part of the
+   ruling, while still sitting on the grid. The schema offers three styles and
+   all three are implemented rather than falling through to the same line. */
 ${scope} .jot-divider {
   border: 0;
   height: ${ROW}px;
@@ -349,9 +354,35 @@ ${scope} .jot-divider {
 ${scope} .jot-divider::after {
   content: "";
   position: absolute;
-  left: 0; right: 0;
+  left: 50%;
+  transform: translateX(-50%);
   top: calc(var(--jot-rule-offset) - 1px);
-  border-top: 1px solid var(--jot-accent);
+  width: 18%;
+  min-width: 84px;
+  border-top: 2px solid var(--jot-accent);
+}
+${scope} .jot-divider[data-style="dots"]::after {
+  border-top: 0;
+  height: 3px;
+  width: 64px;
+  min-width: 0;
+  top: calc(var(--jot-rule-offset) - 3px);
+  background-image: radial-gradient(circle, var(--jot-accent) 2px, transparent 2.1px);
+  background-size: 18px 4px;
+  background-repeat: repeat-x;
+}
+${scope} .jot-divider[data-style="wave"]::after {
+  border-top: 0;
+  height: 8px;
+  width: 96px;
+  min-width: 0;
+  top: calc(var(--jot-rule-offset) - 5px);
+  background-image:
+    radial-gradient(circle at 50% 100%, transparent 5px, var(--jot-accent) 5px, var(--jot-accent) 6.4px, transparent 6.5px),
+    radial-gradient(circle at 50% 0%,   transparent 5px, var(--jot-accent) 5px, var(--jot-accent) 6.4px, transparent 6.5px);
+  background-size: 24px 8px, 24px 8px;
+  background-position: 0 0, 12px 0;
+  background-repeat: repeat-x;
 }
 
 /* ── Drawn blocks ───────────────────────────────────────────────────── */
@@ -486,10 +517,15 @@ ${scope} .jot-card[data-accent="quiet"] {
 }
 
 /* ── @tree ──────────────────────────────────────────────────────────── */
-/* Connectors are borders on the list items, not SVG: a border cannot drift
-   from the box it belongs to, and the node stays ordinary flow content so it
-   can contain other blocks. Every label is one row tall, so a tree of any
-   depth is a whole number of rows. */
+/* Connectors are borders on pseudo-elements of each node, not an SVG overlay:
+   a border cannot drift from the box it belongs to. Every label is one row
+   tall, so a tree of any depth is a whole number of rows.
+
+   Two pseudo-elements per node, never three. ::before draws the vertical
+   spine, ::after the horizontal elbow, and they MEET at the elbow row. An
+   earlier version drew the spine as a border on the <li> and patched the last
+   child with a second element, which left a visible one-pixel seam where the
+   two did not quite touch. */
 ${scope} .jot-tree { background: var(--jot-surface); }
 ${scope} .jot-tree ul { list-style: none; margin: 0; padding: 0; }
 ${scope} .jot-tree-label {
@@ -498,20 +534,26 @@ ${scope} .jot-tree-label {
   padding: 0 ${ROW / 4}px;
 }
 ${scope} .jot-tree-node { position: relative; line-height: ${ROW}px; }
+${scope} .jot-tree-kids { padding-left: ${ROW}px; }
 
-/* dir=right reads as an outline: children indent, with an elbow connecting
-   each to its parent's spine. */
-${scope} .jot-tree[data-dir="right"] .jot-tree-kids,
-${scope} .jot-tree[data-dir="down"] .jot-tree-kids { padding-left: ${ROW}px; }
-${scope} .jot-tree[data-dir="right"] .jot-tree-kids > .jot-tree-node,
-${scope} .jot-tree[data-dir="down"] .jot-tree-kids > .jot-tree-node {
+${scope} .jot-tree-kids > .jot-tree-node { padding-left: ${ROW / 2}px; }
+/* Vertical spine: full height, so it reaches the next sibling's elbow. */
+${scope} .jot-tree-kids > .jot-tree-node::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
   border-left: 1px solid var(--jot-color-accent-slate-blue);
-  padding-left: ${ROW / 2}px;
 }
-/* The elbow: a short horizontal stub meeting the spine at the label's baseline
-   row, so connectors line up with the text rather than floating between rows. */
-${scope} .jot-tree[data-dir="right"] .jot-tree-kids > .jot-tree-node::before,
-${scope} .jot-tree[data-dir="down"] .jot-tree-kids > .jot-tree-node::before {
+/* The last child's spine stops AT the elbow rather than running past it —
+   \`bottom: auto\` plus an exact height, so the two borders share a pixel. */
+${scope} .jot-tree-kids > .jot-tree-node:last-child::before {
+  bottom: auto;
+  height: ${ROW / 2}px;
+}
+/* Horizontal elbow, landing on the label's own row. */
+${scope} .jot-tree-kids > .jot-tree-node::after {
   content: "";
   position: absolute;
   left: 0;
@@ -519,37 +561,65 @@ ${scope} .jot-tree[data-dir="down"] .jot-tree-kids > .jot-tree-node::before {
   width: ${ROW / 2}px;
   border-top: 1px solid var(--jot-color-accent-slate-blue);
 }
-/* The last child's spine stops at its own elbow instead of running past it. */
-${scope} .jot-tree[data-dir="right"] .jot-tree-kids > .jot-tree-node:last-child,
-${scope} .jot-tree[data-dir="down"] .jot-tree-kids > .jot-tree-node:last-child {
-  border-left-color: transparent;
-}
-${scope} .jot-tree[data-dir="right"] .jot-tree-kids > .jot-tree-node:last-child::after,
-${scope} .jot-tree[data-dir="down"] .jot-tree-kids > .jot-tree-node:last-child::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 0;
-  height: ${ROW / 2}px;
-  border-left: 1px solid var(--jot-color-accent-slate-blue);
-}
-${scope} .jot-tree[data-style="dashed"] .jot-tree-node,
 ${scope} .jot-tree[data-style="dashed"] .jot-tree-node::before,
 ${scope} .jot-tree[data-style="dashed"] .jot-tree-node::after { border-style: dashed; }
-
-/* dir=split puts left-marked branches on the other side of the root. */
-${scope} .jot-tree[data-dir="split"] > .jot-tree-root > .jot-tree-node > .jot-tree-kids {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0 ${ROW}px;
+${scope} .jot-tree[data-style="rounded"] .jot-tree-kids > .jot-tree-node::after {
+  border-bottom-left-radius: ${ROW / 4}px;
 }
-${scope} .jot-tree[data-dir="split"] .jot-tree-node[data-side="left"] { order: -1; }
 
 ${scope} .jot-tree > .jot-tree-root > .jot-tree-node > .jot-tree-label {
   font-weight: 600;
   background: var(--jot-surface-elevated);
   border-radius: var(--jot-shape-border-radius-sm);
 }
+
+/* ── @tree dir=split — a bilateral mind map ─────────────────────────── */
+/* The root sits centred with branches either side. Nodes marked \`<\` go left,
+   and their connectors mirror: spine on the right, elbow pointing back in.
+   Without this the split direction rendered as two bare columns with no
+   connectors at all, because the rules above are scoped to right/down. */
+${scope} .jot-tree[data-dir="split"] > .jot-tree-root { display: flex; flex-direction: column; align-items: center; }
+${scope} .jot-tree[data-dir="split"] > .jot-tree-root > .jot-tree-node { display: flex; flex-direction: column; align-items: center; width: 100%; }
+${scope} .jot-tree[data-dir="split"] > .jot-tree-root > .jot-tree-node > .jot-tree-kids {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 0 ${ROW * 2}px;
+  padding-left: 0;
+  width: 100%;
+  position: relative;
+}
+/* The trunk: a short stem from the root down into the branch row. */
+${scope} .jot-tree[data-dir="split"] > .jot-tree-root > .jot-tree-node > .jot-tree-kids::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 0;
+  height: ${ROW}px;
+  border-left: 1px solid var(--jot-color-accent-slate-blue);
+}
+/* A whole row, not half: a half-row gap here put the entire diagram on a half
+   row and pushed everything below it off the ruling. */
+${scope} .jot-tree[data-dir="split"] > .jot-tree-root > .jot-tree-node > .jot-tree-kids > .jot-tree-node {
+  flex: 1 1 0;
+  padding-top: ${ROW}px;
+  padding-left: 0;
+}
+/* The top-level branches hang off the trunk, not off a spine of their own.
+   Without this they inherit the generic elbow and draw an orphan connector
+   floating at the outer edge of the diagram. */
+${scope} .jot-tree[data-dir="split"] > .jot-tree-root > .jot-tree-node > .jot-tree-kids > .jot-tree-node::before,
+${scope} .jot-tree[data-dir="split"] > .jot-tree-root > .jot-tree-node > .jot-tree-kids > .jot-tree-node::after {
+  display: none;
+}
+${scope} .jot-tree[data-dir="split"] .jot-tree-node[data-side="left"] { order: -1; }
+/* Left branches mirror: text right-aligned, spine and elbow on the right. */
+${scope} .jot-tree[data-dir="split"] .jot-tree-node[data-side="left"],
+${scope} .jot-tree[data-dir="split"] .jot-tree-node[data-side="left"] .jot-tree-node { text-align: right; }
+${scope} .jot-tree[data-dir="split"] .jot-tree-node[data-side="left"] .jot-tree-kids { padding-left: 0; padding-right: ${ROW}px; }
+${scope} .jot-tree[data-dir="split"] .jot-tree-node[data-side="left"] .jot-tree-kids > .jot-tree-node { padding-left: 0; padding-right: ${ROW / 2}px; }
+${scope} .jot-tree[data-dir="split"] .jot-tree-node[data-side="left"] .jot-tree-kids > .jot-tree-node::before { left: auto; right: 0; }
+${scope} .jot-tree[data-dir="split"] .jot-tree-node[data-side="left"] .jot-tree-kids > .jot-tree-node::after { left: auto; right: 0; }
 
 /* ── Nested blocks ──────────────────────────────────────────────────── */
 /* A block inside a block. Chrome is deliberately lighter at depth: a card

@@ -498,3 +498,57 @@ describe("render — M3 diagrams: @tree", () => {
     expect(css).toContain("border-left: 1px solid var(--jot-color-accent-slate-blue)");
   });
 });
+
+describe("render — tree connectors and dividers", () => {
+  const css = renderLayoutCss();
+
+  it("draws each connector with two pseudo-elements that meet", () => {
+    // An earlier version drew the spine as a border on the <li> and patched the
+    // last child with a third element, leaving a visible one-pixel seam. One
+    // element per direction, sharing the elbow row, cannot seam.
+    expect(css).toMatch(/\.jot-tree-kids > \.jot-tree-node::before \{[^}]*border-left/);
+    expect(css).toMatch(/\.jot-tree-kids > \.jot-tree-node::after \{[^}]*border-top/);
+    const last = /\.jot-tree-kids > \.jot-tree-node:last-child::before \{[^}]*\}/.exec(css)![0];
+    const elbow = /\.jot-tree-kids > \.jot-tree-node::after \{[^}]*\}/.exec(css)![0];
+    // The last child's spine stops exactly where the elbow sits.
+    expect(Number(/height:\s*(\d+)px/.exec(last)![1])).toBe(Number(/top:\s*(\d+)px/.exec(elbow)![1]));
+  });
+
+  it("gives dir=split real connectors, not bare columns", () => {
+    // split used to match none of the connector rules, so it rendered as two
+    // unlinked lists.
+    expect(css).toContain('[data-dir="split"]');
+    expect(css).toMatch(/\[data-dir="split"\][^{]*\.jot-tree-kids::before \{[^}]*border-left/);
+    // Left-marked branches mirror rather than repeating the right-hand layout.
+    expect(css).toMatch(/\[data-side="left"\][^{]*::before \{[^}]*right: 0/);
+  });
+
+  it("keeps the split trunk and branch gap on whole rows", () => {
+    const trunk = /\[data-dir="split"\][^{]*\.jot-tree-kids::before \{[^}]*\}/.exec(css)![0];
+    expect(Number(/height:\s*(\d+)px/.exec(trunk)![1]) % ROW).toBe(0);
+  });
+
+  it("suppresses the generic elbow on top-level split branches", () => {
+    // They hang off the trunk; inheriting the elbow drew an orphan connector
+    // floating at the outer edge of the diagram.
+    expect(css).toMatch(/\[data-dir="split"\][\s\S]{0,400}?display: none/);
+  });
+
+  it("draws the divider as a short centred mark, not a full-width rule", () => {
+    // A full-width line on a ruled line is invisible: it just makes one rule
+    // darker. A section break has to read as deliberate.
+    const rule = /\.jot-divider::after \{[^}]*\}/.exec(css)![0];
+    expect(rule).toContain("left: 50%");
+    expect(rule).toContain("translateX(-50%)");
+    expect(rule).not.toMatch(/right:\s*0/);
+  });
+
+  it("implements all three divider styles the schema promises", () => {
+    for (const style of ["dots", "wave"]) {
+      expect(css, `missing divider style ${style}`).toContain(`.jot-divider[data-style="${style}"]`);
+    }
+    for (const [src, style] of [["---", "line"], ["@divider(style=dots)", "dots"], ["@divider(style=wave)", "wave"]] as const) {
+      expect(render(src, { mode: "notebook" }).html).toContain(`data-style="${style}"`);
+    }
+  });
+});

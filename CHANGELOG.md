@@ -18,6 +18,13 @@ All notable changes to Jotstak are recorded here. Format loosely follows [Keep a
 - `@footnote` now uses the universal `id` param (`@footnote id=<id>`); `@doodle` drawing area params renamed `width`/`height` → `cols`/`rows`.
 - Web deploy workflow is manual-only until M1 (no Cloudflare project or secrets yet).
 
+### Fixed (tree connectors and dividers)
+- **Connectors had a visible one-pixel seam.** The spine was a border on the `<li>` patched by a third element for the last child, and the two did not quite meet. One pseudo-element per direction now, sharing the elbow row, so a seam is not possible.
+- **`dir=split` rendered as two bare columns.** The connector rules were scoped to `right` and `down`, so split matched none of them: no lines, no trunk, no centring. It now has a centred root, a trunk, and mirrored connectors on left-marked branches.
+- A stray orphan connector floated at the outer edge of a split diagram, because top-level branches inherited the generic elbow while hanging off the trunk.
+- The split branch gap was half a row, putting the whole diagram — and everything below it — off the ruling.
+- **The divider was invisible by construction**: a full-width terracotta line drawn exactly on a ruled line just makes one rule darker. It is a short centred mark now, and all three styles the schema promises (`line`, `dots`, `wave`) are actually implemented rather than falling through to the same rule.
+
 ### Added (M3 — diagrams, in progress)
 - **`@tree`** renders a hierarchy with elbow connectors, `dir=right`/`down`/`split`, and `>`/`<` to pick a side under `split` — intent, not coordinates.
 - Diagrams are laid out in **CSS, not SVG**, so a node can contain other blocks (a `@metric` inside a tree node), text stays selectable and searchable, and boxes inherit the design tokens and the row contract rather than re-implementing both.

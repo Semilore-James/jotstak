@@ -384,7 +384,7 @@ function renderNode(n: Node, diagnostics: Diagnostic[]): string {
     case "list":
       return renderList(n);
     case "divider":
-      return `<hr class="jot-divider" />`;
+      return `<hr class="jot-divider" data-style="${escapeHtml(n.style)}" />`;
     case "quote":
       return renderQuote(n);
     case "markdown":
