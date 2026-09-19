@@ -325,8 +325,50 @@ function renderUnsupported(n: BlockNode, diagnostics: Diagnostic[]): string {
   return text ? block(text) : "";
 }
 
+// ── Diagrams ─────────────────────────────────────────────────────────────
+//
+// Laid out in CSS rather than drawn in SVG. Three reasons, in order of weight:
+//
+//   1. Nodes must be able to CONTAIN other blocks. A metric inside a tree node
+//      is the whole point of composition, and SVG cannot hold arbitrary flow
+//      content without foreignObject, which brings its own problems.
+//   2. Text stays selectable, searchable and readable by a screen reader.
+//   3. Boxes inherit the design tokens and the row contract for free; an SVG
+//      would re-implement both and drift.
+//
+// SVG is reserved for connector geometry a border cannot express.
+
+/** A node's own text, plus anything nested beneath it. */
+function treeNode(node: TreeNode, depth: number): string {
+  const kids =
+    node.children.length > 0
+      ? `<ul class="jot-tree-kids">${node.children.map((c) => treeNode(c, depth + 1)).join("")}</ul>`
+      : "";
+  // `>` / `<` prefix a node's side under dir=split. Intent, not coordinates.
+  const raw = node.text;
+  const side = raw.startsWith("> ") ? "right" : raw.startsWith("< ") ? "left" : null;
+  const text = side ? raw.slice(2) : raw;
+  return `<li class="jot-tree-node"${side ? ` data-side="${side}"` : ""}><span class="jot-tree-label">${inline(text)}</span>${kids}</li>`;
+}
+
+function renderTreeDiagram(n: BlockNode, diagnostics: Diagnostic[]): string {
+  const roots = n.body.shape === "indented" ? n.body.roots : [];
+  const dir = n.params.dir ?? "down";
+  const style = n.params.style ?? "solid";
+  const nested = n.children.map((c) => renderNode(c, diagnostics)).join("");
+
+  const body = roots.map((r) => treeNode(r, 0)).join("");
+  return (
+    `<div class="jot-tree" data-dir="${escapeHtml(dir)}" data-style="${escapeHtml(style)}"${attr("id", n.params.id)}>` +
+    `<ul class="jot-tree-root">${body}</ul>` +
+    (nested ? `<div class="jot-nested">${nested}</div>` : "") +
+    `</div>`
+  );
+}
+
 function renderBlock(n: BlockNode, diagnostics: Diagnostic[]): string {
   if (n.name in PANELS) return renderCard(n, diagnostics);
+  if (n.name === "tree") return renderTreeDiagram(n, diagnostics);
   if (n.name === "columns") return renderColumns(n, diagnostics);
   if (n.name === "callout") return renderCallout(n, diagnostics);
   if (n.name === "meta") return renderMeta(n);

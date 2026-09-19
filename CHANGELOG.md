@@ -18,6 +18,10 @@ All notable changes to Jotstak are recorded here. Format loosely follows [Keep a
 - `@footnote` now uses the universal `id` param (`@footnote id=<id>`); `@doodle` drawing area params renamed `width`/`height` → `cols`/`rows`.
 - Web deploy workflow is manual-only until M1 (no Cloudflare project or secrets yet).
 
+### Added (M3 — diagrams, in progress)
+- **`@tree`** renders a hierarchy with elbow connectors, `dir=right`/`down`/`split`, and `>`/`<` to pick a side under `split` — intent, not coordinates.
+- Diagrams are laid out in **CSS, not SVG**, so a node can contain other blocks (a `@metric` inside a tree node), text stays selectable and searchable, and boxes inherit the design tokens and the row contract rather than re-implementing both.
+
 ### Added (documentation)
 - **Getting started** and **Recipes** pages. Getting started leads with "paste a `.md` in, there is nothing to learn", then climbs one rung at a time, with a section on indentation because that is the one rule that changes meaning if you get it wrong.
 - **Reference renamed to Functions**, split one page per function with prev/next navigation, and an index leading on **18 functions across 27 names**.

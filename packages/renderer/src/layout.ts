@@ -485,6 +485,72 @@ ${scope} .jot-card[data-accent="quiet"] {
   border-style: dashed;
 }
 
+/* ── @tree ──────────────────────────────────────────────────────────── */
+/* Connectors are borders on the list items, not SVG: a border cannot drift
+   from the box it belongs to, and the node stays ordinary flow content so it
+   can contain other blocks. Every label is one row tall, so a tree of any
+   depth is a whole number of rows. */
+${scope} .jot-tree { background: var(--jot-surface); }
+${scope} .jot-tree ul { list-style: none; margin: 0; padding: 0; }
+${scope} .jot-tree-label {
+  display: inline-block;
+  line-height: ${ROW}px;
+  padding: 0 ${ROW / 4}px;
+}
+${scope} .jot-tree-node { position: relative; line-height: ${ROW}px; }
+
+/* dir=right reads as an outline: children indent, with an elbow connecting
+   each to its parent's spine. */
+${scope} .jot-tree[data-dir="right"] .jot-tree-kids,
+${scope} .jot-tree[data-dir="down"] .jot-tree-kids { padding-left: ${ROW}px; }
+${scope} .jot-tree[data-dir="right"] .jot-tree-kids > .jot-tree-node,
+${scope} .jot-tree[data-dir="down"] .jot-tree-kids > .jot-tree-node {
+  border-left: 1px solid var(--jot-color-accent-slate-blue);
+  padding-left: ${ROW / 2}px;
+}
+/* The elbow: a short horizontal stub meeting the spine at the label's baseline
+   row, so connectors line up with the text rather than floating between rows. */
+${scope} .jot-tree[data-dir="right"] .jot-tree-kids > .jot-tree-node::before,
+${scope} .jot-tree[data-dir="down"] .jot-tree-kids > .jot-tree-node::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: ${ROW / 2}px;
+  width: ${ROW / 2}px;
+  border-top: 1px solid var(--jot-color-accent-slate-blue);
+}
+/* The last child's spine stops at its own elbow instead of running past it. */
+${scope} .jot-tree[data-dir="right"] .jot-tree-kids > .jot-tree-node:last-child,
+${scope} .jot-tree[data-dir="down"] .jot-tree-kids > .jot-tree-node:last-child {
+  border-left-color: transparent;
+}
+${scope} .jot-tree[data-dir="right"] .jot-tree-kids > .jot-tree-node:last-child::after,
+${scope} .jot-tree[data-dir="down"] .jot-tree-kids > .jot-tree-node:last-child::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: ${ROW / 2}px;
+  border-left: 1px solid var(--jot-color-accent-slate-blue);
+}
+${scope} .jot-tree[data-style="dashed"] .jot-tree-node,
+${scope} .jot-tree[data-style="dashed"] .jot-tree-node::before,
+${scope} .jot-tree[data-style="dashed"] .jot-tree-node::after { border-style: dashed; }
+
+/* dir=split puts left-marked branches on the other side of the root. */
+${scope} .jot-tree[data-dir="split"] > .jot-tree-root > .jot-tree-node > .jot-tree-kids {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 ${ROW}px;
+}
+${scope} .jot-tree[data-dir="split"] .jot-tree-node[data-side="left"] { order: -1; }
+
+${scope} .jot-tree > .jot-tree-root > .jot-tree-node > .jot-tree-label {
+  font-weight: 600;
+  background: var(--jot-surface-elevated);
+  border-radius: var(--jot-shape-border-radius-sm);
+}
+
 /* ── Nested blocks ──────────────────────────────────────────────────── */
 /* A block inside a block. Chrome is deliberately lighter at depth: a card
    inside a card with the same border and shadow reads as clutter. The nested

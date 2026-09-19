@@ -92,12 +92,13 @@ describe("render — structure", () => {
   });
 
   it("keeps an unrendered primitive's content instead of dropping it", () => {
-    // @tree is a diagram primitive, deferred to M3. Until it has a renderer its
-    // content must still appear, with an info diagnostic rather than silence.
-    const { html, diagnostics } = render("@tree(dir=right)\n  Orders\n    Customer", {
+    // @star_model has no renderer yet. Until it does, its content must still
+    // appear, with an info diagnostic rather than silence — a half-written
+    // document should render something.
+    const { html, diagnostics } = render("@star_model Orders\n  fact: Orders\n  dim Customer", {
       mode: "notebook",
     });
-    expect(html).toContain("Orders");
+    expect(html).toContain("Customer");
     expect(diagnostics.some((d) => d.message.includes("no renderer yet"))).toBe(true);
   });
 });
@@ -450,5 +451,50 @@ describe("render — nested blocks keep the row contract", () => {
     expect(card).not.toBeNull();
     expect(card![0]).toContain("jot-nested");
     expect(card![0]).toContain('data-primitive="metric"');
+  });
+});
+
+describe("render — M3 diagrams: @tree", () => {
+  it("renders a hierarchy from indentation", () => {
+    const { html, diagnostics } = render("@tree(dir=right)\n  Orders\n    Customer\n      Segment\n    Product", {
+      mode: "notebook",
+    });
+    expect(diagnostics.filter((d) => d.severity !== "info")).toEqual([]);
+    expect(html).toContain('class="jot-tree"');
+    expect(html).toContain('data-dir="right"');
+    for (const label of ["Orders", "Customer", "Segment", "Product"]) {
+      expect(html).toContain(`>${label}<`);
+    }
+    // Depth is real nesting, not indentation faked with padding.
+    expect(html).toMatch(/Orders[\s\S]*jot-tree-kids[\s\S]*Customer[\s\S]*jot-tree-kids[\s\S]*Segment/);
+  });
+
+  it("lets a tree contain other blocks", () => {
+    // The reason diagrams are CSS and not SVG: a node must be able to hold
+    // ordinary flow content, including another primitive.
+    const { html } = render(
+      '@tree(dir=right)\n  Pricing\n    Usage-based\n\n  @metric(name="Teams" value="1,240")',
+      { mode: "notebook" },
+    );
+    expect(html).toMatch(/jot-tree[\s\S]*jot-nested[\s\S]*data-primitive="metric"/);
+  });
+
+  it("reads > and < as sides rather than as coordinates", () => {
+    const { html } = render("@tree(dir=split)\n  Central\n    > Right branch\n    < Left branch", {
+      mode: "notebook",
+    });
+    expect(html).toContain('data-side="right"');
+    expect(html).toContain('data-side="left"');
+    // The marker is consumed, not printed.
+    expect(html).not.toContain("&gt; Right branch");
+  });
+
+  it("keeps every tree label one row tall", () => {
+    const css = renderLayoutCss();
+    const label = baseRule(".jot-tree-label");
+    expect(Number(/line-height:\s*(\d+)px/.exec(label)![1]) % ROW).toBe(0);
+    // Connectors are borders on the nodes, so they cannot drift from the boxes
+    // they belong to the way a separate SVG overlay would.
+    expect(css).toContain("border-left: 1px solid var(--jot-color-accent-slate-blue)");
   });
 });
