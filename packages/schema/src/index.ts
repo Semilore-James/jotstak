@@ -92,6 +92,42 @@ const page: PrimitiveSpec = {
 // STRUCTURE
 // ---------------------------------------------------------------------------
 
+const panel: PrimitiveSpec = {
+  name: "panel",
+  group: "structure",
+  summary:
+    "A bounded region that clears the ruling and holds anything: fields, prose, or other blocks. This is the general container — @decision, @risk, @assumption and @persona are presets over it, so the PM vocabulary is available but never required. Use @panel directly when none of the presets fit, or when a document should not read as jargon.",
+  params: [
+    { name: "label", type: "string", required: false, description: "Small uppercase kicker above the title, e.g. \"Risk\". Omit for an unlabelled panel." },
+    { name: "title", type: "string", required: false, description: "The panel's heading." },
+    { name: "badge", type: "string", required: false, description: "Short status chip beside the label, e.g. \"accepted\" or \"high\"." },
+    { name: "accent", type: "enum", required: false, description: "Colour treatment. `alert` marks something needing attention; `quiet` drops the fill entirely.", enumValues: ["neutral", "alert", "positive", "info", "quiet"], default: "neutral" },
+  ],
+  bodyShape: "mixed",
+  breaksRuling: true,
+  examples: [
+    '@panel(label="Risk" badge=high accent=alert title="Churn among small teams")\n  mitigation: Grandfather existing plans for 12 months.',
+    '@panel(title="Anything can go inside")\n  A panel holds prose, fields, or other blocks.\n\n  @metric(name="WAU" value="1,240")',
+  ],
+};
+
+const columns: PrimitiveSpec = {
+  name: "columns",
+  group: "structure",
+  summary:
+    "Places regions side by side. Each `key:` in the body is a column, and its indented content — text or nested blocks — fills it. Replaces the separate two-page spread and feature-pillars primitives, which were the same mechanic with different names.",
+  params: [
+    { name: "ratio", type: "string", required: false, description: 'Relative column widths, e.g. "1:1", "2:1". Defaults to equal columns.' },
+    { name: "headings", type: "boolean", required: false, description: "Render each column's key as a heading above it. Set false to use the keys purely as structure.", default: "true" },
+  ],
+  bodyShape: "keyed",
+  breaksRuling: true,
+  examples: [
+    '@columns(ratio="1:2")\n  left:\n    The diagram\n  right:\n    The paragraph that explains it',
+    '@columns\n  Core:\n    Search\n    Export\n  Growth:\n    Templates\n    Sharing',
+  ],
+};
+
 const heading: PrimitiveSpec = {
   name: "heading",
   group: "structure",
@@ -153,6 +189,7 @@ const cover: PrimitiveSpec = {
     "Section cover / divider page. A full-width visual break introducing a major section. Takes a title and optional subtitle.",
   params: [
     { name: "subtitle", type: "string", required: false, description: "Smaller text below the title." },
+    { name: "style", type: "enum", required: false, description: "Visual weight.", enumValues: ["default", "minimal", "bold"], default: "default" },
   ],
   bodyShape: "plain",
   breaksRuling: true,
@@ -190,10 +227,12 @@ const quote: PrimitiveSpec = {
   name: "quote",
   group: "text",
   summary:
-    "Block quote with optional attribution. Shorthand: `> ` at line start for the body.",
+    "Someone else's words, with optional attribution. Covers both a pull quote and a research citation — `by`, `source`, `date` and `tag` carry the provenance. Shorthand: `> ` at line start. Distinct from @callout, which is the author's own voice.",
   params: [
     { name: "by", type: "string", required: false, description: "Attribution — who said it." },
     { name: "source", type: "string", required: false, description: "Where it came from (interview, doc, URL)." },
+    { name: "date", type: "string", required: false, description: "When it was captured." },
+    { name: "tag", type: "string", required: false, description: "Theme tag for clustering, e.g. onboarding, pricing." },
   ],
   bodyShape: "plain",
   breaksRuling: false,
@@ -272,20 +311,6 @@ const tree: PrimitiveSpec = {
   ],
 };
 
-const pillars: PrimitiveSpec = {
-  name: "pillars",
-  group: "lists",
-  summary:
-    "Grouped feature-area columns. Each pillar is a named column with items beneath it. Define each pillar with `pillar <name>` and indent items below it.",
-  params: [
-    { name: "cols", type: "number", required: false, description: "Max columns per row (wraps if more pillars than cols). Default: auto-fit." },
-  ],
-  bodyShape: "indented",
-  breaksRuling: true,
-  examples: [
-    "@pillars\n  pillar Core\n    Search\n    Export\n    Preview\n  pillar Growth\n    Templates\n    Sharing\n  pillar Platform\n    API\n    Plugins",
-  ],
-};
 
 // ---------------------------------------------------------------------------
 // DIAGRAMS / VISUAL THINKING
@@ -398,23 +423,6 @@ const decision: PrimitiveSpec = {
   ],
 };
 
-const evidence: PrimitiveSpec = {
-  name: "evidence",
-  group: "pm-artifacts",
-  summary:
-    "Research evidence block. A quote from a user, document, or data source, with structured attribution. Renders as a styled quotation with source metadata.",
-  params: [
-    { name: "by", type: "string", required: false, description: "Who said it (name, participant ID, role)." },
-    { name: "source", type: "string", required: false, description: "Where it came from (interview, survey, doc, URL)." },
-    { name: "date", type: "string", required: false, description: "When it was captured." },
-    { name: "tag", type: "string", required: false, description: "Theme tag for clustering, e.g. onboarding, pricing." },
-  ],
-  bodyShape: "plain",
-  breaksRuling: false,
-  examples: [
-    '@evidence by="User P7" source="Discovery interview 3" tag=onboarding\n  I just want it to not lose my work. I had three tabs open and was terrified of closing the wrong one.',
-  ],
-};
 
 const metric: PrimitiveSpec = {
   name: "metric",
@@ -452,20 +460,6 @@ const persona: PrimitiveSpec = {
   ],
 };
 
-const sprint: PrimitiveSpec = {
-  name: "sprint",
-  group: "pm-artifacts",
-  summary:
-    "Sprint planning block. Body has keyed fields (goal, dates, capacity) and an indented item list where each item is a line with optional `[status]` prefix.",
-  params: [
-    { name: "name", type: "string", required: true, description: "Sprint name or number." },
-  ],
-  bodyShape: "mixed",
-  breaksRuling: false,
-  examples: [
-    '@sprint name="Sprint 14"\n  goal: Ship the table primitive and the playground\n  dates: 2026-10-07 to 2026-10-18\n  capacity: 3 engineers, 1 designer\n  items:\n    [done] Table renderer\n    [in-progress] Playground wiring\n    [todo] Pipe-table compat parser\n    [stretch] Tab-separated mode',
-  ],
-};
 
 const risk: PrimitiveSpec = {
   name: "risk",
@@ -503,36 +497,7 @@ const assumption: PrimitiveSpec = {
 // EXPRESSIVE LAYER
 // ---------------------------------------------------------------------------
 
-const banner: PrimitiveSpec = {
-  name: "banner",
-  group: "expressive",
-  summary:
-    "Section cover banner. Full-width, renders the title text large with the Organic treatment (cream/terracotta). Body text is the title.",
-  params: [
-    { name: "style", type: "enum", required: false, description: "Visual style.", enumValues: ["default", "minimal", "bold"], default: "default" },
-  ],
-  bodyShape: "plain",
-  breaksRuling: true,
-  examples: [
-    "@banner Product Requirements — Jotstak v1",
-    "@banner Discovery phase",
-  ],
-};
 
-const spread: PrimitiveSpec = {
-  name: "spread",
-  group: "expressive",
-  summary:
-    "Two-page notebook layout. Content under `left:` renders on the left page; content under `right:` renders on the right. Use this to place a diagram beside its explanation.",
-  params: [
-    { name: "ratio", type: "string", required: false, description: 'Column ratio, e.g. "1:1", "2:1", "1:2".', default: "1:1" },
-  ],
-  bodyShape: "keyed",
-  breaksRuling: true,
-  examples: [
-    '@spread ratio="1:2"\n  left:\n    @star_model center="Orders"\n      dim Customer\n      dim Product\n  right:\n    The Orders fact table sits at the center.\n    Customer and Product are the two dimensions\n    we query most often.',
-  ],
-};
 
 const sticky: PrimitiveSpec = {
   name: "sticky",
@@ -576,18 +541,19 @@ const icon: PrimitiveSpec = {
 export const PRIMITIVES: PrimitiveSpec[] = [
   // Document-level
   meta, page,
-  // Structure
+  // Structure — panel and columns are the general containers
+  panel, columns,
   heading, bullet, numbered, divider, cover,
   // Text
   note, quote, callout, footnote,
   // Lists
-  table, tree, pillars,
+  table, tree,
   // Diagrams
   star_model, journey, matrix, timeline, doodle,
   // PM artifacts
-  decision, evidence, metric, persona, sprint, risk, assumption,
+  decision, metric, persona, risk, assumption,
   // Expressive
-  banner, spread, sticky, icon,
+  sticky, icon,
 ];
 
 // ---------------------------------------------------------------------------
@@ -641,13 +607,10 @@ export const SUGGESTED_ICONS: Record<string, string> = {
   journey: "route",
   matrix: "grid-2x2",
   timeline: "milestone",
-  pillars: "columns-3",
   doodle: "pencil",
   decision: "git-branch",
-  evidence: "quote",
   metric: "trending-up",
   persona: "user-round",
-  sprint: "calendar-range",
   risk: "alert-triangle",
   assumption: "help-circle",
   note: "pen-line",
@@ -659,8 +622,8 @@ export const SUGGESTED_ICONS: Record<string, string> = {
   tip: "lightbulb",
   question: "circle-question-mark",
   cover: "bookmark",
-  banner: "flag",
-  spread: "book-open",
+  panel: "square",
+  columns: "columns-3",
   sticky: "sticky-note",
   divider: "minus",
 };

@@ -29,3 +29,6 @@ jotter-overview.md
 
 # Fonts are copied from node_modules at build time by apps/web/scripts/copy-fonts.mjs
 apps/web/public/fonts/
+
+# Generated from the schema at build time by apps/web/scripts/generate-reference.mjs
+apps/web/src/content/docs/docs/reference.mdx

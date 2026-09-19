@@ -18,6 +18,20 @@ All notable changes to Jotstak are recorded here. Format loosely follows [Keep a
 - `@footnote` now uses the universal `id` param (`@footnote id=<id>`); `@doodle` drawing area params renamed `width`/`height` → `cols`/`rows`.
 - Web deploy workflow is manual-only until M1 (no Cloudflare project or secrets yet).
 
+### Changed (the primitive cut, redone for composition)
+- **`@panel` and `@columns` added as the general forms.** `@decision`, `@risk`, `@assumption`, `@persona`, `@metric` and `@callout` are now presets over `@panel` — identical output, different defaults. PM vocabulary is available but never required, and `@panel` is there when it does not fit.
+- **Removed `@banner`** (a duplicate of `@cover`, which absorbed its `style`), **`@evidence`** (folded into `@quote`, which gained `date` and `tag`), **`@spread` and `@pillars`** (both became `@columns`), and **`@sprint`**, which contradicted the PRD's stated non-goal of not being a project tracker.
+- 30 primitives → **27 names over 18 rendering functions**, six of them optional presets.
+- `RENDER_FUNCTIONS` exported from the renderer, so the docs can state the function count without it drifting from the code.
+
+### Added (documentation)
+- **Generated primitive reference** at `/docs/reference`, built from the schema plus the renderer's function map at build time. Organised by function rather than alphabetically, because the honest answer to "how much is there to learn" is the function count.
+
+### Fixed (inline marks)
+- **The grammar and the renderer disagreed on two of four inline marks.** The TextMate grammar coloured `__x__` as underline and `==x==` as highlight; the renderer produced bold and literal text. `__x__` stays bold, because it is bold in Markdown and redefining it would break the superset promise. `==highlight==` is now implemented — safe, since core Markdown gives `==` no meaning.
+- Doc-mode alert badges kept their pink pill and gained a stray em dash, because `.jot-badge[data-alert]` had equal specificity and came later in the stylesheet.
+- A drawn block's clearance was half a row above and half below, an inline-flow idea that broke once every block became its own grid cell: the first block in a document lost its top half to the first-child margin reset and came out half a row short. Clearance is one full row below now.
+
 ### Added (composition)
 - **Blocks nest.** A directive indented inside another block's body becomes a child block, parsed recursively through the same lexer and parser — so a `@metric` can live inside a `@decision`, and a table inside a card. Nothing is a special case. This is the change that stops the primitive set growing every time two ideas need to appear together.
 - Nested diagnostics map back to real file lines, so an error inside a nested block still points at the right place.

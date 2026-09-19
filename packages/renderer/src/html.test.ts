@@ -16,7 +16,8 @@ function gridLineHeights(): string {
     .replace(/\.jot-body code \{[^}]*\}/g, "")
     .replace(/\.jot-body \.jot-metric-value \{[^}]*\}/g, "")
     .replace(/\.jot-body \.jot-metric-target,[\s\S]*?\}/g, "")
-    .replace(/\.jot-badge \{[^}]*\}/g, "");
+    .replace(/\.jot-badge \{[^}]*\}/g, "")
+    .replace(/\.jot-body mark \{[^}]*\}/g, "");
 }
 
 /**
@@ -136,8 +137,11 @@ describe("render — the ruled-line contract", () => {
     expect((padding + border) * 2).toBe(ROW);
   });
 
-  it("gives drawn blocks half a row of clearance each side", () => {
-    expect(baseRule(".jot-card")).toContain(`margin: ${ROW / 2}px 0`);
+  it("gives drawn blocks a whole row of clearance below", () => {
+    // Half a row above and below was an inline-flow idea. Every block is its
+    // own grid cell now, so the gap between two blocks is one block's bottom
+    // margin — and a full row survives the first-child margin-top reset.
+    expect(baseRule(".jot-card")).toContain(`margin: 0 0 ${ROW}px`);
   });
 
   it("makes drawn blocks opaque so they clear the ruling", () => {
@@ -294,12 +298,11 @@ describe("render — M2 primitives", () => {
     expect(html).toContain("target 2,000");
   });
 
-  it("renders @evidence as a quotation with attribution", () => {
-    const { html } = render('@evidence(by="P7" source="Interview 3" tag=pricing)\n  It cost money.', {
+  it("renders @quote with the attribution @evidence used to carry", () => {
+    const { html } = render('@quote(by="P7" source="Interview 3" tag=pricing)\n  It cost money.', {
       mode: "notebook",
     });
-    expect(html).toContain("jot-evidence");
-    expect(html).toContain("<blockquote>");
+    expect(html).toContain("jot-quote");
     expect(html).toContain("P7 · Interview 3");
     expect(html).toContain("pricing");
   });
@@ -346,10 +349,10 @@ describe("render — the showcase document", () => {
     "utf8",
   );
 
-  it("renders seven primitive types with no errors or warnings", () => {
+  it("renders every primitive it uses with no errors or warnings", () => {
     const { html, diagnostics } = render(sample, { mode: "notebook" });
     expect(diagnostics.filter((d) => d.severity !== "info")).toEqual([]);
-    for (const p of ["meta", "risk", "metric", "evidence", "decision", "assumption", "persona"]) {
+    for (const p of ["meta", "risk", "metric", "quote", "decision", "assumption", "persona"]) {
       expect(html, `missing @${p}`).toContain(p);
     }
   });

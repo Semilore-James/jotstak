@@ -7,6 +7,8 @@
 // reflow, font swaps and narrow viewports.
 
 import MarkdownIt from "markdown-it";
+// @ts-expect-error — markdown-it-mark ships no type declarations.
+import markPlugin from "markdown-it-mark";
 import { getPrimitive } from "@jotstak/schema";
 import type {
   BlockNode,
@@ -23,7 +25,11 @@ import type { Diagnostic, RenderMode } from "./index.js";
 // Markdown is delegated rather than reimplemented (ADR-001). `html: false` matters:
 // raw HTML in source is escaped, not passed through, so a .jot file can never
 // inject markup into the extension webview or the playground page.
-const md = new MarkdownIt({ html: false, linkify: true, typographer: true });
+// `==highlight==` is the one inline mark .jot adds. It is safe for the superset
+// promise because core Markdown gives `==` no meaning, unlike `__`, which is
+// already bold — the TextMate grammar used to claim `__` meant underline, so the
+// editor coloured it one way while the renderer produced another.
+const md = new MarkdownIt({ html: false, linkify: true, typographer: true }).use(markPlugin);
 
 const escapeHtml = (s: string): string =>
   s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -61,13 +67,15 @@ function renderList(n: ListNode): string {
 
 function renderQuote(n: QuoteNode): string {
   const text = block(n.lines.join("\n"));
-  const by = n.params.by;
-  const source = n.params.source;
-  const credit =
-    by || source
-      ? `<cite>${[by, source].filter(Boolean).map((s) => escapeHtml(s!)).join(" — ")}</cite>`
-      : "";
-  return `<blockquote class="jot-quote">${text}${credit}</blockquote>`;
+  // @quote absorbed @evidence. They were one function: someone else's words
+  // with provenance attached. A pull quote simply attaches less of it.
+  const credit = [n.params.by, n.params.source, n.params.date]
+    .filter(Boolean)
+    .map((s) => escapeHtml(s!))
+    .join(" · ");
+  const tag = n.params.tag ? `<span class="jot-badge">${escapeHtml(n.params.tag)}</span>` : "";
+  const caption = credit || tag ? `<cite>${credit}${tag}</cite>` : "";
+  return `<blockquote class="jot-quote">${text}${caption}</blockquote>`;
 }
 
 function renderNote(n: MarginNoteNode): string {
@@ -75,18 +83,24 @@ function renderNote(n: MarginNoteNode): string {
 }
 
 function renderCard(n: BlockNode, diagnostics: Diagnostic[]): string {
-  const card = CARDS[n.name] ?? {};
+  const card = PANELS[n.name] ?? {};
   const spec = getPrimitive(n.name);
   const title = (card.titleParam ? n.params[card.titleParam] : undefined) ?? n.title;
   const badge = card.badgeParam ? n.params[card.badgeParam] : undefined;
-  const alert = badge !== undefined && (card.alertValues ?? []).includes(badge);
+  const accent = n.params.accent;
+  const alert =
+    accent === "alert" || (badge !== undefined && (card.alertValues ?? []).includes(badge));
+  // @panel says what it is; a preset is named for what it is.
+  const label = n.params.label ?? card.label ?? (n.name === "panel" ? "" : (spec?.name ?? n.name));
 
   const parts: string[] = [];
-  parts.push(
-    `<p class="jot-card-kicker">${escapeHtml(spec?.name ?? n.name)}` +
-      (badge ? `<span class="jot-badge"${alert ? ' data-alert="true"' : ""}>${escapeHtml(badge)}</span>` : "") +
-      `</p>`,
-  );
+  if (label || badge) {
+    parts.push(
+      `<p class="jot-card-kicker">${escapeHtml(label)}` +
+        (badge ? `<span class="jot-badge"${alert ? ' data-alert="true"' : ""}>${escapeHtml(badge)}</span>` : "") +
+        `</p>`,
+    );
+  }
   if (title) parts.push(`<p class="jot-card-title">${inline(title)}</p>`);
 
   // @metric leads with the number, because that is the thing being read.
@@ -107,25 +121,69 @@ function renderCard(n: BlockNode, diagnostics: Diagnostic[]): string {
 
   parts.push(bodyParts(n, diagnostics));
 
-  return `<section class="jot-card" data-primitive="${escapeHtml(n.name)}"${alert ? ' data-alert="true"' : ""}${attr("id", n.params.id)}>${parts.filter(Boolean).join("")}</section>`;
+  return `<section class="jot-card" data-primitive="${escapeHtml(n.name)}"${accent ? ` data-accent="${escapeHtml(accent)}"` : ""}${alert ? ' data-alert="true"' : ""}${attr("id", n.params.id)}>${parts.filter(Boolean).join("")}</section>`;
 }
 
 const TREND: Record<string, string> = { up: "↑", down: "↓", flat: "→" };
 
-/** @evidence is a quotation with structured attribution, not a field card. */
-function renderEvidence(n: BlockNode): string {
-  const lines = n.body.shape === "plain" ? n.body.lines : [];
-  const text = lines.length > 0 ? block(lines.join("\n")) : `<p>${inline(n.title)}</p>`;
-  const credit = [n.params.by, n.params.source, n.params.date].filter(Boolean).map((s) => escapeHtml(s!));
-  const tag = n.params.tag ? `<span class="jot-badge">${escapeHtml(n.params.tag)}</span>` : "";
-  return (
-    `<figure class="jot-evidence"${attr("id", n.params.id)}>` +
-    `<blockquote>${text}</blockquote>` +
-    (credit.length > 0 || tag
-      ? `<figcaption>${credit.join(" · ")}${tag}</figcaption>`
-      : "") +
-    `</figure>`
-  );
+/**
+ * Which primitives share a rendering FUNCTION.
+ *
+ * Exported because it is the honest answer to "how many things does this
+ * language actually do?" — and because the docs generate their reference from
+ * it, so the count in the documentation can never drift from the renderer.
+ * Names in the same bucket produce the same markup with different defaults.
+ */
+export const RENDER_FUNCTIONS: Record<string, readonly string[]> = {
+  panel: ["panel", "decision", "risk", "assumption", "persona", "metric", "callout"],
+  columns: ["columns"],
+  quote: ["quote"],
+  chips: ["meta"],
+  margin: ["note"],
+  heading: ["heading", "cover"],
+  list: ["bullet", "numbered"],
+  divider: ["divider"],
+  table: ["table"],
+  tree: ["tree"],
+  matrix: ["matrix"],
+  timeline: ["timeline"],
+  journey: ["journey"],
+  star: ["star_model"],
+  sticky: ["sticky"],
+  freeform: ["doodle"],
+  inline: ["icon", "footnote"],
+  config: ["page"],
+};
+
+/**
+ * @columns places regions side by side. Each keyed field is a column; its
+ * children and any nested blocks fill it. This one function replaced both
+ * @spread (two pages) and @pillars (feature columns), which were the same
+ * mechanic wearing different names.
+ */
+function renderColumns(n: BlockNode, diagnostics: Diagnostic[]): string {
+  const fields = n.body.shape === "keyed" ? n.body.fields : [];
+  const showHeadings = n.params.headings !== "false";
+  const ratio = (n.params.ratio ?? "")
+    .split(":")
+    .map((x) => Number(x.trim()))
+    .filter((x) => Number.isFinite(x) && x > 0);
+
+  const cols = fields.map((f, i) => {
+    const heading = showHeadings
+      ? `<p class="jot-col-heading">${inline(f.key)}</p>`
+      : "";
+    const items =
+      f.children.length > 0
+        ? block(f.children.map((c) => renderNested(c)).join("\n"))
+        : "";
+    const basis = ratio[i] !== undefined ? ` style="flex-grow:${ratio[i]}"` : "";
+    return `<div class="jot-col"${basis}>${heading}${items}</div>`;
+  });
+
+  const nested = n.children.map((c) => renderNode(c, diagnostics)).join("");
+  const trailing = nested ? `<div class="jot-col">${nested}</div>` : "";
+  return `<div class="jot-columns"${attr("id", n.params.id)}>${cols.join("")}${trailing}</div>`;
 }
 
 /** Callouts: the flavor is the shortcode, so it drives the colour and the label. */
@@ -165,20 +223,28 @@ function renderMeta(n: BlockNode): string {
 // what a primitive MEANS, this says how it LOOKS. A future MCP or plain-text
 // consumer wants the former without the latter.
 
-interface CardSpec {
-  /** Param used as the card's heading, if any. */
+interface PanelPreset {
+  /** Param used as the panel's heading. */
   titleParam?: string;
-  /** Param rendered as the badge beside the kicker. */
+  /** Param rendered as the badge beside the label. */
   badgeParam?: string;
   /** Badge values that should read as a warning rather than neutral. */
   alertValues?: string[];
+  /** Kicker text. Defaults to the primitive's own name. */
+  label?: string;
 }
 
-const CARDS: Record<string, CardSpec> = {
+/**
+ * Every entry here is the SAME rendering function with different defaults.
+ * `@panel` is the function; the rest are presets over it, so a document can be
+ * written entirely in PM vocabulary or entirely without it. That choice belongs
+ * to the author, which is why neither form is privileged in the renderer.
+ */
+const PANELS: Record<string, PanelPreset> = {
+  panel:      { titleParam: "title", badgeParam: "badge" },
   decision:   { titleParam: "title", badgeParam: "status", alertValues: ["deprecated", "superseded"] },
   risk:       { titleParam: "title", badgeParam: "level", alertValues: ["high", "critical"] },
   assumption: { titleParam: "title", badgeParam: "confidence", alertValues: ["low"] },
-  sprint:     { titleParam: "name" },
   persona:    { titleParam: "name" },
   metric:     { titleParam: "name", badgeParam: "status", alertValues: ["at-risk", "off-track"] },
 };
@@ -260,8 +326,8 @@ function renderUnsupported(n: BlockNode, diagnostics: Diagnostic[]): string {
 }
 
 function renderBlock(n: BlockNode, diagnostics: Diagnostic[]): string {
-  if (n.name in CARDS) return renderCard(n, diagnostics);
-  if (n.name === "evidence") return renderEvidence(n);
+  if (n.name in PANELS) return renderCard(n, diagnostics);
+  if (n.name === "columns") return renderColumns(n, diagnostics);
   if (n.name === "callout") return renderCallout(n, diagnostics);
   if (n.name === "meta") return renderMeta(n);
   // @page configures the document rather than rendering; handled by the shell.

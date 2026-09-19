@@ -128,12 +128,16 @@ ${scope}[data-mode="doc"] .jot-card[data-alert="true"] {
 ${scope}[data-mode="doc"] .jot-card-kicker {
   color: var(--jot-color-doc-ink-muted);
 }
-${scope}[data-mode="doc"] .jot-badge {
+/* Written with the attribute selector so it outranks \`.jot-badge[data-alert]\`,
+   which otherwise kept its pink pill in doc mode and collided with the dash. */
+${scope}[data-mode="doc"] .jot-badge,
+${scope}[data-mode="doc"] .jot-badge[data-alert="true"] {
   background: none;
   padding: 0;
+  margin-left: ${ROW / 4}px;
   color: var(--jot-color-doc-ink-muted);
 }
-${scope}[data-mode="doc"] .jot-badge::before { content: "— "; }
+${scope}[data-mode="doc"] .jot-badge[data-alert="true"] { color: var(--jot-color-accent-terracotta); }
 ${scope}[data-mode="doc"] .jot-callout,
 ${scope}[data-mode="doc"] .jot-evidence,
 ${scope}[data-mode="doc"] .jot-body pre {
@@ -193,6 +197,15 @@ ${scope} .jot-body[data-primitive="meta"] > * { margin-bottom: ${ROW}px; }
 ${scope} .jot-quote > :last-child,
 ${scope} .jot-card > :last-child,
 ${scope} .jot-body li > :last-child { margin-bottom: 0; }
+/* Clearance around a drawn block is ONE ROW BELOW, not half a row on each side.
+   Half-and-half was designed for inline flow; every block is now its own grid
+   cell, so the gap between two blocks is already the sum of one block's bottom
+   margin and nothing else. It also survives the first-child margin reset, which
+   zeroes margin-top and used to leave the first card half a row short. */
+${scope} .jot-body > .jot-card,
+${scope} .jot-body > .jot-columns,
+${scope} .jot-body > .jot-callout,
+${scope} .jot-body > .jot-evidence { margin: 0 0 ${ROW}px; }
 
 /* ── Text on the grid ───────────────────────────────────────────────── */
 /* Every one of these is a whole number of rows. The token line-heights are
@@ -221,6 +234,17 @@ ${scope} .jot-h3 { font-size: ${typography.headline.md.size}; line-height: ${ROW
 ${scope} .jot-doc > .jot-body:first-child > :first-child { margin-top: 0; }
 
 ${scope} .jot-body strong { font-weight: 600; }
+/* \`==highlight==\`. Like inline code, its box is capped below the line strut so
+   a highlighted phrase cannot stretch the row it sits in. */
+${scope} .jot-body mark {
+  background: linear-gradient(transparent 12%, var(--jot-color-accent-terracotta-pale) 12%, var(--jot-color-accent-terracotta-pale) 88%, transparent 88%);
+  color: inherit;
+  padding: 0 2px;
+  line-height: 20px;
+}
+${scope}[data-mode="doc"] .jot-body mark {
+  background: var(--jot-color-accent-terracotta-pale);
+}
 ${scope} .jot-body em { font-style: italic; }
 ${scope} .jot-body a { color: var(--jot-accent); text-underline-offset: 3px; }
 ${scope} .jot-body code {
@@ -342,7 +366,7 @@ ${scope} .jot-card {
   border-radius: var(--jot-shape-border-radius-base);
   box-shadow: var(--jot-card-shadow);
   padding: 13px 18px;
-  margin: ${ROW / 2}px 0;
+  margin: 0 0 ${ROW}px;
 }
 ${scope} .jot-card-title {
   font-family: var(--jot-font-heading);
@@ -428,6 +452,38 @@ ${scope} .jot-body .jot-trend {
 }
 ${scope} .jot-trend[data-trend="up"] { color: var(--jot-color-accent-sage); }
 ${scope} .jot-trend[data-trend="down"] { color: var(--jot-color-accent-terracotta); }
+
+/* ── @columns ───────────────────────────────────────────────────────── */
+/* One mechanic for what used to be two primitives: a two-page spread and a row
+   of feature pillars are both "regions side by side". Gaps are whole rows so a
+   column that wraps on a narrow screen cannot break the ruling. */
+${scope} .jot-columns { display: flex; flex-wrap: wrap; gap: 0 ${ROW}px; }
+/* A small basis so columns actually sit side by side in a narrow preview pane;
+   they still wrap on a phone, where stacking is the right answer. */
+${scope} .jot-col { flex: 1 1 150px; min-width: 0; }
+${scope} .jot-col > :last-child { margin-bottom: 0; }
+${scope} .jot-col-heading {
+  font-family: var(--jot-font-label);
+  font-size: ${typography.label.md.size};
+  font-weight: 600;
+  letter-spacing: ${typography.label.md.letterSpacing};
+  text-transform: uppercase;
+  color: var(--jot-ink-muted);
+  line-height: ${ROW}px;
+  margin: 0;
+}
+
+/* ── Panel accents ──────────────────────────────────────────────────── */
+/* The accent is what makes a panel read as what it IS before the label is
+   read. Presets set it; @panel takes it directly. */
+${scope} .jot-card[data-accent="alert"]    { border-left: 3px solid var(--jot-color-accent-terracotta); }
+${scope} .jot-card[data-accent="positive"] { border-left: 3px solid var(--jot-color-accent-sage); }
+${scope} .jot-card[data-accent="info"]     { border-left: 3px solid var(--jot-color-accent-slate-blue); }
+${scope} .jot-card[data-accent="quiet"] {
+  background: none;
+  box-shadow: none;
+  border-style: dashed;
+}
 
 /* ── Nested blocks ──────────────────────────────────────────────────── */
 /* A block inside a block. Chrome is deliberately lighter at depth: a card

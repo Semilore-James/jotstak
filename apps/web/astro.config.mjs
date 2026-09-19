@@ -27,6 +27,10 @@ export default defineConfig({
         { tag: "meta", attrs: { property: "og:image", content: "https://jotstak.pages.dev/og.png" } },
         { tag: "meta", attrs: { name: "twitter:card", content: "summary_large_image" } },
       ],
+      sidebar: [
+        { label: "Overview", link: "/docs/" },
+        { label: "Reference", link: "/docs/reference/" },
+      ],
       social: [
         { icon: "github", label: "GitHub", href: "https://github.com/Semilore-James/jotstak" },
       ],

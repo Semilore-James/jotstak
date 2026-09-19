@@ -2,20 +2,46 @@
   "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
   "name": "Jotstak",
   "scopeName": "source.jot",
-  "fileTypes": ["jot"],
+  "fileTypes": [
+    "jot"
+  ],
   "patterns": [
-    { "include": "#comment" },
-    { "include": "#margin-note-shorthand" },
-    { "include": "#heading-shorthand" },
-    { "include": "#bullet-shorthand" },
-    { "include": "#numbered-shorthand" },
-    { "include": "#divider-shorthand" },
-    { "include": "#footnote-ref" },
-    { "include": "#primitive-directive" },
-    { "include": "#param-bracket" },
-    { "include": "#string-double" },
-    { "include": "#keyed-field" },
-    { "include": "#inline-format" }
+    {
+      "include": "#comment"
+    },
+    {
+      "include": "#margin-note-shorthand"
+    },
+    {
+      "include": "#heading-shorthand"
+    },
+    {
+      "include": "#bullet-shorthand"
+    },
+    {
+      "include": "#numbered-shorthand"
+    },
+    {
+      "include": "#divider-shorthand"
+    },
+    {
+      "include": "#footnote-ref"
+    },
+    {
+      "include": "#primitive-directive"
+    },
+    {
+      "include": "#param-bracket"
+    },
+    {
+      "include": "#string-double"
+    },
+    {
+      "include": "#keyed-field"
+    },
+    {
+      "include": "#inline-format"
+    }
   ],
   "repository": {
     "comment": {
@@ -25,27 +51,39 @@
     "margin-note-shorthand": {
       "match": "^(>>)(.*)$",
       "captures": {
-        "1": { "name": "punctuation.definition.annotation.jot" },
-        "2": { "name": "string.unquoted.margin-note.jot" }
+        "1": {
+          "name": "punctuation.definition.annotation.jot"
+        },
+        "2": {
+          "name": "string.unquoted.margin-note.jot"
+        }
       }
     },
     "heading-shorthand": {
       "match": "^(#{1,3})\\s+(.*)$",
       "captures": {
-        "1": { "name": "punctuation.definition.heading.jot" },
-        "2": { "name": "markup.heading.jot" }
+        "1": {
+          "name": "punctuation.definition.heading.jot"
+        },
+        "2": {
+          "name": "markup.heading.jot"
+        }
       }
     },
     "bullet-shorthand": {
       "match": "^(\\s*)(-)\\s",
       "captures": {
-        "2": { "name": "punctuation.definition.list.begin.jot" }
+        "2": {
+          "name": "punctuation.definition.list.begin.jot"
+        }
       }
     },
     "numbered-shorthand": {
       "match": "^(\\s*)(\\d+\\.)\\s",
       "captures": {
-        "2": { "name": "punctuation.definition.list.begin.jot" }
+        "2": {
+          "name": "punctuation.definition.list.begin.jot"
+        }
       }
     },
     "divider-shorthand": {
@@ -55,42 +93,60 @@
     "footnote-ref": {
       "match": "\\[\\^([a-zA-Z0-9_]+)\\]",
       "captures": {
-        "1": { "name": "entity.name.tag.footnote.jot" }
+        "1": {
+          "name": "entity.name.tag.footnote.jot"
+        }
       }
     },
     "primitive-directive": {
       "comment": "All @-prefixed shortcodes. Scoped by semantic group for theming.",
       "patterns": [
         {
-          "comment": "PM-artifact & diagram directives — terracotta (#c67139)",
+          "comment": "PM-artifact & diagram directives \u2014 terracotta (#c67139)",
           "match": "(@)(project|pillar|decision|evidence|metric|persona|sprint|risk|assumption|star_model|journey|matrix|timeline|doodle|banner|cover|spread|icon|export|signature)",
           "captures": {
-            "1": { "name": "punctuation.definition.keyword.jot" },
-            "2": { "name": "keyword.control.directive.jot" }
+            "1": {
+              "name": "punctuation.definition.keyword.jot"
+            },
+            "2": {
+              "name": "keyword.control.directive.jot"
+            }
           }
         },
         {
-          "comment": "Data & relationship primitives — slate blue (#436475)",
+          "comment": "Data & relationship primitives \u2014 slate blue (#436475)",
           "match": "(@)(tree|pillars|footnote)",
           "captures": {
-            "1": { "name": "punctuation.definition.keyword.jot" },
-            "2": { "name": "entity.name.type.data.jot" }
+            "1": {
+              "name": "punctuation.definition.keyword.jot"
+            },
+            "2": {
+              "name": "entity.name.type.data.jot"
+            }
           }
         },
         {
-          "comment": "Structural primitives — neutral umber (#73685e)",
+          "comment": "Structural primitives \u2014 neutral umber (#73685e)",
           "match": "(@)(heading|bullet|numbered|divider|table|callout|info|warn|tip|question|quote|sticky)",
           "captures": {
-            "1": { "name": "punctuation.definition.keyword.jot" },
-            "2": { "name": "storage.type.structural.jot" }
+            "1": {
+              "name": "punctuation.definition.keyword.jot"
+            },
+            "2": {
+              "name": "storage.type.structural.jot"
+            }
           }
         },
         {
-          "comment": "Margin / annotation — sepia (#8b634b)",
+          "comment": "Margin / annotation \u2014 sepia (#8b634b)",
           "match": "(@)(note)",
           "captures": {
-            "1": { "name": "punctuation.definition.keyword.jot" },
-            "2": { "name": "comment.block.annotation.jot" }
+            "1": {
+              "name": "punctuation.definition.keyword.jot"
+            },
+            "2": {
+              "name": "comment.block.annotation.jot"
+            }
           }
         }
       ]
@@ -99,17 +155,31 @@
       "comment": "Bracketed params like [status:active, color:#c67139]",
       "begin": "\\[",
       "end": "\\]",
-      "beginCaptures": { "0": { "name": "punctuation.section.brackets.begin.jot" } },
-      "endCaptures": { "0": { "name": "punctuation.section.brackets.end.jot" } },
+      "beginCaptures": {
+        "0": {
+          "name": "punctuation.section.brackets.begin.jot"
+        }
+      },
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.section.brackets.end.jot"
+        }
+      },
       "patterns": [
         {
           "match": "([a-zA-Z_][a-zA-Z0-9_]*)(:)",
           "captures": {
-            "1": { "name": "variable.parameter.jot" },
-            "2": { "name": "punctuation.separator.key-value.jot" }
+            "1": {
+              "name": "variable.parameter.jot"
+            },
+            "2": {
+              "name": "punctuation.separator.key-value.jot"
+            }
           }
         },
-        { "include": "#string-double" }
+        {
+          "include": "#string-double"
+        }
       ]
     },
     "string-double": {
@@ -120,16 +190,32 @@
       "comment": "Body key:value lines like 'context: ...', 'goal: ...'",
       "match": "^(\\s+)([a-zA-Z_][a-zA-Z0-9_ ]*)(:)\\s",
       "captures": {
-        "2": { "name": "variable.other.member.jot" },
-        "3": { "name": "punctuation.separator.key-value.jot" }
+        "2": {
+          "name": "variable.other.member.jot"
+        },
+        "3": {
+          "name": "punctuation.separator.key-value.jot"
+        }
       }
     },
     "inline-format": {
       "patterns": [
-        { "match": "\\*\\*[^*]+\\*\\*", "name": "markup.bold.jot" },
-        { "match": "\\*[^*]+\\*", "name": "markup.italic.jot" },
-        { "match": "==[^=]+==" , "name": "markup.highlight.jot" },
-        { "match": "__[^_]+__", "name": "markup.underline.jot" }
+        {
+          "match": "\\*\\*[^*]+\\*\\*",
+          "name": "markup.bold.jot"
+        },
+        {
+          "match": "\\*[^*]+\\*",
+          "name": "markup.italic.jot"
+        },
+        {
+          "match": "==[^=]+==",
+          "name": "markup.highlight.jot"
+        },
+        {
+          "match": "__[^_]+__",
+          "name": "markup.bold.jot"
+        }
       ]
     }
   }

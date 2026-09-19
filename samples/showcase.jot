@@ -16,7 +16,7 @@
 @metric(name="Weekly active teams" value="1,240" target="2,000" trend=up status=on-track)
   Growing 8% week-over-week since the playground shipped.
 
-@evidence(by="User P7" source="Discovery interview 3" tag=pricing)
+@quote(by="User P7" source="Discovery interview 3" tag=pricing)
   We stopped adding people to the workspace because every new seat cost money.
   That is exactly backwards from what you want us doing.
 

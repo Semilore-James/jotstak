@@ -46,7 +46,7 @@ export { FONT_FACES, renderThemeCss } from "./css.js";
 export type { FontFace, ThemeCssOptions } from "./css.js";
 
 export { renderLayoutCss, BASELINE_OFFSET, toWholeRows } from "./layout.js";
-export { renderDocument } from "./html.js";
+export { renderDocument, RENDER_FUNCTIONS } from "./html.js";
 export type { HtmlOptions } from "./html.js";
 export * as tokens from "./tokens.js";
 

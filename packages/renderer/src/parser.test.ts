@@ -23,13 +23,12 @@ describe("parser — block bodies by shape", () => {
 
   it("shapes a plain body into lines", () => {
     const n = first(
-      '@evidence by="P7"\n  I just want it to not lose my work.\n  Three tabs open, terrified.',
-    ) as BlockNode;
+      '@quote by="P7"\n  I just want it to not lose my work.\n  Three tabs open, terrified.',
+    ) as QuoteNode;
 
-    expect(n.body.shape).toBe("plain");
-    if (n.body.shape !== "plain") throw new Error("wrong shape");
-    expect(n.body.lines).toHaveLength(2);
-    expect(n.body.lines[0]).toBe("I just want it to not lose my work.");
+    expect(n.type).toBe("quote");
+    expect(n.lines).toHaveLength(2);
+    expect(n.lines[0]).toBe("I just want it to not lose my work.");
   });
 
   it("shapes an indented body into a tree", () => {
@@ -46,7 +45,7 @@ describe("parser — block bodies by shape", () => {
 
   it("shapes a mixed body into fields plus loose rows", () => {
     const n = first(
-      '@sprint name="Sprint 14"\n  goal: Ship the table primitive\n  capacity: 3 engineers\n  items:\n    [done] Table renderer\n    [todo] Playground wiring',
+      '@panel title="Sprint 14"\n  goal: Ship the table primitive\n  capacity: 3 engineers\n  items:\n    [done] Table renderer\n    [todo] Playground wiring',
     ) as BlockNode;
 
     expect(n.body.shape).toBe("mixed");
@@ -153,8 +152,8 @@ describe("parser — shortcode sugar", () => {
   });
 
   it("does not eat a title that is not an enum value", () => {
-    const n = first("@banner Discovery phase") as BlockNode;
-    expect(n.name).toBe("banner");
+    const n = first("@cover Discovery phase") as BlockNode;
+    expect(n.name).toBe("cover");
     expect(n.title).toBe("Discovery phase");
     expect(n.params.style).toBeUndefined();
   });
@@ -339,7 +338,7 @@ describe("parser — parenthesised param lists", () => {
   });
 
   it("treats text after the closing paren as the title", () => {
-    const n = first("@banner(style=bold) Discovery phase") as BlockNode;
+    const n = first("@cover(style=bold) Discovery phase") as BlockNode;
     expect(n.params.style).toBe("bold");
     expect(n.title).toBe("Discovery phase");
   });
