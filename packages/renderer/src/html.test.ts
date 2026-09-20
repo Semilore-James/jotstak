@@ -3,6 +3,13 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { render, renderLayoutCss, BASELINE_OFFSET, toWholeRows } from "./index.js";
 import { spacing } from "./tokens.js";
+import { getPrimitive } from "@jotstak/schema";
+
+const getPrimitiveForTest = (n: string) => {
+  const p = getPrimitive(n);
+  if (!p) throw new Error(`no primitive @${n}`);
+  return p;
+};
 
 const ROW = spacing.baselineGrid;
 
@@ -17,7 +24,10 @@ function gridLineHeights(): string {
     .replace(/\.jot-body \.jot-metric-value \{[^}]*\}/g, "")
     .replace(/\.jot-body \.jot-metric-target,[\s\S]*?\}/g, "")
     .replace(/\.jot-badge \{[^}]*\}/g, "")
-    .replace(/\.jot-body mark \{[^}]*\}/g, "");
+    .replace(/\.jot-body mark \{[^}]*\}/g, "")
+    // A boxed tree node budgets line-height + border + margin to one row,
+    // rather than making the line itself a row. Asserted separately.
+    .replace(/\[data-nodes="boxed"\] \.jot-tree-label \{[^}]*\}/g, "");
 }
 
 /**
@@ -631,5 +641,55 @@ describe("render — dir=split arranges itself", () => {
     // Three columns total, not one per branch — four branches used to produce
     // four columns and an off-centre hub.
     expect(renderLayoutCss()).toMatch(/\.jot-tree-split \{[^}]*grid-template-columns: 1fr auto 1fr/);
+  });
+});
+
+describe("render — @tree nodes=boxed", () => {
+  it("defaults to text, so a tree mid-document stays quiet", () => {
+    expect(render("@tree(dir=right)\n  A\n    B", { mode: "notebook" }).html).toContain('data-nodes="text"');
+  });
+
+  it("opts into boxes only when asked", () => {
+    expect(render("@tree(dir=right nodes=boxed)\n  A\n    B", { mode: "notebook" }).html).toContain(
+      'data-nodes="boxed"',
+    );
+  });
+
+  it("lays depth out as columns when boxed", () => {
+    // Each node becomes a flex row of [label | its children], so the third
+    // level lands in the third column — the infographic shape.
+    const css = renderLayoutCss();
+    expect(css).toMatch(/\[data-nodes="boxed"\] \.jot-tree-node \{[^}]*display: flex/);
+    expect(css).toMatch(/\[data-nodes="boxed"\] \.jot-tree-kids \{[^}]*flex: 1 1 auto/);
+  });
+
+  it("mirrors flow as well as text on a boxed split's left side", () => {
+    // Without row-reverse the children march back towards the hub and the
+    // branch reads inside out.
+    expect(renderLayoutCss()).toMatch(
+      /\[data-nodes="boxed"\][^{]*\[data-side="left"\][^{]*\.jot-tree-node \{[^}]*flex-direction: row-reverse/,
+    );
+  });
+
+  it("budgets a boxed node's chrome into exactly one row", () => {
+    // Content plus border plus margin must total a row. Treating the box as
+    // "nearly a row" and adding margins on top came to 42px and put the whole
+    // diagram on a half row.
+    const css = renderLayoutCss();
+    const rule = /\[data-nodes="boxed"\] \.jot-tree-label \{[^}]*\}/.exec(css)![0];
+    const line = Number(/line-height:\s*(\d+)px/.exec(rule)![1]);
+    const margin = Number(/margin:\s*(\d+)px/.exec(rule)![1]);
+    const border = 1;
+    expect(line + border * 2 + margin * 2).toBe(ROW);
+  });
+
+  it("is a schema param, not a private renderer flag", () => {
+    // Anything that changes output has to be in the schema, or autocomplete and
+    // the generated docs will not know it exists.
+    const spec = getPrimitiveForTest("tree");
+    const nodes = spec.params.find((p) => p.name === "nodes");
+    expect(nodes).toBeDefined();
+    expect(nodes!.enumValues).toEqual(["text", "boxed"]);
+    expect(nodes!.default).toBe("text");
   });
 });

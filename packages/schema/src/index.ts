@@ -302,6 +302,7 @@ const tree: PrimitiveSpec = {
   params: [
     { name: "dir", type: "enum", required: false, description: "Growth direction.", enumValues: ["down", "right", "left", "up", "split"], default: "down" },
     { name: "style", type: "enum", required: false, description: "Line style between nodes.", enumValues: ["solid", "dashed", "rounded"], default: "solid" },
+    { name: "nodes", type: "enum", required: false, description: "How each node is drawn. `text` reads as an outline and suits a taxonomy inside prose. `boxed` draws each node as a box and lays depth out in columns, which reads as an infographic and carries more visual weight.", enumValues: ["text", "boxed"], default: "text" },
   ],
   bodyShape: "indented",
   breaksRuling: true,

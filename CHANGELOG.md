@@ -18,6 +18,14 @@ All notable changes to Jotstak are recorded here. Format loosely follows [Keep a
 - `@footnote` now uses the universal `id` param (`@footnote id=<id>`); `@doodle` drawing area params renamed `width`/`height` → `cols`/`rows`.
 - Web deploy workflow is manual-only until M1 (no Cloudflare project or secrets yet).
 
+### Added (@tree nodes=boxed)
+- **`nodes=boxed`** draws each node as a box and lays depth out in columns — the infographic treatment. `nodes=text` stays the default, because most trees sit mid-document where a grid of boxes would shout over the paragraph around them.
+- Boxed split mirrors its flow as well as its text, so a left branch's children sit on its outer side rather than marching back toward the hub.
+- A boxed node's line-height, border and margin are budgeted to total exactly one row.
+
+### Fixed (mirrored trees)
+- **Mirroring only applied to the top level.** Indentation came from `padding-left`; zeroing it for the mirror without adding `padding-right` left every deeper level with no indent at all, so a three-deep branch collapsed onto one spine and read as a flat list.
+
 ### Changed (dir=split arranges itself)
 - **The renderer now balances a mind map's branches.** Unmarked branches used to all take the right-hand treatment, leaving the hub off-centre and the diagram lopsided — the author had to hand-place every branch with `<`, which breaks the "intent, not coordinates" principle the language is built on.
 - Balance is by **subtree weight, not branch count**: one branch with five nodes is offset by several light ones rather than by a single one. Explicit `<` and `>` still win, as an override rather than the mechanism.

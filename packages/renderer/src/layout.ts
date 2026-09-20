@@ -573,6 +573,69 @@ ${scope} .jot-tree > .jot-tree-root > .jot-tree-node > .jot-tree-label {
   border-radius: var(--jot-shape-border-radius-sm);
 }
 
+/* ── @tree nodes=boxed — the infographic treatment ─────────────────── */
+/* Opt-in, because most trees sit mid-document where a grid of boxes would
+   shout over the surrounding paragraph. When asked for, depth becomes COLUMNS
+   rather than indentation: each node is a flex row of [label | its children],
+   so the third level naturally lands in the third column. Connectors stay
+   borders on pseudo-elements, square-routed from a parent's edge to each
+   child's, which is what makes it read as a diagram rather than an outline. */
+${scope} .jot-tree[data-nodes="boxed"] .jot-tree-node {
+  display: flex;
+  align-items: flex-start;
+}
+${scope} .jot-tree[data-nodes="boxed"] .jot-tree-label {
+  flex: none;
+  align-self: flex-start;
+  background: var(--jot-surface-elevated);
+  border: 1px solid var(--jot-color-accent-slate-blue);
+  border-radius: var(--jot-shape-border-radius-base);
+  padding: 0 ${ROW / 2}px;
+  /* 20 content + 2 border + 6 margin = one row exactly. A box that is nearly a
+     row tall plus separate margins came to 42px and put the whole diagram on a
+     half row — the chrome has to be budgeted, not added to. */
+  line-height: 20px;
+  margin: 3px 0;
+  white-space: nowrap;
+}
+${scope} .jot-tree[data-nodes="boxed"] .jot-tree-kids {
+  flex: 1 1 auto;
+  padding-left: ${ROW}px;
+}
+/* Each child's stub reaches back to the parent's column, and the spine runs
+   between siblings. Offset to the label's own centre, not the row's. */
+${scope} .jot-tree[data-nodes="boxed"] .jot-tree-kids > .jot-tree-node::before,
+${scope} .jot-tree[data-nodes="boxed"] .jot-tree-kids > .jot-tree-node::after {
+  top: 0;
+  bottom: auto;
+}
+${scope} .jot-tree[data-nodes="boxed"] .jot-tree-kids > .jot-tree-node::before {
+  height: 100%;
+  bottom: auto;
+}
+${scope} .jot-tree[data-nodes="boxed"] .jot-tree-kids > .jot-tree-node:last-child::before {
+  height: ${ROW / 2}px;
+}
+${scope} .jot-tree[data-nodes="boxed"] .jot-tree-kids > .jot-tree-node::after {
+  top: ${ROW / 2}px;
+}
+/* Boxed + split: the left side has to mirror its FLOW as well as its text, or
+   children march rightward back towards the hub and the branch reads inside
+   out. row-reverse puts each node's children on its outer side. */
+${scope} .jot-tree[data-nodes="boxed"] .jot-tree-side[data-side="left"] .jot-tree-node {
+  flex-direction: row-reverse;
+}
+${scope} .jot-tree[data-nodes="boxed"] .jot-tree-side[data-side="left"] .jot-tree-kids {
+  padding-left: 0;
+  padding-right: ${ROW}px;
+}
+
+/* The hub gets the same treatment so it does not look like a different thing. */
+${scope} .jot-tree[data-nodes="boxed"] .jot-tree-hub > .jot-tree-label {
+  border-color: var(--jot-accent);
+  background: var(--jot-color-accent-terracotta-pale);
+}
+
 /* ── @tree dir=split — a bilateral mind map ─────────────────────────── */
 /* Three columns: left branches, the hub, right branches. Not one column per
    branch — that gave four columns for four branches instead of two sides, and
@@ -598,7 +661,11 @@ ${scope} .jot-tree-side > .jot-tree-kids { padding: 0; }
 ${scope} .jot-tree-side[data-side="right"] > .jot-tree-kids { padding-left: ${ROW}px; }
 /* Left side mirrors completely — text, spine and elbow all flip. */
 ${scope} .jot-tree-side[data-side="left"] { text-align: right; }
-${scope} .jot-tree-side[data-side="left"] > .jot-tree-kids { padding-right: ${ROW}px; }
+/* EVERY nested level mirrors, not just the top one. Indent came from
+   padding-left; zeroing it for the mirror without adding padding-right left
+   deeper levels with no indent at all, so a three-deep branch collapsed onto a
+   single spine and read as a flat list. */
+${scope} .jot-tree-side[data-side="left"] .jot-tree-kids { padding-left: 0; padding-right: ${ROW}px; }
 ${scope} .jot-tree-side[data-side="left"] .jot-tree-kids > .jot-tree-node {
   padding-left: 0;
   padding-right: ${ROW / 2}px;
@@ -608,7 +675,6 @@ ${scope} .jot-tree-side[data-side="left"] .jot-tree-kids > .jot-tree-node::after
   left: auto;
   right: 0;
 }
-${scope} .jot-tree-side[data-side="left"] .jot-tree-kids { padding-left: 0; }
 /* Each side connects inward to the hub's row, so the hub visibly joins both. */
 ${scope} .jot-tree-side { position: relative; }
 ${scope} .jot-tree-side::after {
@@ -855,6 +921,69 @@ ${scope} .jot-tree > .jot-tree-root > .jot-tree-node > .jot-tree-label {
   font-weight: 600;
   background: var(--jot-surface-elevated);
   border-radius: var(--jot-shape-border-radius-sm);
+}
+
+/* ── @tree nodes=boxed — the infographic treatment ─────────────────── */
+/* Opt-in, because most trees sit mid-document where a grid of boxes would
+   shout over the surrounding paragraph. When asked for, depth becomes COLUMNS
+   rather than indentation: each node is a flex row of [label | its children],
+   so the third level naturally lands in the third column. Connectors stay
+   borders on pseudo-elements, square-routed from a parent's edge to each
+   child's, which is what makes it read as a diagram rather than an outline. */
+${scope} .jot-tree[data-nodes="boxed"] .jot-tree-node {
+  display: flex;
+  align-items: flex-start;
+}
+${scope} .jot-tree[data-nodes="boxed"] .jot-tree-label {
+  flex: none;
+  align-self: flex-start;
+  background: var(--jot-surface-elevated);
+  border: 1px solid var(--jot-color-accent-slate-blue);
+  border-radius: var(--jot-shape-border-radius-base);
+  padding: 0 ${ROW / 2}px;
+  /* 20 content + 2 border + 6 margin = one row exactly. A box that is nearly a
+     row tall plus separate margins came to 42px and put the whole diagram on a
+     half row — the chrome has to be budgeted, not added to. */
+  line-height: 20px;
+  margin: 3px 0;
+  white-space: nowrap;
+}
+${scope} .jot-tree[data-nodes="boxed"] .jot-tree-kids {
+  flex: 1 1 auto;
+  padding-left: ${ROW}px;
+}
+/* Each child's stub reaches back to the parent's column, and the spine runs
+   between siblings. Offset to the label's own centre, not the row's. */
+${scope} .jot-tree[data-nodes="boxed"] .jot-tree-kids > .jot-tree-node::before,
+${scope} .jot-tree[data-nodes="boxed"] .jot-tree-kids > .jot-tree-node::after {
+  top: 0;
+  bottom: auto;
+}
+${scope} .jot-tree[data-nodes="boxed"] .jot-tree-kids > .jot-tree-node::before {
+  height: 100%;
+  bottom: auto;
+}
+${scope} .jot-tree[data-nodes="boxed"] .jot-tree-kids > .jot-tree-node:last-child::before {
+  height: ${ROW / 2}px;
+}
+${scope} .jot-tree[data-nodes="boxed"] .jot-tree-kids > .jot-tree-node::after {
+  top: ${ROW / 2}px;
+}
+/* Boxed + split: the left side has to mirror its FLOW as well as its text, or
+   children march rightward back towards the hub and the branch reads inside
+   out. row-reverse puts each node's children on its outer side. */
+${scope} .jot-tree[data-nodes="boxed"] .jot-tree-side[data-side="left"] .jot-tree-node {
+  flex-direction: row-reverse;
+}
+${scope} .jot-tree[data-nodes="boxed"] .jot-tree-side[data-side="left"] .jot-tree-kids {
+  padding-left: 0;
+  padding-right: ${ROW}px;
+}
+
+/* The hub gets the same treatment so it does not look like a different thing. */
+${scope} .jot-tree[data-nodes="boxed"] .jot-tree-hub > .jot-tree-label {
+  border-color: var(--jot-accent);
+  background: var(--jot-color-accent-terracotta-pale);
 }
 
 /* ── @tree dir=split — a bilateral mind map ─────────────────────────── */

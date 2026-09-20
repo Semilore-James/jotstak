@@ -401,7 +401,7 @@ function splitSides(branches: TreeNode[]): { left: TreeNode[]; right: TreeNode[]
   return { left: left.sort(bySource), right: right.sort(bySource) };
 }
 
-function renderSplitTree(n: BlockNode, roots: TreeNode[], nested: string): string {
+function renderSplitTree(n: BlockNode, roots: TreeNode[], nested: string, nodes: string): string {
   // A mind map has one hub. Extra roots are rendered beneath it rather than
   // silently dropped.
   const hub = roots[0];
@@ -411,7 +411,7 @@ function renderSplitTree(n: BlockNode, roots: TreeNode[], nested: string): strin
     `<div class="jot-tree-side" data-side="${which}"><ul class="jot-tree-kids">${nodes.map(treeNode).join("")}</ul></div>`;
 
   return (
-    `<div class="jot-tree" data-dir="split"${attr("id", n.params.id)}>` +
+    `<div class="jot-tree" data-dir="split" data-nodes="${escapeHtml(nodes)}"${attr("id", n.params.id)}>` +
     `<div class="jot-tree-split">` +
     side(left, "left") +
     `<div class="jot-tree-hub"><span class="jot-tree-label">${inline(readSide(hub.text).text)}</span></div>` +
@@ -427,13 +427,18 @@ function renderTreeDiagram(n: BlockNode, diagnostics: Diagnostic[]): string {
   const roots = n.body.shape === "indented" ? n.body.roots : [];
   const dir = n.params.dir ?? "down";
   const style = n.params.style ?? "solid";
+  // `text` reads as an outline and sits quietly inside prose; `boxed` draws
+  // each node and lays depth out in columns, which reads as an infographic.
+  // Text is the default deliberately: most trees appear mid-document, where a
+  // grid of boxes would shout over the paragraph around it.
+  const nodes = n.params.nodes ?? "text";
   const nested = n.children.map((c) => renderNode(c, diagnostics)).join("");
 
-  if (dir === "split") return renderSplitTree(n, roots, nested);
+  if (dir === "split") return renderSplitTree(n, roots, nested, nodes);
 
   const body = roots.map(treeNode).join("");
   return (
-    `<div class="jot-tree" data-dir="${escapeHtml(dir)}" data-style="${escapeHtml(style)}"${attr("id", n.params.id)}>` +
+    `<div class="jot-tree" data-dir="${escapeHtml(dir)}" data-style="${escapeHtml(style)}" data-nodes="${escapeHtml(nodes)}"${attr("id", n.params.id)}>` +
     `<ul class="jot-tree-root">${body}</ul>` +
     (nested ? `<div class="jot-nested">${nested}</div>` : "") +
     `</div>`
