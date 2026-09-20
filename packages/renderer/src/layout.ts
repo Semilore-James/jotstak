@@ -535,14 +535,28 @@ ${scope} .jot-card[data-accent="quiet"] {
    child with a second element, which left a visible one-pixel seam where the
    two did not quite touch. */
 ${scope} .jot-tree {
-  background: var(--jot-surface);
-  /* A boxed tree renders depth as columns, so a deep one is simply wider
-     than the body column. Contained here rather than left to overflow: a
-     mirrored left side spilled 148px past the page edge, behind the editor,
-     with no way to scroll to it. The scrollbar chrome is suppressed because
-     a 15px horizontal bar would add a fraction of a row to the block and
-     break the one promise the ruling makes; the clipped edge and the fade
-     below are the affordance instead. */
+  /* A boxed tree renders depth as columns, so a deep one is simply wider than
+     the page. It scrolls rather than overflowing, because a mirrored left side
+     spilled 148px past the page edge where no scroll can reach it.
+
+     The scrollbar is suppressed: a horizontal bar would add a fraction of a row
+     to the block and break the one promise the ruling makes. In its place, the
+     classic four-layer scroll shadow. Two covers painted with
+     background-attachment: local scroll away with the content; two shadows
+     painted with attachment: scroll stay put, so an edge darkens only while
+     there is something beyond it. It is pure paint, so it costs no height.
+
+     This is not decoration. Without it the tree simply cut words in half and
+     said nothing — seven labels vanished from one diagram, the hub among them. */
+  background:
+    linear-gradient(to right, var(--jot-surface) 30%, rgba(255, 255, 255, 0)) left center,
+    linear-gradient(to left, var(--jot-surface) 30%, rgba(255, 255, 255, 0)) right center,
+    radial-gradient(farthest-side at 0% 50%, rgba(44, 37, 35, 0.16), rgba(255, 255, 255, 0)) left center,
+    radial-gradient(farthest-side at 100% 50%, rgba(44, 37, 35, 0.16), rgba(255, 255, 255, 0)) right center,
+    var(--jot-surface);
+  background-repeat: no-repeat;
+  background-size: 40px 100%, 40px 100%, 14px 100%, 14px 100%, auto;
+  background-attachment: local, local, scroll, scroll, local;
   overflow-x: auto;
   overscroll-behavior-x: contain;
   scrollbar-width: none;
@@ -680,7 +694,8 @@ ${scope} .jot-tree-split {
    Given the body column it just clipped, so it takes both columns and any
    margin note beside it moves below, which is what a margin note should do
    next to a figure anyway. */
-${scope} .jot-body:has(> .jot-tree[data-dir="split"][data-nodes="boxed"]) {
+${scope} .jot-body:has(> .jot-tree[data-nodes="boxed"]),
+${scope} .jot-body:has(> .jot-tree[data-dir="split"]) {
   grid-column: 1 / -1;
 }
 ${scope} .jot-tree-hub { display: flex; justify-content: center; }
@@ -912,7 +927,6 @@ ${scope} .jot-card[data-accent="quiet"] {
    earlier version drew the spine as a border on the <li> and patched the last
    child with a second element, which left a visible one-pixel seam where the
    two did not quite touch. */
-${scope} .jot-tree { background: var(--jot-surface); }
 ${scope} .jot-tree ul { list-style: none; margin: 0; padding: 0; }
 ${scope} .jot-tree-label {
   display: inline-block;

@@ -326,6 +326,81 @@ const extraCss = `
       paint();
     });
 
+    // Indentation decides structure in .jot, so the editor has to help with it.
+    // Left to a bare textarea, Enter returns to column zero and Tab leaves the
+    // field entirely — which is how a branch ends up one space out of line and
+    // silently becomes a child of its sibling. The parser now reports that, but
+    // not making the mistake beats being told about it.
+    const STEP = 2;
+    const leadingSpace = (line: string): string => (/^[ \t]*/.exec(line) ?? [""])[0];
+
+    /** Replace the current selection, keeping undo history intact where possible. */
+    const replaceSelection = (text: string, caretOffset?: number): void => {
+      const start = src.selectionStart;
+      if (!document.execCommand?.("insertText", false, text)) {
+        const end = src.selectionEnd;
+        src.value = src.value.slice(0, start) + text + src.value.slice(end);
+      }
+      if (caretOffset !== undefined) {
+        const pos = start + caretOffset;
+        src.setSelectionRange(pos, pos);
+      }
+      paint();
+    };
+
+    /** Indent or outdent every line the selection touches, by whole steps. */
+    const shiftLines = (by: number): void => {
+      const value = src.value;
+      const from = value.lastIndexOf("\n", src.selectionStart - 1) + 1;
+      const toEnd = value.indexOf("\n", src.selectionEnd);
+      const to = toEnd === -1 ? value.length : toEnd;
+      const shifted = value
+        .slice(from, to)
+        .split("\n")
+        .map((line) => {
+          if (by > 0) return " ".repeat(STEP) + line;
+          const lead = leadingSpace(line);
+          return line.slice(Math.min(STEP, lead.length));
+        })
+        .join("\n");
+
+      src.setSelectionRange(from, to);
+      replaceSelection(shifted);
+      src.setSelectionRange(from, from + shifted.length);
+      paint();
+    };
+
+    // Escape releases the field so Tab can still move focus — trapping Tab
+    // outright would make the editor unreachable by keyboard.
+    let tabMovesFocus = false;
+    src.addEventListener("blur", () => { tabMovesFocus = false; });
+
+    src.addEventListener("keydown", (e: KeyboardEvent) => {
+      if (e.key === "Escape") { tabMovesFocus = true; return; }
+      if (e.key !== "Tab" && e.key !== "Enter") tabMovesFocus = false;
+
+      if (e.key === "Tab" && !tabMovesFocus) {
+        e.preventDefault();
+        if (e.shiftKey || src.selectionStart !== src.selectionEnd) shiftLines(e.shiftKey ? -1 : 1);
+        else replaceSelection(" ".repeat(STEP), STEP);
+        return;
+      }
+
+      if (e.key === "Enter" && !e.shiftKey && src.selectionStart === src.selectionEnd) {
+        const upTo = src.value.slice(0, src.selectionStart);
+        const line = upTo.slice(upTo.lastIndexOf("\n") + 1);
+        let indent = leadingSpace(line);
+        // A directive or a `key:` opens a body, so the next line belongs inside
+        // it. This is the one place guessing is safe: it is what the author
+        // meant every time, and one Shift+Tab undoes it.
+        if (line.trim() !== "" && /^\s*(@[a-zA-Z_]|[^:]+:\s*$)/.test(line) && !/\)\s*$/.test(line)) {
+          indent += " ".repeat(STEP);
+        }
+        e.preventDefault();
+        replaceSelection("\n" + indent, 1 + indent.length);
+      }
+    });
+
     src.addEventListener("input", paint);
     nbBtn.addEventListener("click", () => setMode("notebook"));
     docBtn.addEventListener("click", () => setMode("doc"));

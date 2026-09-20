@@ -404,3 +404,61 @@ describe("parser — nested blocks", () => {
     expect(n.children).toEqual([]);
   });
 });
+
+describe("parser — indentation is the sharpest edge, so it is reported", () => {
+  const indentWarnings = (src: string) =>
+    parse(src).diagnostics.filter((d) => /Ambiguous indentation/.test(d.message));
+
+  it("flags a branch indented between its parent and its parent's children", () => {
+    // Reported from the playground: this tree lost its entire left side. The
+    // one-space overshoot made "Pillar B" a child of "Pillar A" rather than its
+    // sibling, so nothing remained to balance against and the hub drifted off
+    // centre. The source looked correct, and the output said nothing.
+    const src = [
+      "@tree dir=split",
+      "  Central idea",
+      "    > Pillar A",
+      "      > Sub-point",
+      "     Pillar B",
+      "      Sub-point",
+    ].join("\n");
+
+    const warnings = indentWarnings(src);
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]!.line).toBe(4);
+    expect(warnings[0]!.message).toContain("5 spaces in");
+    expect(warnings[0]!.message).toContain('"Pillar A"');
+    expect(warnings[0]!.message).toContain("sit at 6");
+  });
+
+  it("says nothing when the same tree is indented consistently", () => {
+    const src = [
+      "@tree dir=split",
+      "  Central idea",
+      "    > Pillar A",
+      "      > Sub-point",
+      "    Pillar B",
+      "      Sub-point",
+    ].join("\n");
+    expect(indentWarnings(src)).toEqual([]);
+  });
+
+  it("judges consistency, not step size, so a four-space document is fine", () => {
+    const src = ["@tree", "    A", "        B", "        C", "    D"].join("\n");
+    expect(indentWarnings(src)).toEqual([]);
+  });
+
+  it("accepts different step sizes at different depths, as long as siblings agree", () => {
+    const src = ["@tree", "  A", "      B", "      C", "  D"].join("\n");
+    expect(indentWarnings(src)).toEqual([]);
+  });
+
+  it("flags top-level lines that do not line up with each other", () => {
+    // Only reachable when a later root is *shallower* than the first: a deeper
+    // line is never ambiguous, it simply nests.
+    const src = ["@tree", "   A", "  B"].join("\n");
+    const warnings = indentWarnings(src);
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]!.message).toContain("the other top-level lines");
+  });
+});

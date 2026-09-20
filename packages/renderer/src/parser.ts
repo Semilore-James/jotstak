@@ -37,10 +37,45 @@ interface Entry {
   position: Position;
 }
 
-/** Build a hierarchy from indentation. Deeper lines become children of the last shallower line. */
-function buildTree(entries: Entry[]): TreeNode[] {
+/** A node's own words, without the markers that steer layout rather than read. */
+function bareLabel(text: string): string {
+  return text.replace(/^([-*]|\d+[.)]|[<>])\s+/, "").trim();
+}
+
+/**
+ * Build a hierarchy from indentation. Deeper lines become children of the last
+ * shallower line.
+ *
+ * Siblings are expected to line up, and a line that does not is reported. This
+ * is the single sharpest edge in the language: indentation decides structure,
+ * so one stray space silently reshapes the document, and the source still looks
+ * right because a one-space difference is not visible while you type. A
+ * dir=split tree lost its whole left side this way — a branch indented one
+ * space too far became a child of its sibling, so there was nothing left to
+ * balance against and the hub drifted off centre. Nothing in the output said
+ * why. Now it does.
+ *
+ * Only sibling *consistency* is checked, never the size of the step, so
+ * indenting by two, three or four spaces is equally fine as long as a set of
+ * siblings agrees with itself.
+ */
+function buildTree(entries: Entry[], diagnostics?: Diagnostic[]): TreeNode[] {
   const roots: TreeNode[] = [];
-  const stack: { indent: number; node: TreeNode }[] = [];
+  const stack: { indent: number; node: TreeNode; childIndent?: number }[] = [];
+  let rootIndent: number | undefined;
+
+  const disagree = (e: Entry, expected: number, parentText: string | null): void => {
+    if (!diagnostics) return;
+    const where = parentText === null ? "the other top-level lines" : `the other children of "${bareLabel(parentText)}"`;
+    diagnostics.push({
+      severity: "warning",
+      message:
+        `Ambiguous indentation: this line sits ${e.indent} spaces in, but ${where} sit at ${expected}. ` +
+        `Indent it to ${expected} to line up with them, or out to make it a sibling one level up.`,
+      line: e.position.line,
+      column: e.position.column,
+    });
+  };
 
   for (const e of entries) {
     const node: TreeNode = { text: e.text, children: [], position: e.position };
@@ -48,8 +83,15 @@ function buildTree(entries: Entry[]): TreeNode[] {
       stack.pop();
     }
     const parent = stack[stack.length - 1];
-    if (parent) parent.node.children.push(node);
-    else roots.push(node);
+    if (parent) {
+      if (parent.childIndent === undefined) parent.childIndent = e.indent;
+      else if (parent.childIndent !== e.indent) disagree(e, parent.childIndent, parent.node.text);
+      parent.node.children.push(node);
+    } else {
+      if (rootIndent === undefined) rootIndent = e.indent;
+      else if (rootIndent !== e.indent) disagree(e, rootIndent, null);
+      roots.push(node);
+    }
     stack.push({ indent: e.indent, node });
   }
   return roots;
@@ -159,6 +201,7 @@ function extractNested(
 function shapeBody(
   body: LineToken[],
   shape: PrimitiveSpec["bodyShape"],
+  diagnostics: Diagnostic[],
 ): BlockBody {
   if (shape === "none" || body.length === 0) {
     return shape === "none" ? { shape: "none" } : emptyFor(shape);
@@ -209,7 +252,7 @@ function shapeBody(
       fields.push({
         key: m[1]!.trim(),
         value: m[2]!.trim(),
-        children: buildTree(children),
+        children: buildTree(children, diagnostics),
         position: posOf(t),
       });
     } else {
@@ -219,7 +262,7 @@ function shapeBody(
     i = j;
   }
 
-  roots.push(...buildTree(looseEntries));
+  roots.push(...buildTree(looseEntries, diagnostics));
 
   if (shape === "keyed") return { shape: "keyed", fields };
   if (shape === "indented") return { shape: "indented", roots };
@@ -407,7 +450,7 @@ export function parseTokens(
         children.push({
           type: "list",
           ordered,
-          items: buildTree(entries),
+          items: buildTree(entries, diagnostics),
           position: startPos,
         });
         break;
@@ -467,7 +510,7 @@ export function parseTokens(
         const realLines = collected.body.filter((b) => b.kind !== "blank");
         const baseIndent = realLines.length > 0 ? Math.min(...realLines.map((b) => b.indent)) : 2;
         const { own, children: nested } = extractNested(collected.body, baseIndent, diagnostics);
-        const body = shapeBody(own, spec.bodyShape);
+        const body = shapeBody(own, spec.bodyShape, diagnostics);
 
         // Normalise onto the node type that matches the concept, so the
         // renderer never has to care which spelling was used.
