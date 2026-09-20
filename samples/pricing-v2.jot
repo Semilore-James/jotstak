@@ -1,0 +1,42 @@
+@meta
+  project: Pricing v2
+  owner: Marta
+  status: in review
+  updated: 2026-09-19
+
+# Moving to usage-based pricing
+
+@risk(level=high title="Churn among small teams")
+  Small teams pay less under usage pricing, but they are also the loudest
+  segment and the first to post about a change.
+  mitigation: Grandfather existing plans for 12 months.
+
+>> this is the one that worries me
+
+@metric(name="Weekly active teams" value="1,240" target="2,000" trend=up status=on-track)
+  Growing 8% week-over-week since the playground shipped.
+
+@quote(by="User P7" source="Discovery interview 3" tag=pricing)
+  We stopped adding people to the workspace because every new seat cost money.
+  That is exactly backwards from what you want us doing.
+
+@decision(
+  title="Usage-based, billed monthly, with a floor"
+  status=accepted
+  date=2026-09-19
+)
+  context: Seat pricing punishes the teams who adopt fastest
+  choice: Usage-based with a floor so revenue stays predictable
+  consequences: Revenue is lumpier; forecasting needs rework
+
+@warn
+  Finance needs 30 days' notice before any billing change ships.
+
+@assumption(title="Teams will accept a floor" confidence=medium)
+  Teams tolerate a minimum charge if it is visibly lower than their current bill.
+  validation: Offer it to 5 accounts at renewal; 3 of 5 accept without escalation.
+
+@persona(name="Marta, the systems PM")
+  role: Platform PM at a mid-size fintech
+  goal: Sketch the pricing model inside the spec, not in a separate tool
+  frustration: The diagram lives in Miro and the numbers live in Sheets

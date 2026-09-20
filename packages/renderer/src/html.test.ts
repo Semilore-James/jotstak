@@ -640,7 +640,14 @@ describe("render — dir=split arranges itself", () => {
     expect(html).toMatch(/data-side="left"[\s\S]*jot-tree-hub[\s\S]*data-side="right"/);
     // Three columns total, not one per branch — four branches used to produce
     // four columns and an off-centre hub.
-    expect(renderLayoutCss()).toMatch(/\.jot-tree-split \{[^}]*grid-template-columns: 1fr auto 1fr/);
+    const css = renderLayoutCss();
+    expect(css).toMatch(/\.jot-tree-split \{[^}]*grid-template-columns: 1fr auto 1fr/);
+    // The two sides stay equal and the grid takes the width it needs, which for
+    // a boxed tree can exceed the body column. That width has to be contained:
+    // a mirrored left side once spilled past the page edge with no way to reach
+    // it, because overflow to the left of a block is not scrollable.
+    expect(css).toMatch(/\.jot-tree-split \{[^}]*width: max-content/);
+    expect(css).toMatch(/\.jot-tree \{[^}]*overflow-x: auto/);
   });
 });
 

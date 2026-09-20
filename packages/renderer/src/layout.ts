@@ -14,7 +14,7 @@
 // off the rule, and the error never corrects itself. Chrome is therefore sized so
 // borders + padding total exactly one row, and inner content is always row-multiples.
 
-import { spacing, typography } from "./tokens.js";
+import { notebookLayout, spacing, typography } from "./tokens.js";
 import { FONT_METRICS } from "./font-metrics.js";
 
 const ROW = spacing.baselineGrid; // 28
@@ -72,7 +72,17 @@ ${scope} .jot-doc {
   margin: 0 auto;
   padding: ${ROW}px 0;
   display: grid;
-  grid-template-columns: var(--jot-layout-main-column-ratio, 0.77fr) var(--jot-layout-margin-channel-ratio, 0.23fr);
+  /* The 'fr' unit is written here rather than taken from the custom property,
+     and that is not a style choice. The ratio tokens are unitless numbers, so
+     the var expanded to 'grid-template-columns: 0.77 0.23' — invalid, silently
+     dropped by every browser, and the two columns had been auto-sizing at
+     roughly 50/50 ever since instead of 77/23. calc(0.77 * 1fr) is rejected
+     too, so the ratio is interpolated from the token at build time.
+     minmax(0, …) lets a wide block shrink inside its column rather than force
+     the track wider and shove the margin channel off the page. */
+  grid-template-columns:
+    minmax(0, ${notebookLayout.mainColumnRatio}fr)
+    minmax(0, ${notebookLayout.marginChannelRatio}fr);
   column-gap: ${ROW}px;
   align-items: start;
 }
@@ -139,7 +149,6 @@ ${scope}[data-mode="doc"] .jot-badge[data-alert="true"] {
 }
 ${scope}[data-mode="doc"] .jot-badge[data-alert="true"] { color: var(--jot-color-accent-terracotta); }
 ${scope}[data-mode="doc"] .jot-callout,
-${scope}[data-mode="doc"] .jot-evidence,
 ${scope}[data-mode="doc"] .jot-body pre {
   background: none;
   border: 0;
@@ -204,8 +213,7 @@ ${scope} .jot-body li > :last-child { margin-bottom: 0; }
    zeroes margin-top and used to leave the first card half a row short. */
 ${scope} .jot-body > .jot-card,
 ${scope} .jot-body > .jot-columns,
-${scope} .jot-body > .jot-callout,
-${scope} .jot-body > .jot-evidence { margin: 0 0 ${ROW}px; }
+${scope} .jot-body > .jot-callout { margin: 0 0 ${ROW}px; }
 
 /* ── Text on the grid ───────────────────────────────────────────────── */
 /* Every one of these is a whole number of rows. The token line-heights are
@@ -526,7 +534,20 @@ ${scope} .jot-card[data-accent="quiet"] {
    earlier version drew the spine as a border on the <li> and patched the last
    child with a second element, which left a visible one-pixel seam where the
    two did not quite touch. */
-${scope} .jot-tree { background: var(--jot-surface); }
+${scope} .jot-tree {
+  background: var(--jot-surface);
+  /* A boxed tree renders depth as columns, so a deep one is simply wider
+     than the body column. Contained here rather than left to overflow: a
+     mirrored left side spilled 148px past the page edge, behind the editor,
+     with no way to scroll to it. The scrollbar chrome is suppressed because
+     a 15px horizontal bar would add a fraction of a row to the block and
+     break the one promise the ruling makes; the clipped edge and the fade
+     below are the affordance instead. */
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+}
+${scope} .jot-tree::-webkit-scrollbar { display: none; }
 ${scope} .jot-tree ul { list-style: none; margin: 0; padding: 0; }
 ${scope} .jot-tree-label {
   display: inline-block;
@@ -643,9 +664,24 @@ ${scope} .jot-tree[data-nodes="boxed"] .jot-tree-hub > .jot-tree-label {
    balancing by subtree weight; \`<\` and \`>\` override it. */
 ${scope} .jot-tree-split {
   display: grid;
+  /* Sized to its content, floored at the column width. minmax(0, 1fr) let
+     the tracks shrink below their boxes, which pushed the mirrored side out
+     of the page; plain 1fr floors at min-content, and max-content width puts
+     the whole grid inside the scroll container above, where it is reachable. */
+  width: max-content;
+  min-width: 100%;
   grid-template-columns: 1fr auto 1fr;
   align-items: start;
   column-gap: ${ROW}px;
+}
+/* A bilateral boxed tree is a full-page figure, not a column element. The
+   numbers force it: two mirrored sides at depth 2 need about 780px, the body
+   column offers 656px at the design width, and the full frame offers 880px.
+   Given the body column it just clipped, so it takes both columns and any
+   margin note beside it moves below, which is what a margin note should do
+   next to a figure anyway. */
+${scope} .jot-body:has(> .jot-tree[data-dir="split"][data-nodes="boxed"]) {
+  grid-column: 1 / -1;
 }
 ${scope} .jot-tree-hub { display: flex; justify-content: center; }
 ${scope} .jot-tree-hub > .jot-tree-label {
@@ -1051,23 +1087,6 @@ ${scope} .jot-nested .jot-card {
   background: var(--jot-surface);
 }
 ${scope} .jot-nested .jot-card-kicker { font-size: ${typography.label.sm.size}; }
-
-/* ── @evidence: a quotation with structured attribution ─────────────── */
-${scope} .jot-evidence {
-  margin: 0;
-  /* No horizontal borders here, so the padding alone carries the row. */
-  padding: ${ROW / 2}px 18px;
-  background: var(--jot-surface-elevated);
-  border-left: 2px solid var(--jot-color-accent-slate-blue);
-  border-radius: var(--jot-shape-border-radius-base);
-}
-${scope} .jot-evidence blockquote { margin: 0; font-style: italic; }
-${scope} .jot-evidence figcaption {
-  font-family: var(--jot-font-label);
-  font-size: ${typography.label.md.size};
-  line-height: ${ROW}px;
-  color: var(--jot-ink-muted);
-}
 
 /* ── Callouts: the flavor is the shortcode, so it drives the colour ─── */
 ${scope} .jot-callout {

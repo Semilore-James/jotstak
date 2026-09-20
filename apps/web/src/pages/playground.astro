@@ -6,50 +6,16 @@
 // That is the local-first architecture paying off twice: it is the reason the
 // tool works offline, and the reason this page costs nothing to host.
 import Base from "../layouts/Base.astro";
-
-const starter = `@meta
-  project: Pricing v2
-  owner: Marta
-  status: in review
-  updated: 2026-09-19
-
-# Moving to usage-based pricing
-
-@risk(level=high title="Churn among small teams")
-  Small teams pay less under usage pricing, but they are also the loudest
-  segment and the first to post about a change.
-  mitigation: Grandfather existing plans for 12 months.
-
->> this is the one that worries me
-
-@metric(name="Weekly active teams" value="1,240" target="2,000" trend=up status=on-track)
-  Growing 8% week-over-week since the playground shipped.
-
-@evidence(by="User P7" source="Discovery interview 3" tag=pricing)
-  We stopped adding people to the workspace because every new seat cost money.
-  That is exactly backwards from what you want us doing.
-
-@decision(
-  title="Usage-based, billed monthly, with a floor"
-  status=accepted
-  date=2026-09-19
-)
-  context: Seat pricing punishes the teams who adopt fastest
-  choice: Usage-based with a floor so revenue stays predictable
-  consequences: Revenue is lumpier; forecasting needs rework
-
-@warn
-  Finance needs 30 days' notice before any billing change ships.
-
-@assumption(title="Teams will accept a floor" confidence=medium)
-  Teams tolerate a minimum charge if it is visibly lower than their current bill.
-  validation: Offer it to 5 accounts at renewal; 3 of 5 accept without escalation.
-
-@persona(name="Marta, the systems PM")
-  role: Platform PM at a mid-size fintech
-  goal: Sketch the pricing model inside the spec, not in a separate tool
-  frustration: The diagram lives in Miro and the numbers live in Sheets
-`;
+// The starter document is a real file in samples/, not a string literal here.
+// It used to be inline, and it silently rotted: it still said @evidence long
+// after the recut folded that into @quote, so the playground greeted everyone
+// with a red error. In samples/ it is covered by the same test as every other
+// document, and a cut primitive now fails the build instead of the first visitor.
+//
+// `?raw` and not readFileSync: Vite resolves it against THIS file and inlines
+// the text, whereas import.meta.url at build time points at the bundled chunk
+// in dist/.prerender/chunks, which sent the path off into apps/samples.
+import starter from "../../../../samples/pricing-v2.jot?raw";
 
 const extraCss = `
 .pg { max-width: 1400px; margin: 0 auto; padding: 20px 28px 40px; width: 100%; box-sizing: border-box; }
@@ -184,6 +150,7 @@ const extraCss = `
             <li><button role="option" data-value="starter" aria-selected="true">A real PM document<small>Seven primitives, composed</small></button></li>
             <li><button role="option" data-value="markdown" aria-selected="false">Plain Markdown<small>No .jot syntax at all</small></button></li>
             <li><button role="option" data-value="nested" aria-selected="false">Nested blocks<small>A metric inside a decision</small></button></li>
+            <li><button role="option" data-value="diagram" aria-selected="false">Diagrams<small>A tree, from indentation alone</small></button></li>
             <li><button role="option" data-value="empty" aria-selected="false">Empty<small>Start from nothing</small></button></li>
           </ul>
         </div>
@@ -252,6 +219,39 @@ const extraCss = `
       "",
       "  @quote(by=\"User P7\" source=\"Interview 3\")",
       "    We stopped adding people because every new seat cost money.",
+    ].join("\n"),
+    diagram: [
+      "# Diagrams from indentation",
+      "",
+      "A tree is indented lines — no canvas, no drag, no export step. It lives",
+      "in the file beside the prose that argues for it.",
+      "",
+      "@tree dir=right",
+      "  Discovery",
+      "    Interviews",
+      "      Synthesis",
+      "    Survey",
+      "",
+      "Add `nodes=boxed` and the same lines carry more weight:",
+      "",
+      "@tree(dir=right nodes=boxed)",
+      "  Discovery",
+      "    Interviews",
+      "      Synthesis",
+      "    Survey",
+      "",
+      "Under `dir=split` it balances itself around the centre — branches are",
+      "weighted by how much hangs off them, so you do not arrange anything.",
+      "",
+      "@tree(dir=split nodes=boxed)",
+      "  Retention",
+      "    Onboarding",
+      "      First value",
+      "    Habit loop",
+      "    Reactivation",
+      "    Win-back",
+      "",
+      ">> Prefix a node with `>` or `<` to pin which side it takes.",
     ].join("\n"),
     empty: "",
   };

@@ -308,7 +308,9 @@ const tree: PrimitiveSpec = {
   breaksRuling: true,
   examples: [
     "@tree dir=right\n  Orders\n    Customer\n      Segment\n    Product",
+    "@tree(dir=right nodes=boxed)\n  Discovery\n    Interviews\n      Synthesis\n    Survey",
     "@tree dir=split\n  Central idea\n    > Pillar A\n      > Sub-point\n    < Pillar B",
+    "@tree(dir=split nodes=boxed)\n  Retention\n    > Onboarding\n      > First value\n    < Habit loop",
   ],
 };
 

@@ -128,12 +128,14 @@ ${meta.blurb}
     md += `<details>\n<summary>Parameters</summary>\n\n${paramTable(spec.params)}\n</details>\n\n`;
 
     if (spec.examples.length > 1) {
+      // Every example renders, because an example of a *visual* parameter that
+      // shows no picture documents nothing — `nodes=boxed` shipped invisible
+      // for exactly this reason. They sit inside <details> so they cost no page
+      // space until opened. Rendering them is cheap now: a demo is one call in
+      // the remark plugin, not the Astro component instance whose per-instance
+      // compile cost put this build over the heap limit at 59 of them.
       md += `<details>\n<summary>More examples</summary>\n\n`;
-      // Plain code fences, not live demos. A second rendered example of the
-      // same function earns neither the page space nor the build time: each
-      // <Demo> is an Astro component instance, and the compiler's cost per
-      // instance is what put this build over the heap limit at 59 of them.
-      for (const ex of spec.examples.slice(1)) md += "```jot\n" + ex + "\n```\n\n";
+      for (const ex of spec.examples.slice(1)) md += demo(ex);
       md += `</details>\n\n`;
     }
   }

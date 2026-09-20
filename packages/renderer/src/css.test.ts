@@ -3,6 +3,7 @@ import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { FONT_FACES, renderThemeCss } from "./css.js";
+import { renderLayoutCss } from "./layout.js";
 import { colors } from "./tokens.js";
 
 const require = createRequire(import.meta.url);
@@ -68,6 +69,25 @@ describe("tokens", () => {
     expect(css).toContain("--jot-space-baseline-grid: 28px;");
     expect(css).toContain("--jot-layout-max-content-width: 880px;");
     expect(css).toContain("--jot-layout-main-column-ratio: 0.77;");
+  });
+
+  it("never spends a unitless ratio token as a grid track", () => {
+    // The ratio tokens are correctly unitless, which makes them unusable as
+    // track sizes: grid-template-columns: var(--...-ratio) var(--...-ratio)
+    // expanded to "0.77 0.23", which is invalid, so browsers dropped the whole
+    // declaration and auto-sized the two columns at roughly 50/50. The result
+    // looked plausible enough that nothing caught it — the margin channel was
+    // simply always about twice the width it was designed to be.
+    const css = renderLayoutCss();
+    const docGrid = css.match(/\.jot-doc \{[\s\S]*?\}/)?.[0] ?? "";
+    const tracks = docGrid.match(/grid-template-columns:([\s\S]*?);/)?.[1] ?? "";
+
+    expect(tracks).not.toBe("");
+    expect(tracks).not.toMatch(/var\(--jot-layout-[a-z-]*ratio/);
+    // Both tracks carry a real unit, and both can shrink below min-content so a
+    // wide diagram cannot force the column and displace the margin channel.
+    expect(tracks).toMatch(/minmax\(0, 0\.77fr\)/);
+    expect(tracks).toMatch(/minmax\(0, 0\.23fr\)/);
   });
 
   it("re-points semantic aliases per mode", () => {

@@ -31,10 +31,16 @@ export default function remarkJotDemo() {
       const code = node.value;
       const { html } = render(code, { mode: "notebook" });
 
+      // `not-content` is Starlight's escape hatch, and a demo needs it: Starlight
+      // gives every element that follows a sibling `margin-top: 1rem`, at any
+      // depth. Inside a rendered .jot document that is silent poison — it lands
+      // between grid children, off the 28px ruling, and a dir=split tree measured
+      // 380px instead of 112px. The demo is our design system, not Starlight's
+      // prose, so nothing from theirs should reach it.
       parent.children[index] = {
         type: "html",
         value:
-          `<div class="jot-demo${stacked ? " stacked" : ""}">` +
+          `<div class="jot-demo not-content${stacked ? " stacked" : ""}">` +
           `<pre class="jot-demo-src"><code>${escape(code)}</code></pre>` +
           `<div class="jot-demo-out" data-mode="notebook">${html}</div>` +
           `</div>`,
