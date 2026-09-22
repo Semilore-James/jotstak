@@ -499,15 +499,20 @@ describe("render — M3 diagrams: @tree", () => {
     expect(html).not.toContain("&gt; Right branch");
   });
 
-  it("keeps every tree label one row tall", () => {
+  it("keeps every tree node one row tall", () => {
     const css = renderLayoutCss();
-    const label = baseRule(".jot-tree-label");
-    expect(Number(/line-height:\s*(\d+)px/.exec(label)![1]) % ROW).toBe(0);
+    // In tree units, so a scaled tree's rows shrink together and stay aligned.
+    expect(css).toMatch(/\.jot-tree \.jot-tree-node \{[^}]*line-height: calc\(28 \* var\(--u, 1px\)\)/);
     // Connectors are borders on the nodes, so they cannot drift from the boxes
     // they belong to the way a separate SVG overlay would.
-    expect(css).toContain("border-left: 1px solid var(--jot-color-accent-slate-blue)");
+    expect(css).toContain("--jot-tree-line: var(--jot-color-accent-slate-blue)");
+    expect(css).toContain("border-left: 1px var(--jot-tree-line-style, solid) var(--jot-tree-line)");
   });
 });
+
+/** The number of tree units in a `calc(N * var(--u, 1px))` length. */
+const units = (rule: string, prop: string): number =>
+  Number(new RegExp(`${prop}:\\s*calc\\((-?[\\d.]+) \\* var\\(--u`).exec(rule)![1]);
 
 describe("render — tree connectors and dividers", () => {
   const css = renderLayoutCss();
@@ -516,32 +521,35 @@ describe("render — tree connectors and dividers", () => {
     // An earlier version drew the spine as a border on the <li> and patched the
     // last child with a third element, leaving a visible one-pixel seam. One
     // element per direction, sharing the elbow row, cannot seam.
-    expect(css).toMatch(/\.jot-tree-kids > \.jot-tree-node::before \{[^}]*border-left/);
-    expect(css).toMatch(/\.jot-tree-kids > \.jot-tree-node::after \{[^}]*border-top/);
-    const last = /\.jot-tree-kids > \.jot-tree-node:last-child::before \{[^}]*\}/.exec(css)![0];
-    const elbow = /\.jot-tree-kids > \.jot-tree-node::after \{[^}]*\}/.exec(css)![0];
+    const outline = '[data-look="outline"] .jot-tree-kids > .jot-tree-node';
+    const at = (sel: string) => new RegExp(sel.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + " \\{[^}]*\\}").exec(css)![0];
+    expect(at(`${outline}::before`)).toContain("border-left");
+    expect(at(`${outline}::after`)).toContain("border-top");
     // The last child's spine stops exactly where the elbow sits.
-    expect(Number(/height:\s*(\d+)px/.exec(last)![1])).toBe(Number(/top:\s*(\d+)px/.exec(elbow)![1]));
+    expect(units(at(`${outline}:last-child::before`), "height")).toBe(units(at(`${outline}::after`), "top"));
   });
 
   it("gives dir=split real connectors, not bare columns", () => {
-    // split used to match none of the connector rules, so it rendered as two
+    // split once matched none of the connector rules, so it rendered as two
     // unlinked lists.
-    expect(css).toContain('[data-dir="split"]');
-    expect(css).toMatch(/\[data-dir="split"\][^{]*\.jot-tree-kids::before \{[^}]*border-left/);
+    expect(css).toMatch(/\[data-look="split"\] \.jot-tree-kids > \.jot-tree-node::before \{[^}]*border-left/);
     // Left-marked branches mirror rather than repeating the right-hand layout.
-    expect(css).toMatch(/\[data-side="left"\][^{]*::before \{[^}]*right: 0/);
+    expect(css).toMatch(/\[data-side="left"\][^{]*::before,[^{]*::after \{[^}]*right: 0/);
   });
 
-  it("keeps the split trunk and branch gap on whole rows", () => {
-    const trunk = /\[data-dir="split"\][^{]*\.jot-tree-kids::before \{[^}]*\}/.exec(css)![0];
-    expect(Number(/height:\s*(\d+)px/.exec(trunk)![1]) % ROW).toBe(0);
+  it("joins the hub to each side from the hub's own edge, on the row's middle", () => {
+    // The line used to stop at the side's edge, leaving the gap to the hub bare.
+    const side = /\[data-look="split"\] \.jot-tree-side::after \{[^}]*\}/.exec(css)![0];
+    expect(units(side, "top")).toBe(14);
+    expect(units(side, "width")).toBe(56);
+    expect(css).toMatch(/\[data-side="right"\]::after \{ left: calc\(-28 \* var\(--u, 1px\)\); \}/);
   });
 
-  it("suppresses the generic elbow on top-level split branches", () => {
-    // They hang off the trunk; inheriting the elbow drew an orphan connector
-    // floating at the outer edge of the diagram.
-    expect(css).toMatch(/\[data-dir="split"\][\s\S]{0,400}?display: none/);
+  it("starts the spine at the middle where a parent sits beside its children", () => {
+    // Started at the top of the row, a stray tick poked up above every hub
+    // junction — in the old version too.
+    expect(css).toMatch(/\.jot-tree-side > \.jot-tree-kids > \.jot-tree-node:first-child::before,[^{]*\{ top: calc\(14 \* var/);
+    expect(css).toMatch(/\.jot-tree-side > \.jot-tree-kids > \.jot-tree-node:only-child::before,[^{]*\{ display: none; \}/);
   });
 
   it("draws the divider as a short centred mark, not a full-width rule", () => {
@@ -575,7 +583,7 @@ describe("render — dir=split arranges itself", () => {
       const from = m.index! + m[0].length;
       let depth = 0;
       const labels: string[] = [];
-      const token = /<ul class="jot-tree-kids">|<\/ul>|<span class="jot-tree-label">([^<]*)</g;
+      const token = /<ul class="jot-tree-kids"[^>]*>|<\/ul>|<span class="jot-tree-text">([^<]*)</g;
       token.lastIndex = from;
       let t: RegExpExecArray | null;
       while ((t = token.exec(html)) !== null) {
@@ -642,12 +650,11 @@ describe("render — dir=split arranges itself", () => {
     // four columns and an off-centre hub.
     const css = renderLayoutCss();
     expect(css).toMatch(/\.jot-tree-split \{[^}]*grid-template-columns: 1fr auto 1fr/);
-    // The two sides stay equal and the grid takes the width it needs, which for
-    // a boxed tree can exceed the body column. That width has to be contained:
-    // a mirrored left side once spilled past the page edge with no way to reach
-    // it, because overflow to the left of a block is not scrollable.
-    expect(css).toMatch(/\.jot-tree-split \{[^}]*width: max-content/);
-    expect(css).toMatch(/\.jot-tree \{[^}]*overflow-x: auto/);
+    // Nothing in a tree scrolls sideways any more: a page cannot scroll, and a
+    // scrolled figure prints clipped (ARC-14). Too-wide figures are placed and
+    // scaled instead (UX-31) — see tree.test.ts.
+    expect(css).not.toMatch(/\.jot-tree[^{]*\{[^}]*overflow-x: auto/);
+    expect(css).not.toMatch(/\.jot-tree-split \{[^}]*width: max-content/);
   });
 });
 
@@ -662,12 +669,19 @@ describe("render — @tree nodes=boxed", () => {
     );
   });
 
-  it("lays depth out as columns when boxed", () => {
-    // Each node becomes a flex row of [label | its children], so the third
-    // level lands in the third column — the infographic shape.
+  it("lays depth out as aligned columns under dir=right, boxed or not", () => {
+    // dir now means what it says (UX-28): dir=right is the column breakdown in
+    // either look, and every list is a subgrid of one grid, so each level's
+    // labels share a left edge however the families above them are shaped.
+    for (const nodes of ["text", "boxed"]) {
+      const { html } = render(`@tree(dir=right nodes=${nodes})\n  A\n    B\n      C`, { mode: "notebook" });
+      expect(html).toContain('data-look="columns"');
+      expect(html).toContain('data-depth="3"');
+    }
     const css = renderLayoutCss();
-    expect(css).toMatch(/\[data-nodes="boxed"\] \.jot-tree-node \{[^}]*display: flex/);
-    expect(css).toMatch(/\[data-nodes="boxed"\] \.jot-tree-kids \{[^}]*flex: 1 1 auto/);
+    expect(css).toMatch(/\[data-look="columns"\] \.jot-tree-kids \{[^}]*grid-template-columns: subgrid/);
+    // A parent shares the row of its first child.
+    expect(css).toMatch(/\[data-look="columns"\] \.jot-tree-kids \{[^}]*grid-row: 1/);
   });
 
   it("mirrors flow as well as text on a boxed split's left side", () => {
@@ -678,16 +692,18 @@ describe("render — @tree nodes=boxed", () => {
     );
   });
 
-  it("budgets a boxed node's chrome into exactly one row", () => {
-    // Content plus border plus margin must total a row. Treating the box as
-    // "nearly a row" and adding margins on top came to 42px and put the whole
-    // diagram on a half row.
+  it("budgets a pill's chrome into exactly one row", () => {
+    // Height plus margin must total a row. Treating the box as "nearly a row"
+    // and adding margins on top once came to 42px and put the whole diagram on
+    // a half row.
     const css = renderLayoutCss();
-    const rule = /\[data-nodes="boxed"\] \.jot-tree-label \{[^}]*\}/.exec(css)![0];
-    const line = Number(/line-height:\s*(\d+)px/.exec(rule)![1]);
-    const margin = Number(/margin:\s*(\d+)px/.exec(rule)![1]);
-    const border = 1;
-    expect(line + border * 2 + margin * 2).toBe(ROW);
+    const rule = /\[data-nodes="boxed"\] \.jot-tree-text \{[^}]*\}/.exec(css)![0];
+    const height = units(rule, "height");
+    const margin = Number(/margin:\s*calc\(([\d.]+) \* var/.exec(rule)![1]);
+    expect(height + 2 * margin).toBe(ROW);
+    // One line, grown outward rather than wrapped: a two-line pill would be
+    // 48px, which is not a whole row.
+    expect(rule).toContain("white-space: nowrap");
   });
 
   it("is a schema param, not a private renderer flag", () => {

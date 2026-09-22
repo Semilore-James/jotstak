@@ -13,8 +13,9 @@
 //     body: text
 //   ```
 //
-// and get the source beside the real rendered output. Append `-stacked` to the
-// language to stack them instead.
+// and get the source above the real rendered output — a sheet of A4, laid out
+// exactly as it prints. (They sat side by side until the page model landed;
+// half a content column is not a page, and every figure arrived shrunk.)
 
 import { render } from "@jotstak/renderer";
 
@@ -25,9 +26,8 @@ export default function remarkJotDemo() {
   return (tree) => {
     visit(tree, (node, index, parent) => {
       if (node.type !== "code" || !parent || index === null) return;
-      if (node.lang !== "jot-demo" && node.lang !== "jot-demo-stacked") return;
+      if (node.lang !== "jot-demo") return;
 
-      const stacked = node.lang === "jot-demo-stacked";
       const code = node.value;
       const { html } = render(code, { mode: "notebook" });
 
@@ -40,7 +40,7 @@ export default function remarkJotDemo() {
       parent.children[index] = {
         type: "html",
         value:
-          `<div class="jot-demo not-content${stacked ? " stacked" : ""}">` +
+          `<div class="jot-demo not-content">` +
           `<pre class="jot-demo-src"><code>${escape(code)}</code></pre>` +
           `<div class="jot-demo-out" data-mode="notebook">${html}</div>` +
           `</div>`,

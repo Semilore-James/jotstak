@@ -298,16 +298,18 @@ const tree: PrimitiveSpec = {
   name: "tree",
   group: "lists",
   summary:
-    "A hierarchy defined by indentation. `dir` sets growth direction. Under dir=split, prefix a node with > (right) or < (left) for a bilateral mind-map.",
+    "A hierarchy defined by indentation. `dir` is the way it grows: `down` (the default) reads as an outline, `right` puts each level in its own column, and `split` balances branches either side of a centre — prefix a branch with > or < to pin its side. `nodes=boxed` draws every node as a pill.",
   params: [
-    { name: "dir", type: "enum", required: false, description: "Growth direction.", enumValues: ["down", "right", "left", "up", "split"], default: "down" },
+    { name: "dir", type: "enum", required: false, description: "The way the tree grows. `down` grows down the page — an outline, or with nodes=boxed a top-down chart. `right` gives each level its own column, aligned so a level reads straight down. `split` places branches either side of a centre, balanced by size.", enumValues: ["down", "right", "split"], default: "down" },
     { name: "style", type: "enum", required: false, description: "Line style between nodes.", enumValues: ["solid", "dashed", "rounded"], default: "solid" },
-    { name: "nodes", type: "enum", required: false, description: "How each node is drawn. `text` reads as an outline and suits a taxonomy inside prose. `boxed` draws each node as a box and lays depth out in columns, which reads as an infographic and carries more visual weight.", enumValues: ["text", "boxed"], default: "text" },
+    { name: "nodes", type: "enum", required: false, description: "How each node is drawn. `text` sets the labels on the page, joined by thin lines — quiet enough to sit inside prose. `boxed` draws every node as a pill, branches darker than leaves, with arrows from parent to child — an infographic that carries more weight.", enumValues: ["text", "boxed"], default: "text" },
   ],
   bodyShape: "indented",
   breaksRuling: true,
   examples: [
-    "@tree dir=right\n  Orders\n    Customer\n      Segment\n    Product",
+    "@tree dir=right\n  Table\n    Cell\n      Content type\n      Interaction\n    Row\n      Actions\n    Column\n      Width",
+    "@tree(dir=down nodes=boxed)\n  Discovery\n    Interviews\n      Recruiting\n      Synthesis\n    Survey\n      Design\n      Analysis",
+    "@tree\n  Orders\n    Customer\n      Segment\n    Product",
     "@tree(dir=right nodes=boxed)\n  Discovery\n    Interviews\n      Synthesis\n    Survey",
     "@tree dir=split\n  Central idea\n    > Pillar A\n      > Sub-point\n    < Pillar B",
     "@tree(dir=split nodes=boxed)\n  Retention\n    > Onboarding\n      > First value\n    < Habit loop",
@@ -578,8 +580,8 @@ export const UNIVERSAL_PARAMS: ParamSpec[] = [
     type: "enum",
     required: false,
     description:
-      "How much page this block takes. `auto` (default) lets the renderer size it to its content — the natural choice. `column` keeps it inside the main text column, `wide` spans the full column, `full` spills across the margin channel too for large diagrams.",
-    enumValues: ["auto", "column", "wide", "full"],
+      "How much page this block takes. `auto` (default) lets the renderer decide: a figure stays in the text column if it fits, takes the full width if it doesn't, and moves to a landscape page of its own if it still doesn't. `column` keeps it in the text column, `wide` fills the text column, `full` spans the margin channel too, `landscape` gives it a landscape page. A figure pinned somewhere too small for it is scaled down to fit — never cut off.",
+    enumValues: ["auto", "column", "wide", "full", "landscape"],
     default: "auto",
   },
   {

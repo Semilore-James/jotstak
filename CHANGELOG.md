@@ -18,6 +18,20 @@ All notable changes to Jotstak are recorded here. Format loosely follows [Keep a
 - `@footnote` now uses the universal `id` param (`@footnote id=<id>`); `@doodle` drawing area params renamed `width`/`height` → `cols`/`rows`.
 - Web deploy workflow is manual-only until M1 (no Cloudflare project or secrets yet).
 
+### Added (the page — A4, print-true)
+- **A document is A4.** Page geometry is derived from the paper size and the 28px baseline, not typed in: 36 whole rows on a portrait page, 24 on landscape, and a vertical margin of whatever is left over, so the ruling stays in phase across a page break.
+- **Print cuts pages; the screen stays continuous.** Print CSS keeps blocks and their margin notes together and never breaks a heading from what follows it.
+- **A figure too wide for portrait gets its own landscape sheet** (`@page jot-landscape`) — real paper turned sideways, not a rotated picture.
+- **Widths are measured, not guessed.** Label widths come from the shipped fonts' own advance tables plus a 3% safety margin; checked against a browser, the estimate runs +0.23% on average.
+- **Automatic escalation:** a figure takes the text column, then the full page width, then a landscape page — and `width=` pins it if the author disagrees. A figure pinned somewhere too small scales to fit. Nothing is ever cut off.
+- A figure that fits at 90% or better is scaled rather than sent to a landscape page, and says so as information rather than a warning.
+
+### Changed (every surface shows the same page)
+- **The playground preview is a sheet of A4, not a scrolling box.** It was `overflow: auto` with the document squeezed to the pane, so what you saw was a different width from what printed. The sheet now keeps its real width and zooms to fit, never past 1:1; the editor stays beside it and the window scrolls.
+- **Docs demos stack source above output** and render a full sheet. Side by side left the page under half a sheet wide, which shrank a split tree to 57% and folded the margin channel under its anchor.
+- **The landing page shows the margin channel** instead of folding it away — and stops reserving 23% of the sheet for a channel it wasn't drawing.
+- Rows are separate grids rather than one document-wide grid, because a browser honours a named page only on a block in normal flow.
+
 ### Added (@tree nodes=boxed)
 - **`nodes=boxed`** draws each node as a box and lays depth out in columns — the infographic treatment. `nodes=text` stays the default, because most trees sit mid-document where a grid of boxes would shout over the paragraph around them.
 - Boxed split mirrors its flow as well as its text, so a left branch's children sit on its outer side rather than marching back toward the hub.

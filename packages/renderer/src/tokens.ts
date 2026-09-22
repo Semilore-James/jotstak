@@ -174,7 +174,9 @@ export const notebookLayout = {
   // The preview splits into a main column and a right margin channel
   mainColumnRatio:   0.77,   // ~77% for ruled document flow
   marginChannelRatio: 0.23,  // ~23% for @note annotations and callout ticks
-  maxContentWidth:   880,    // px — max width of the two-column frame
+  // px — the frame is an A4 page's printable width (ARC-14): 210mm less two
+  // 56px margins. Derived in page.ts; a test keeps this token in step with it.
+  maxContentWidth:   681.7,
   leftMarginLineX:   32,     // px — the faint vertical rose/coral margin rule
 
   // Margin notes connect to their anchor with a tick line + dot

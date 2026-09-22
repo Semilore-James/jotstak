@@ -6,7 +6,7 @@
 // the real rendered output, built with the actual renderer, not a screenshot.
 
 import { PRIMITIVES, UNIVERSAL_PARAMS, getPrimitive } from "@jotstak/schema";
-import { RENDER_FUNCTIONS, renderThemeCss, renderLayoutCss } from "@jotstak/renderer";
+import { RENDER_FUNCTIONS, renderThemeCss, renderLayoutCss, PAGE } from "@jotstak/renderer";
 import { writeFileSync, mkdirSync, rmSync, existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -19,19 +19,28 @@ const publicDir = join(here, "..", "public");
 // One stylesheet for every demo on the site, scoped so it cannot touch
 // Starlight's own chrome. Linked once from the docs head.
 mkdirSync(publicDir, { recursive: true });
+// A whole sheet of A4 at 96dpi: the printable width plus the page margins.
+const SHEET = PAGE.portrait.content + 2 * PAGE.marginX;
+
 const DEMO_CHROME = `
-.jot-demo { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 12px; margin: 1rem 0 1.5rem; align-items: start; }
-.jot-demo.stacked { grid-template-columns: minmax(0,1fr); }
-.jot-demo-src { margin: 0; padding: 12px 14px; font-size: 12.5px; line-height: 20px; border-radius: 6px;
+/* Source above, rendered page below. The two used to sit side by side, which
+   left the page about 340px wide — under half a sheet — and every figure is
+   measured against a real page (ARC-15), so the docs then scaled them down to
+   fit the demo: a split tree reached the reference at 57% of its size, with
+   the margin channel folded under its anchor because there was no room for it.
+   A demo exists to show what you actually get. Stacked, it is a sheet of A4 at
+   very nearly full size, laid out exactly as it prints. */
+.jot-demo { margin: 1rem 0 1.5rem; }
+.jot-demo-src { margin: 0 0 10px; padding: 12px 14px; font-size: 12.5px; line-height: 20px; border-radius: 6px;
   background: var(--sl-color-gray-6, #f6f6f6); border: 1px solid var(--sl-color-gray-5, #e0e0e0);
   overflow-x: auto; white-space: pre; }
 .jot-demo-src code { background: none; padding: 0; font-size: inherit; }
-.jot-demo-out { border-radius: 6px; border: 1px solid #e4d5be; overflow: hidden; }
-/* Demos are narrow, so the margin channel folds under its anchor. */
-.jot-demo-out .jot-doc { grid-template-columns: 1fr; max-width: none; padding: 10px 16px; }
-.jot-demo-out .jot-body, .jot-demo-out .jot-aside { grid-column: 1; }
-.jot-demo-out .jot-note { padding-left: 24px; }
-@media (max-width: 900px) { .jot-demo { grid-template-columns: minmax(0,1fr); } }
+/* Zoomed to fit the column, never past 1:1 — the same fit the playground
+   preview uses. No overflow:hidden: if something ever fails to fit it should
+   hang over the edge where it can be seen, not be quietly cut. */
+.jot-demo-out { border-radius: 6px; border: 1px solid #e4d5be; container-type: inline-size; }
+.jot-demo-out > .jotstak { zoom: min(1, calc(100cqw / ${SHEET}px)); }
+.jot-demo-out .jot-doc { padding-inline: ${PAGE.marginX}px; }
 `;
 
 writeFileSync(

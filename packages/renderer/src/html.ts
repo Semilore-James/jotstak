@@ -1,12 +1,13 @@
 // AST -> HTML.
 //
-// Blocks and their margin notes are emitted as paired grid cells: the block in
-// column 1, any notes anchored to it in column 2 of the SAME grid row. Vertical
-// alignment of a note against its anchor therefore falls out of the layout, with
-// no measuring and no absolute positioning — which is what makes it survive
-// reflow, font swaps and narrow viewports.
+// Each block and its margin notes form one row: the block in column 1, any notes
+// anchored to it in column 2 of that row's grid. Vertical alignment of a note
+// against its anchor therefore falls out of the layout, with no measuring and no
+// absolute positioning — which is what makes it survive reflow, font swaps and
+// narrow viewports. Rows are separate elements so print can give one its own page.
 
 import MarkdownIt from "markdown-it";
+import { renderTree as renderTreeFigure } from "./tree.js";
 // @ts-expect-error — markdown-it-mark ships no type declarations.
 import markPlugin from "markdown-it-mark";
 import { getPrimitive } from "@jotstak/schema";
@@ -338,111 +339,9 @@ function renderUnsupported(n: BlockNode, diagnostics: Diagnostic[]): string {
 //
 // SVG is reserved for connector geometry a border cannot express.
 
-/** Total nodes in a subtree, including itself. The weight used to balance sides. */
-function subtreeWeight(node: TreeNode): number {
-  return 1 + node.children.reduce((sum, c) => sum + subtreeWeight(c), 0);
-}
-
-/** `>` and `<` prefix a node's side. Intent, not coordinates. */
-function readSide(text: string): { side: "left" | "right" | null; text: string } {
-  if (text.startsWith("> ")) return { side: "right", text: text.slice(2) };
-  if (text.startsWith("< ")) return { side: "left", text: text.slice(2) };
-  return { side: null, text };
-}
-
-/** A node's own text, plus anything nested beneath it. */
-function treeNode(node: TreeNode): string {
-  const kids =
-    node.children.length > 0
-      ? `<ul class="jot-tree-kids">${node.children.map(treeNode).join("")}</ul>`
-      : "";
-  const { text } = readSide(node.text);
-  return `<li class="jot-tree-node"><span class="jot-tree-label">${inline(text)}</span>${kids}</li>`;
-}
-
-/**
- * Split a mind map's branches into a balanced left and right group.
- *
- * The author says "split" and marks a branch with `<` or `>` only when they
- * care. Everything else is the renderer's job — that is the whole of "intent,
- * not coordinates", and making someone hand-balance a diagram breaks it.
- *
- * Balance is by SUBTREE WEIGHT, not branch count. Two branches where one has
- * ten descendants and the other has one are not balanced by putting one on each
- * side; the heavy one has to be offset by several light ones. So explicit marks
- * are honoured first, then the remaining branches are placed heaviest-first onto
- * whichever side is currently lighter — the standard greedy partition, which is
- * good enough for the handful of branches a readable mind map can hold.
- */
-function splitSides(branches: TreeNode[]): { left: TreeNode[]; right: TreeNode[] } {
-  const left: TreeNode[] = [];
-  const right: TreeNode[] = [];
-  let leftWeight = 0;
-  let rightWeight = 0;
-
-  const unmarked: TreeNode[] = [];
-  for (const b of branches) {
-    const { side } = readSide(b.text);
-    const w = subtreeWeight(b);
-    if (side === "left") { left.push(b); leftWeight += w; }
-    else if (side === "right") { right.push(b); rightWeight += w; }
-    else unmarked.push(b);
-  }
-
-  for (const b of [...unmarked].sort((a, c) => subtreeWeight(c) - subtreeWeight(a))) {
-    const w = subtreeWeight(b);
-    if (leftWeight <= rightWeight) { left.push(b); leftWeight += w; }
-    else { right.push(b); rightWeight += w; }
-  }
-
-  // Keep authored order within each side; only the side itself is chosen for you.
-  const order = new Map(branches.map((b, i) => [b, i]));
-  const bySource = (a: TreeNode, c: TreeNode) => (order.get(a) ?? 0) - (order.get(c) ?? 0);
-  return { left: left.sort(bySource), right: right.sort(bySource) };
-}
-
-function renderSplitTree(n: BlockNode, roots: TreeNode[], nested: string, nodes: string): string {
-  // A mind map has one hub. Extra roots are rendered beneath it rather than
-  // silently dropped.
-  const hub = roots[0];
-  if (!hub) return "";
-  const { left, right } = splitSides(hub.children);
-  const side = (nodes: TreeNode[], which: "left" | "right"): string =>
-    `<div class="jot-tree-side" data-side="${which}"><ul class="jot-tree-kids">${nodes.map(treeNode).join("")}</ul></div>`;
-
-  return (
-    `<div class="jot-tree" data-dir="split" data-nodes="${escapeHtml(nodes)}"${attr("id", n.params.id)}>` +
-    `<div class="jot-tree-split">` +
-    side(left, "left") +
-    `<div class="jot-tree-hub"><span class="jot-tree-label">${inline(readSide(hub.text).text)}</span></div>` +
-    side(right, "right") +
-    `</div>` +
-    roots.slice(1).map((r) => `<ul class="jot-tree-root">${treeNode(r)}</ul>`).join("") +
-    (nested ? `<div class="jot-nested">${nested}</div>` : "") +
-    `</div>`
-  );
-}
-
 function renderTreeDiagram(n: BlockNode, diagnostics: Diagnostic[]): string {
-  const roots = n.body.shape === "indented" ? n.body.roots : [];
-  const dir = n.params.dir ?? "down";
-  const style = n.params.style ?? "solid";
-  // `text` reads as an outline and sits quietly inside prose; `boxed` draws
-  // each node and lays depth out in columns, which reads as an infographic.
-  // Text is the default deliberately: most trees appear mid-document, where a
-  // grid of boxes would shout over the paragraph around it.
-  const nodes = n.params.nodes ?? "text";
   const nested = n.children.map((c) => renderNode(c, diagnostics)).join("");
-
-  if (dir === "split") return renderSplitTree(n, roots, nested, nodes);
-
-  const body = roots.map(treeNode).join("");
-  return (
-    `<div class="jot-tree" data-dir="${escapeHtml(dir)}" data-style="${escapeHtml(style)}" data-nodes="${escapeHtml(nodes)}"${attr("id", n.params.id)}>` +
-    `<ul class="jot-tree-root">${body}</ul>` +
-    (nested ? `<div class="jot-nested">${nested}</div>` : "") +
-    `</div>`
-  );
+  return renderTreeFigure(n, diagnostics, { inline, escapeHtml, attr }, nested);
 }
 
 function renderBlock(n: BlockNode, diagnostics: Diagnostic[]): string {
@@ -521,9 +420,14 @@ export function renderDocument(
       // three rows to itself.
       const kind = row.content[0]?.type ?? "empty";
       const primitive = row.content[0]?.type === "block" ? row.content[0].name : "";
+      // A row is its own element — the block beside its notes — rather than two
+      // cells of one document-wide grid, because a printed page can only be
+      // named (the landscape sheet) on a block in normal flow. See page.ts.
       return (
+        `<div class="jot-row">` +
         `<div class="jot-body" data-kind="${escapeHtml(kind)}"${primitive ? ` data-primitive="${escapeHtml(primitive)}"` : ""}>${body}</div>` +
-        `<div class="jot-aside">${aside}</div>`
+        `<div class="jot-aside">${aside}</div>` +
+        `</div>`
       );
     })
     .join("");

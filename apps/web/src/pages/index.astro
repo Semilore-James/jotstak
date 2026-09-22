@@ -2,7 +2,10 @@
 // Landing page. The hero renders a real .jot document with the real renderer at
 // build time — the page is its own proof. Nothing here is a mockup.
 import Base from "../layouts/Base.astro";
-import { render } from "@jotstak/renderer";
+import { render, PAGE } from "@jotstak/renderer";
+
+// A whole sheet of A4 at 96dpi: the printable width plus the page margins.
+const SHEET = PAGE.portrait.content + 2 * PAGE.marginX;
 
 const source = `# Q3 pricing review
 
@@ -60,8 +63,11 @@ const extraCss = `
 .cta .secondary { color: var(--jot-accent); }
 .cta a:hover { transform: translate(-1px, -1px); }
 
-.showcase { max-width: 1180px; margin: 0 auto; padding: 0 28px 56px; }
-.showcase-grid { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: 28px; align-items: start; }
+/* Wider than the hero above it, and by a measured amount: at 1400 the right
+   column is a sheet of A4 at its true size, so "you get" is literally the page
+   you would print, not a scaled picture of one. */
+.showcase { max-width: 1400px; margin: 0 auto; padding: 0 28px 56px; }
+.showcase-grid { display: grid; grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); gap: 28px; align-items: start; }
 .pane-label {
   font-family: var(--jot-font-label);
   font-size: 10px;
@@ -92,13 +98,14 @@ const extraCss = `
   border: 1px solid var(--jot-color-notebook-rule-lines);
   border-radius: 4px;
   box-shadow: 2px 2px 0 var(--jot-color-notebook-rule-lines);
-  overflow: hidden;
+  container-type: inline-size;
 }
-/* The hero sample is narrow, so drop the margin channel and let notes flow
-   under their anchor rather than squeezing the text column. */
-.rendered .jot-doc { grid-template-columns: 1fr; padding: 14px 22px; max-width: none; }
-.rendered .jot-body, .rendered .jot-aside { grid-column: 1; }
-.rendered .jot-note { padding-left: 28px; }
+/* A real sheet, zoomed to fit the column and never past 1:1 (ARC-14) — the
+   same fit the playground and the docs demos use. It used to fold the margin
+   channel under its anchor for want of room; the channel is where a note goes,
+   and a landing page that hides it is selling something else. */
+.rendered > .jotstak { zoom: min(1, calc(100cqw / ${SHEET}px)); }
+.rendered .jot-doc { padding-inline: ${PAGE.marginX}px; }
 
 @media (max-width: 860px) {
   .showcase-grid { grid-template-columns: 1fr; }

@@ -6,6 +6,10 @@
 // That is the local-first architecture paying off twice: it is the reason the
 // tool works offline, and the reason this page costs nothing to host.
 import Base from "../layouts/Base.astro";
+import { PAGE, renderPageCss } from "@jotstak/renderer";
+
+// A whole sheet of A4 at 96dpi: the printable width plus the page margins.
+const SHEET = PAGE.portrait.content + 2 * PAGE.marginX;
 // The starter document is a real file in samples/, not a string literal here.
 // It used to be inline, and it silently rotted: it still said @evidence long
 // after the recut folded that into @quote, so the playground greeted everyone
@@ -18,7 +22,10 @@ import Base from "../layouts/Base.astro";
 import starter from "../../../../samples/pricing-v2.jot?raw";
 
 const extraCss = `
-.pg { max-width: 1400px; margin: 0 auto; padding: 20px 28px 40px; width: 100%; box-sizing: border-box; }
+/* Wider than the rest of the site, and the width is not arbitrary: at 1500 a
+   desktop pane is just past a sheet of A4, so the paper shows at 1:1 instead
+   of being zoomed down. */
+.pg { max-width: 1500px; margin: 0 auto; padding: 20px 28px 40px; width: 100%; box-sizing: border-box; }
 .pg-bar { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 14px; }
 .pg-bar h1 { font-family: var(--jot-font-heading); font-size: 22px; margin: 0; font-weight: 600; }
 .pg-tools { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
@@ -93,8 +100,11 @@ const extraCss = `
   .seg-thumb, .picker-btn svg, .picker-menu { transition: none; }
 }
 
-.pg-grid { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1.15fr); gap: 20px; align-items: stretch; }
-.pane { display: flex; flex-direction: column; min-height: 68vh; }
+.pg-grid { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1.3fr); gap: 20px; align-items: start; }
+.pane { display: flex; flex-direction: column; min-width: 0; }
+/* The source stays within reach while the paper scrolls past it. The window
+   does the scrolling — the document is not trapped in a box of its own. */
+.pane-src { position: sticky; top: 18px; height: calc(100vh - 36px); }
 .pane-label { font-family: var(--jot-font-label); font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--jot-ink-muted); margin: 0 0 8px; }
 
 #src {
@@ -107,13 +117,29 @@ const extraCss = `
 }
 #src:focus { outline: 2px solid var(--jot-accent); outline-offset: -1px; }
 
+/* The rendered side is a sheet of A4, not a scrolling box.
+   It used to be an overflow:auto frame with the document squeezed to whatever
+   width the pane happened to be. Two things were wrong with that. The document
+   on screen was a different width from the one that prints, so a figure could
+   look settled here and escalate on paper. And a long document scrolled
+   inside a frame — a box of paper inside a page — when the page itself is
+   the thing that should scroll (ARC-14: print-true pages, continuous screen).
+   So the sheet keeps its real A4 width and is zoomed down to fit the pane,
+   the way a print preview does. Zoom rather than transform: scale, because
+   zoom reflows: the sheet's box really is smaller, so it takes the right
+   amount of room and the wrapper needs no height correction. It never zooms
+   past 1 — paper is not magnified, only fitted. */
 #out-wrap {
-  flex: 1; overflow: auto; border-radius: 4px;
+  container-type: inline-size;
+  border-radius: 4px;
   border: 1px solid var(--jot-color-notebook-rule-lines);
   box-shadow: 2px 2px 0 var(--jot-color-notebook-rule-lines);
 }
-#out { min-height: 100%; }
-#out .jot-doc { padding: 14px 24px; max-width: none; }
+#out { zoom: min(1, calc(100cqw / ${SHEET}px)); }
+/* The side margins are the page's real ones, so the sheet is exactly A4 wide
+   (ARC-14). Doc mode already sets these; notebook mode had 24px of padding
+   chosen by eye. */
+#out .jot-doc { padding-inline: ${PAGE.marginX}px; }
 
 #diags { margin-top: 10px; font-family: var(--jot-font-mono); font-size: 12px; line-height: 20px; }
 #diags:empty { display: none; }
@@ -124,8 +150,29 @@ const extraCss = `
 
 @media (max-width: 900px) {
   .pg-grid { grid-template-columns: 1fr; }
-  .pane { min-height: 46vh; }
+  /* Stacked, there is nothing to stay beside: the editor scrolls away like
+     everything else, and takes a fixed slice of the viewport instead. */
+  .pane-src { position: static; height: auto; }
+  #src { min-height: 46vh; }
 }
+
+/* Printing the playground prints the DOCUMENT, on real A4 pages — not the
+   editor around it. This is the one place today where a .jot file becomes a
+   PDF, until the extension's export arrives. */
+@media print {
+  .site-head, .site-foot, .pg-bar, .pg-grid > .pane:first-child, .pane-label, #diags { display: none !important; }
+  body { margin: 0; }
+  .pg { padding: 0; max-width: none; }
+  .pg-grid { display: block; }
+  .pane { min-height: 0; }
+  /* The sheet is the paper now, so it prints at 1:1 with no frame around it
+     and no containment — a size container would fragment its own way across
+     pages, and pagination here has to stay the browser's job. */
+  #out-wrap { border: 0; box-shadow: none; container-type: normal; }
+  #out { zoom: 1; }
+  #out .jot-doc { padding: 0; }
+}
+${renderPageCss()}
 `;
 ---
 
@@ -165,7 +212,7 @@ const extraCss = `
     </div>
 
     <div class="pg-grid">
-      <section class="pane">
+      <section class="pane pane-src">
         <p class="pane-label">Source</p>
         <textarea id="src" spellcheck="false" aria-label="Jotstak source">{starter}</textarea>
         <div id="diags" role="status" aria-live="polite"></div>

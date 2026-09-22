@@ -67,7 +67,7 @@ describe("tokens", () => {
   it("gives px units to sizes but keeps ratios unitless", () => {
     const css = renderThemeCss();
     expect(css).toContain("--jot-space-baseline-grid: 28px;");
-    expect(css).toContain("--jot-layout-max-content-width: 880px;");
+    expect(css).toContain("--jot-layout-max-content-width: 681.7px;");
     expect(css).toContain("--jot-layout-main-column-ratio: 0.77;");
   });
 
@@ -79,8 +79,8 @@ describe("tokens", () => {
     // looked plausible enough that nothing caught it — the margin channel was
     // simply always about twice the width it was designed to be.
     const css = renderLayoutCss();
-    const docGrid = css.match(/\.jot-doc \{[\s\S]*?\}/)?.[0] ?? "";
-    const tracks = docGrid.match(/grid-template-columns:([\s\S]*?);/)?.[1] ?? "";
+    const rowGrid = css.match(/\.jot-row \{[\s\S]*?\}/)?.[0] ?? "";
+    const tracks = rowGrid.match(/grid-template-columns:([\s\S]*?);/)?.[1] ?? "";
 
     expect(tracks).not.toBe("");
     expect(tracks).not.toMatch(/var\(--jot-layout-[a-z-]*ratio/);

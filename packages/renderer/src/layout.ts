@@ -15,6 +15,8 @@
 // borders + padding total exactly one row, and inner content is always row-multiples.
 
 import { notebookLayout, spacing, typography } from "./tokens.js";
+import { LANDSCAPE_PAGE, PAGE } from "./page.js";
+import { renderTreeCss } from "./tree-css.js";
 import { FONT_METRICS } from "./font-metrics.js";
 
 const ROW = spacing.baselineGrid; // 28
@@ -68,9 +70,21 @@ export function renderLayoutCss(scope = ".jotstak"): string {
 /* ── Page frame ─────────────────────────────────────────────────────── */
 ${scope} .jot-doc {
   --jot-rule-offset: ${BASELINE_OFFSET}px;
-  max-width: var(--jot-layout-max-content-width);
+  /* Exactly an A4 page's printable width (ARC-14), so anything that fits on
+     screen fits on paper. The number is derived from the paper size in
+     page.ts, not typed here. */
+  max-width: ${PAGE.portrait.content}px;
+  box-sizing: content-box;
   margin: 0 auto;
   padding: ${ROW}px 0;
+}
+/* One row per block: the block beside its margin notes. Rows are separate
+   elements rather than cells of one document-wide grid because print needs
+   them to be. A browser honours a named page — the landscape sheet — only on
+   a block in normal flow; tested on a grid item, it turned the WHOLE FIRST
+   PAGE landscape and isolated nothing. Every row uses identical tracks, so
+   the two columns still line up down the page exactly as one grid did. */
+${scope} .jot-row {
   display: grid;
   /* The 'fr' unit is written here rather than taken from the custom property,
      and that is not a style choice. The ratio tokens are unitless numbers, so
@@ -196,10 +210,10 @@ ${scope} .jot-aside > * { margin-top: 0; margin-bottom: ${ROW}px; }
    three rows — the previous block's margin, its own row, and its own margin.
    These exceptions stay whole-row, so the phase is unaffected. */
 ${scope} .jot-body[data-kind="divider"] > * { margin-bottom: 0; }
-${scope} .jot-body[data-kind="quote"] + .jot-aside:empty + .jot-body[data-kind="quote"] > *,
-${scope} .jot-body[data-kind="list"] + .jot-aside:empty + .jot-body[data-kind="list"] > *,
-${scope} .jot-body[data-primitive="sticky"] + .jot-aside:empty + .jot-body[data-primitive="sticky"] > * { margin-top: 0; }
-${scope} .jot-body[data-kind="quote"]:has(+ .jot-aside:empty + .jot-body[data-kind="quote"]) > * { margin-bottom: 0; }
+${scope} .jot-row:has(> .jot-body[data-kind="quote"]):has(> .jot-aside:empty) + .jot-row > .jot-body[data-kind="quote"] > *,
+${scope} .jot-row:has(> .jot-body[data-kind="list"]):has(> .jot-aside:empty) + .jot-row > .jot-body[data-kind="list"] > *,
+${scope} .jot-row:has(> .jot-body[data-primitive="sticky"]):has(> .jot-aside:empty) + .jot-row > .jot-body[data-primitive="sticky"] > * { margin-top: 0; }
+${scope} .jot-row:has(> .jot-aside:empty):has(+ .jot-row > .jot-body[data-kind="quote"]) > .jot-body[data-kind="quote"] > * { margin-bottom: 0; }
 /* @meta sits tight under the title it describes. */
 ${scope} .jot-body[data-primitive="meta"] > * { margin-bottom: ${ROW}px; }
 /* A trailing margin inside a container would escape the row maths. */
@@ -239,7 +253,7 @@ ${scope} .jot-h3 {
 ${scope} .jot-h1 { font-size: ${typography.headline.xl.size}; line-height: ${ROW * 2}px; letter-spacing: ${typography.headline.xl.letterSpacing}; }
 ${scope} .jot-h2 { font-size: ${typography.headline.lg.size}; line-height: ${ROW * 2}px; letter-spacing: ${typography.headline.lg.letterSpacing}; }
 ${scope} .jot-h3 { font-size: ${typography.headline.md.size}; line-height: ${ROW}px; letter-spacing: ${typography.headline.md.letterSpacing}; }
-${scope} .jot-doc > .jot-body:first-child > :first-child { margin-top: 0; }
+${scope} .jot-doc > .jot-row:first-child > .jot-body > :first-child { margin-top: 0; }
 
 ${scope} .jot-body strong { font-weight: 600; }
 /* \`==highlight==\`. Like inline code, its box is capped below the line strut so
@@ -524,566 +538,7 @@ ${scope} .jot-card[data-accent="quiet"] {
   border-style: dashed;
 }
 
-/* ── @tree ──────────────────────────────────────────────────────────── */
-/* Connectors are borders on pseudo-elements of each node, not an SVG overlay:
-   a border cannot drift from the box it belongs to. Every label is one row
-   tall, so a tree of any depth is a whole number of rows.
-
-   Two pseudo-elements per node, never three. ::before draws the vertical
-   spine, ::after the horizontal elbow, and they MEET at the elbow row. An
-   earlier version drew the spine as a border on the <li> and patched the last
-   child with a second element, which left a visible one-pixel seam where the
-   two did not quite touch. */
-${scope} .jot-tree {
-  /* A boxed tree renders depth as columns, so a deep one is simply wider than
-     the page. It scrolls rather than overflowing, because a mirrored left side
-     spilled 148px past the page edge where no scroll can reach it.
-
-     The scrollbar is suppressed: a horizontal bar would add a fraction of a row
-     to the block and break the one promise the ruling makes. In its place, the
-     classic four-layer scroll shadow. Two covers painted with
-     background-attachment: local scroll away with the content; two shadows
-     painted with attachment: scroll stay put, so an edge darkens only while
-     there is something beyond it. It is pure paint, so it costs no height.
-
-     This is not decoration. Without it the tree simply cut words in half and
-     said nothing — seven labels vanished from one diagram, the hub among them. */
-  background:
-    linear-gradient(to right, var(--jot-surface) 30%, rgba(255, 255, 255, 0)) left center,
-    linear-gradient(to left, var(--jot-surface) 30%, rgba(255, 255, 255, 0)) right center,
-    radial-gradient(farthest-side at 0% 50%, rgba(44, 37, 35, 0.16), rgba(255, 255, 255, 0)) left center,
-    radial-gradient(farthest-side at 100% 50%, rgba(44, 37, 35, 0.16), rgba(255, 255, 255, 0)) right center,
-    var(--jot-surface);
-  background-repeat: no-repeat;
-  background-size: 40px 100%, 40px 100%, 14px 100%, 14px 100%, auto;
-  background-attachment: local, local, scroll, scroll, local;
-  overflow-x: auto;
-  overscroll-behavior-x: contain;
-  scrollbar-width: none;
-}
-${scope} .jot-tree::-webkit-scrollbar { display: none; }
-${scope} .jot-tree ul { list-style: none; margin: 0; padding: 0; }
-${scope} .jot-tree-label {
-  display: inline-block;
-  line-height: ${ROW}px;
-  padding: 0 ${ROW / 4}px;
-}
-${scope} .jot-tree-node { position: relative; line-height: ${ROW}px; }
-${scope} .jot-tree-kids { padding-left: ${ROW}px; }
-
-${scope} .jot-tree-kids > .jot-tree-node { padding-left: ${ROW / 2}px; }
-/* Vertical spine: full height, so it reaches the next sibling's elbow. */
-${scope} .jot-tree-kids > .jot-tree-node::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  border-left: 1px solid var(--jot-color-accent-slate-blue);
-}
-/* The last child's spine stops AT the elbow rather than running past it —
-   \`bottom: auto\` plus an exact height, so the two borders share a pixel. */
-${scope} .jot-tree-kids > .jot-tree-node:last-child::before {
-  bottom: auto;
-  height: ${ROW / 2}px;
-}
-/* Horizontal elbow, landing on the label's own row. */
-${scope} .jot-tree-kids > .jot-tree-node::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: ${ROW / 2}px;
-  width: ${ROW / 2}px;
-  border-top: 1px solid var(--jot-color-accent-slate-blue);
-}
-${scope} .jot-tree[data-style="dashed"] .jot-tree-node::before,
-${scope} .jot-tree[data-style="dashed"] .jot-tree-node::after { border-style: dashed; }
-${scope} .jot-tree[data-style="rounded"] .jot-tree-kids > .jot-tree-node::after {
-  border-bottom-left-radius: ${ROW / 4}px;
-}
-
-${scope} .jot-tree > .jot-tree-root > .jot-tree-node > .jot-tree-label {
-  font-weight: 600;
-  background: var(--jot-surface-elevated);
-  border-radius: var(--jot-shape-border-radius-sm);
-}
-
-/* ── @tree nodes=boxed — the infographic treatment ─────────────────── */
-/* Opt-in, because most trees sit mid-document where a grid of boxes would
-   shout over the surrounding paragraph. When asked for, depth becomes COLUMNS
-   rather than indentation: each node is a flex row of [label | its children],
-   so the third level naturally lands in the third column. Connectors stay
-   borders on pseudo-elements, square-routed from a parent's edge to each
-   child's, which is what makes it read as a diagram rather than an outline. */
-${scope} .jot-tree[data-nodes="boxed"] .jot-tree-node {
-  display: flex;
-  align-items: flex-start;
-}
-${scope} .jot-tree[data-nodes="boxed"] .jot-tree-label {
-  flex: none;
-  align-self: flex-start;
-  background: var(--jot-surface-elevated);
-  border: 1px solid var(--jot-color-accent-slate-blue);
-  border-radius: var(--jot-shape-border-radius-base);
-  padding: 0 ${ROW / 2}px;
-  /* 20 content + 2 border + 6 margin = one row exactly. A box that is nearly a
-     row tall plus separate margins came to 42px and put the whole diagram on a
-     half row — the chrome has to be budgeted, not added to. */
-  line-height: 20px;
-  margin: 3px 0;
-  white-space: nowrap;
-}
-${scope} .jot-tree[data-nodes="boxed"] .jot-tree-kids {
-  flex: 1 1 auto;
-  padding-left: ${ROW}px;
-}
-/* Each child's stub reaches back to the parent's column, and the spine runs
-   between siblings. Offset to the label's own centre, not the row's. */
-${scope} .jot-tree[data-nodes="boxed"] .jot-tree-kids > .jot-tree-node::before,
-${scope} .jot-tree[data-nodes="boxed"] .jot-tree-kids > .jot-tree-node::after {
-  top: 0;
-  bottom: auto;
-}
-${scope} .jot-tree[data-nodes="boxed"] .jot-tree-kids > .jot-tree-node::before {
-  height: 100%;
-  bottom: auto;
-}
-${scope} .jot-tree[data-nodes="boxed"] .jot-tree-kids > .jot-tree-node:last-child::before {
-  height: ${ROW / 2}px;
-}
-${scope} .jot-tree[data-nodes="boxed"] .jot-tree-kids > .jot-tree-node::after {
-  top: ${ROW / 2}px;
-}
-/* Boxed + split: the left side has to mirror its FLOW as well as its text, or
-   children march rightward back towards the hub and the branch reads inside
-   out. row-reverse puts each node's children on its outer side. */
-${scope} .jot-tree[data-nodes="boxed"] .jot-tree-side[data-side="left"] .jot-tree-node {
-  flex-direction: row-reverse;
-}
-${scope} .jot-tree[data-nodes="boxed"] .jot-tree-side[data-side="left"] .jot-tree-kids {
-  padding-left: 0;
-  padding-right: ${ROW}px;
-}
-
-/* The hub gets the same treatment so it does not look like a different thing. */
-${scope} .jot-tree[data-nodes="boxed"] .jot-tree-hub > .jot-tree-label {
-  border-color: var(--jot-accent);
-  background: var(--jot-color-accent-terracotta-pale);
-}
-
-/* ── @tree dir=split — a bilateral mind map ─────────────────────────── */
-/* Three columns: left branches, the hub, right branches. Not one column per
-   branch — that gave four columns for four branches instead of two sides, and
-   left the hub off-centre. The renderer decides which side each branch takes,
-   balancing by subtree weight; \`<\` and \`>\` override it. */
-${scope} .jot-tree-split {
-  display: grid;
-  /* Sized to its content, floored at the column width. minmax(0, 1fr) let
-     the tracks shrink below their boxes, which pushed the mirrored side out
-     of the page; plain 1fr floors at min-content, and max-content width puts
-     the whole grid inside the scroll container above, where it is reachable. */
-  width: max-content;
-  min-width: 100%;
-  grid-template-columns: 1fr auto 1fr;
-  align-items: start;
-  column-gap: ${ROW}px;
-}
-/* A bilateral boxed tree is a full-page figure, not a column element. The
-   numbers force it: two mirrored sides at depth 2 need about 780px, the body
-   column offers 656px at the design width, and the full frame offers 880px.
-   Given the body column it just clipped, so it takes both columns and any
-   margin note beside it moves below, which is what a margin note should do
-   next to a figure anyway. */
-${scope} .jot-body:has(> .jot-tree[data-nodes="boxed"]),
-${scope} .jot-body:has(> .jot-tree[data-dir="split"]) {
-  grid-column: 1 / -1;
-}
-${scope} .jot-tree-hub { display: flex; justify-content: center; }
-${scope} .jot-tree-hub > .jot-tree-label {
-  font-weight: 600;
-  background: var(--jot-surface-elevated);
-  border-radius: var(--jot-shape-border-radius-sm);
-  border: 1px solid var(--jot-rule);
-  padding: 0 ${ROW / 2}px;
-}
-${scope} .jot-tree-side > .jot-tree-kids { padding: 0; }
-
-/* Right side: spine on the left of the group, elbows reaching right. */
-${scope} .jot-tree-side[data-side="right"] > .jot-tree-kids { padding-left: ${ROW}px; }
-/* Left side mirrors completely — text, spine and elbow all flip. */
-${scope} .jot-tree-side[data-side="left"] { text-align: right; }
-/* EVERY nested level mirrors, not just the top one. Indent came from
-   padding-left; zeroing it for the mirror without adding padding-right left
-   deeper levels with no indent at all, so a three-deep branch collapsed onto a
-   single spine and read as a flat list. */
-${scope} .jot-tree-side[data-side="left"] .jot-tree-kids { padding-left: 0; padding-right: ${ROW}px; }
-${scope} .jot-tree-side[data-side="left"] .jot-tree-kids > .jot-tree-node {
-  padding-left: 0;
-  padding-right: ${ROW / 2}px;
-}
-${scope} .jot-tree-side[data-side="left"] .jot-tree-kids > .jot-tree-node::before,
-${scope} .jot-tree-side[data-side="left"] .jot-tree-kids > .jot-tree-node::after {
-  left: auto;
-  right: 0;
-}
-/* Each side connects inward to the hub's row, so the hub visibly joins both. */
-${scope} .jot-tree-side { position: relative; }
-${scope} .jot-tree-side::after {
-  content: "";
-  position: absolute;
-  top: ${ROW / 2}px;
-  width: ${ROW}px;
-  border-top: 1px solid var(--jot-color-accent-slate-blue);
-}
-${scope} .jot-tree-side[data-side="right"]::after { left: 0; }
-${scope} .jot-tree-side[data-side="left"]::after { right: 0; }
-${scope} .jot-tree-side:empty::after,
-${scope} .jot-tree-side:has(.jot-tree-kids:empty)::after { display: none; }
-
-/* ── Divider ────────────────────────────────────────────────────────── */
-/* A full-width line drawn ON a ruled line is invisible by construction — it
-   just makes one rule slightly darker. A section break has to read as
-   deliberate, so it is a SHORT CENTRED mark instead: clearly not part of the
-   ruling, while still sitting on the grid. The schema offers three styles and
-   all three are implemented rather than falling through to the same line. */
-${scope} .jot-divider {
-  border: 0;
-  height: ${ROW}px;
-  background: none;
-  position: relative;
-}
-${scope} .jot-divider::after {
-  content: "";
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  top: calc(var(--jot-rule-offset) - 1px);
-  width: 18%;
-  min-width: 84px;
-  border-top: 2px solid var(--jot-accent);
-}
-${scope} .jot-divider[data-style="dots"]::after {
-  border-top: 0;
-  height: 3px;
-  width: 64px;
-  min-width: 0;
-  top: calc(var(--jot-rule-offset) - 3px);
-  background-image: radial-gradient(circle, var(--jot-accent) 2px, transparent 2.1px);
-  background-size: 18px 4px;
-  background-repeat: repeat-x;
-}
-${scope} .jot-divider[data-style="wave"]::after {
-  border-top: 0;
-  height: 8px;
-  width: 96px;
-  min-width: 0;
-  top: calc(var(--jot-rule-offset) - 5px);
-  background-image:
-    radial-gradient(circle at 50% 100%, transparent 5px, var(--jot-accent) 5px, var(--jot-accent) 6.4px, transparent 6.5px),
-    radial-gradient(circle at 50% 0%,   transparent 5px, var(--jot-accent) 5px, var(--jot-accent) 6.4px, transparent 6.5px);
-  background-size: 24px 8px, 24px 8px;
-  background-position: 0 0, 12px 0;
-  background-repeat: repeat-x;
-}
-
-/* ── Drawn blocks ───────────────────────────────────────────────────── */
-/* Rule 2: opaque background masks the ruling so the card breathes.
-   Rule 3: 1px border + 13px padding, top and bottom, totals exactly ${ROW}px of
-   chrome. Inner content is row-multiples, so the card's height is always a whole
-   number of rows and the text after it resumes in phase.
-   Rule 4: ${ROW / 2}px margin top and bottom is the half-row clearance. */
-${scope} .jot-card {
-  background: var(--jot-surface-elevated);
-  border: 1px solid var(--jot-rule);
-  border-radius: var(--jot-shape-border-radius-base);
-  box-shadow: var(--jot-card-shadow);
-  padding: 13px 18px;
-  margin: 0 0 ${ROW}px;
-}
-${scope} .jot-card-title {
-  font-family: var(--jot-font-heading);
-  font-size: ${typography.headline.sm.size};
-  font-weight: 600;
-  line-height: ${ROW}px;
-  margin: 0;
-  color: var(--jot-ink);
-}
-${scope} .jot-card-kicker {
-  font-family: var(--jot-font-label);
-  font-size: ${typography.label.sm.size};
-  font-weight: 600;
-  letter-spacing: ${typography.label.sm.letterSpacing};
-  text-transform: uppercase;
-  line-height: ${ROW}px;
-  color: var(--jot-accent);
-  margin: 0;
-}
-${scope} .jot-fields { margin: 0; }
-${scope} .jot-field {
-  display: grid;
-  grid-template-columns: 7rem 1fr;
-  column-gap: ${ROW / 2}px;
-  line-height: ${ROW}px;
-}
-${scope} .jot-field-key {
-  font-family: var(--jot-font-label);
-  font-size: ${typography.label.md.size};
-  font-weight: 600;
-  letter-spacing: ${typography.label.md.letterSpacing};
-  text-transform: uppercase;
-  color: var(--jot-ink-muted);
-}
-${scope} .jot-field-value { font-size: ${typography.body.lg.size}; }
-${scope} .jot-field-list { margin: 0; padding-left: ${ROW}px; }
-${scope} .jot-field-list li { line-height: ${ROW}px; }
-
-/* Badge beside the kicker: the card's status at a glance. Inline-block with a
-   capped line-height so it cannot grow the row it sits in. */
-${scope} .jot-badge {
-  display: inline-block;
-  margin-left: ${ROW / 4}px;
-  padding: 0 7px;
-  border-radius: var(--jot-shape-border-radius-full);
-  background: var(--jot-color-accent-terracotta-pale);
-  color: var(--jot-color-accent-sepia);
-  font-family: var(--jot-font-label);
-  font-size: ${typography.label.sm.size};
-  font-weight: 600;
-  letter-spacing: ${typography.label.sm.letterSpacing};
-  text-transform: uppercase;
-  line-height: 18px;
-  vertical-align: baseline;
-}
-${scope} .jot-badge[data-alert="true"] { background: #f7d9d4; color: #8c1d18; }
-${scope} .jot-card[data-alert="true"] { border-color: var(--jot-color-accent-terracotta); }
-
-/* @metric leads with the number. */
-/* A ${typography.headline.lg.size} number does not fit a ${ROW}px line box — Lora's content height is
-   about 1.28em — so the figure takes two rows rather than overflowing by 6px. */
-/* Two rows for the figure, as a plain line box rather than flex.
-   Flex baseline alignment stretched the row: a ${typography.headline.lg.size} number's inline ascent
-   exceeds the strut's, and the line grows to fit it. Capping the number's own
-   line-height keeps its inline box inside the strut, so the row stays exactly
-   two. Scoped under .jot-body to out-specify the generic \`.jot-body p\` rule. */
-${scope} .jot-body p.jot-metric { line-height: ${ROW * 2}px; }
-${scope} .jot-body .jot-metric > * + * { margin-left: ${ROW / 2}px; }
-${scope} .jot-body .jot-metric-value {
-  font-family: var(--jot-font-heading);
-  font-size: ${typography.headline.lg.size};
-  font-weight: 600;
-  /* line-height 1 keeps this inline box smaller than the surrounding strut,
-     so a large figure cannot stretch the line it sits on. */
-  line-height: 1;
-}
-${scope} .jot-body .jot-metric-target,
-${scope} .jot-body .jot-trend {
-  font-family: var(--jot-font-label);
-  font-size: ${typography.label.md.size};
-  color: var(--jot-ink-muted);
-  line-height: 1;
-}
-${scope} .jot-trend[data-trend="up"] { color: var(--jot-color-accent-sage); }
-${scope} .jot-trend[data-trend="down"] { color: var(--jot-color-accent-terracotta); }
-
-/* ── @columns ───────────────────────────────────────────────────────── */
-/* One mechanic for what used to be two primitives: a two-page spread and a row
-   of feature pillars are both "regions side by side". Gaps are whole rows so a
-   column that wraps on a narrow screen cannot break the ruling. */
-${scope} .jot-columns { display: flex; flex-wrap: wrap; gap: 0 ${ROW}px; }
-/* A small basis so columns actually sit side by side in a narrow preview pane;
-   they still wrap on a phone, where stacking is the right answer. */
-${scope} .jot-col { flex: 1 1 150px; min-width: 0; }
-${scope} .jot-col > :last-child { margin-bottom: 0; }
-${scope} .jot-col-heading {
-  font-family: var(--jot-font-label);
-  font-size: ${typography.label.md.size};
-  font-weight: 600;
-  letter-spacing: ${typography.label.md.letterSpacing};
-  text-transform: uppercase;
-  color: var(--jot-ink-muted);
-  line-height: ${ROW}px;
-  margin: 0;
-}
-
-/* ── Panel accents ──────────────────────────────────────────────────── */
-/* The accent is what makes a panel read as what it IS before the label is
-   read. Presets set it; @panel takes it directly. */
-${scope} .jot-card[data-accent="alert"]    { border-left: 3px solid var(--jot-color-accent-terracotta); }
-${scope} .jot-card[data-accent="positive"] { border-left: 3px solid var(--jot-color-accent-sage); }
-${scope} .jot-card[data-accent="info"]     { border-left: 3px solid var(--jot-color-accent-slate-blue); }
-${scope} .jot-card[data-accent="quiet"] {
-  background: none;
-  box-shadow: none;
-  border-style: dashed;
-}
-
-/* ── @tree ──────────────────────────────────────────────────────────── */
-/* Connectors are borders on pseudo-elements of each node, not an SVG overlay:
-   a border cannot drift from the box it belongs to. Every label is one row
-   tall, so a tree of any depth is a whole number of rows.
-
-   Two pseudo-elements per node, never three. ::before draws the vertical
-   spine, ::after the horizontal elbow, and they MEET at the elbow row. An
-   earlier version drew the spine as a border on the <li> and patched the last
-   child with a second element, which left a visible one-pixel seam where the
-   two did not quite touch. */
-${scope} .jot-tree ul { list-style: none; margin: 0; padding: 0; }
-${scope} .jot-tree-label {
-  display: inline-block;
-  line-height: ${ROW}px;
-  padding: 0 ${ROW / 4}px;
-}
-${scope} .jot-tree-node { position: relative; line-height: ${ROW}px; }
-${scope} .jot-tree-kids { padding-left: ${ROW}px; }
-
-${scope} .jot-tree-kids > .jot-tree-node { padding-left: ${ROW / 2}px; }
-/* Vertical spine: full height, so it reaches the next sibling's elbow. */
-${scope} .jot-tree-kids > .jot-tree-node::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  border-left: 1px solid var(--jot-color-accent-slate-blue);
-}
-/* The last child's spine stops AT the elbow rather than running past it —
-   \`bottom: auto\` plus an exact height, so the two borders share a pixel. */
-${scope} .jot-tree-kids > .jot-tree-node:last-child::before {
-  bottom: auto;
-  height: ${ROW / 2}px;
-}
-/* Horizontal elbow, landing on the label's own row. */
-${scope} .jot-tree-kids > .jot-tree-node::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: ${ROW / 2}px;
-  width: ${ROW / 2}px;
-  border-top: 1px solid var(--jot-color-accent-slate-blue);
-}
-${scope} .jot-tree[data-style="dashed"] .jot-tree-node::before,
-${scope} .jot-tree[data-style="dashed"] .jot-tree-node::after { border-style: dashed; }
-${scope} .jot-tree[data-style="rounded"] .jot-tree-kids > .jot-tree-node::after {
-  border-bottom-left-radius: ${ROW / 4}px;
-}
-
-${scope} .jot-tree > .jot-tree-root > .jot-tree-node > .jot-tree-label {
-  font-weight: 600;
-  background: var(--jot-surface-elevated);
-  border-radius: var(--jot-shape-border-radius-sm);
-}
-
-/* ── @tree nodes=boxed — the infographic treatment ─────────────────── */
-/* Opt-in, because most trees sit mid-document where a grid of boxes would
-   shout over the surrounding paragraph. When asked for, depth becomes COLUMNS
-   rather than indentation: each node is a flex row of [label | its children],
-   so the third level naturally lands in the third column. Connectors stay
-   borders on pseudo-elements, square-routed from a parent's edge to each
-   child's, which is what makes it read as a diagram rather than an outline. */
-${scope} .jot-tree[data-nodes="boxed"] .jot-tree-node {
-  display: flex;
-  align-items: flex-start;
-}
-${scope} .jot-tree[data-nodes="boxed"] .jot-tree-label {
-  flex: none;
-  align-self: flex-start;
-  background: var(--jot-surface-elevated);
-  border: 1px solid var(--jot-color-accent-slate-blue);
-  border-radius: var(--jot-shape-border-radius-base);
-  padding: 0 ${ROW / 2}px;
-  /* 20 content + 2 border + 6 margin = one row exactly. A box that is nearly a
-     row tall plus separate margins came to 42px and put the whole diagram on a
-     half row — the chrome has to be budgeted, not added to. */
-  line-height: 20px;
-  margin: 3px 0;
-  white-space: nowrap;
-}
-${scope} .jot-tree[data-nodes="boxed"] .jot-tree-kids {
-  flex: 1 1 auto;
-  padding-left: ${ROW}px;
-}
-/* Each child's stub reaches back to the parent's column, and the spine runs
-   between siblings. Offset to the label's own centre, not the row's. */
-${scope} .jot-tree[data-nodes="boxed"] .jot-tree-kids > .jot-tree-node::before,
-${scope} .jot-tree[data-nodes="boxed"] .jot-tree-kids > .jot-tree-node::after {
-  top: 0;
-  bottom: auto;
-}
-${scope} .jot-tree[data-nodes="boxed"] .jot-tree-kids > .jot-tree-node::before {
-  height: 100%;
-  bottom: auto;
-}
-${scope} .jot-tree[data-nodes="boxed"] .jot-tree-kids > .jot-tree-node:last-child::before {
-  height: ${ROW / 2}px;
-}
-${scope} .jot-tree[data-nodes="boxed"] .jot-tree-kids > .jot-tree-node::after {
-  top: ${ROW / 2}px;
-}
-/* Boxed + split: the left side has to mirror its FLOW as well as its text, or
-   children march rightward back towards the hub and the branch reads inside
-   out. row-reverse puts each node's children on its outer side. */
-${scope} .jot-tree[data-nodes="boxed"] .jot-tree-side[data-side="left"] .jot-tree-node {
-  flex-direction: row-reverse;
-}
-${scope} .jot-tree[data-nodes="boxed"] .jot-tree-side[data-side="left"] .jot-tree-kids {
-  padding-left: 0;
-  padding-right: ${ROW}px;
-}
-
-/* The hub gets the same treatment so it does not look like a different thing. */
-${scope} .jot-tree[data-nodes="boxed"] .jot-tree-hub > .jot-tree-label {
-  border-color: var(--jot-accent);
-  background: var(--jot-color-accent-terracotta-pale);
-}
-
-/* ── @tree dir=split — a bilateral mind map ─────────────────────────── */
-/* The root sits centred with branches either side. Nodes marked \`<\` go left,
-   and their connectors mirror: spine on the right, elbow pointing back in.
-   Without this the split direction rendered as two bare columns with no
-   connectors at all, because the rules above are scoped to right/down. */
-${scope} .jot-tree[data-dir="split"] > .jot-tree-root { display: flex; flex-direction: column; align-items: center; }
-${scope} .jot-tree[data-dir="split"] > .jot-tree-root > .jot-tree-node { display: flex; flex-direction: column; align-items: center; width: 100%; }
-${scope} .jot-tree[data-dir="split"] > .jot-tree-root > .jot-tree-node > .jot-tree-kids {
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  gap: 0 ${ROW * 2}px;
-  padding-left: 0;
-  width: 100%;
-  position: relative;
-}
-/* The trunk: a short stem from the root down into the branch row. */
-${scope} .jot-tree[data-dir="split"] > .jot-tree-root > .jot-tree-node > .jot-tree-kids::before {
-  content: "";
-  position: absolute;
-  left: 50%;
-  top: 0;
-  height: ${ROW}px;
-  border-left: 1px solid var(--jot-color-accent-slate-blue);
-}
-/* A whole row, not half: a half-row gap here put the entire diagram on a half
-   row and pushed everything below it off the ruling. */
-${scope} .jot-tree[data-dir="split"] > .jot-tree-root > .jot-tree-node > .jot-tree-kids > .jot-tree-node {
-  flex: 1 1 0;
-  padding-top: ${ROW}px;
-  padding-left: 0;
-}
-/* The top-level branches hang off the trunk, not off a spine of their own.
-   Without this they inherit the generic elbow and draw an orphan connector
-   floating at the outer edge of the diagram. */
-${scope} .jot-tree[data-dir="split"] > .jot-tree-root > .jot-tree-node > .jot-tree-kids > .jot-tree-node::before,
-${scope} .jot-tree[data-dir="split"] > .jot-tree-root > .jot-tree-node > .jot-tree-kids > .jot-tree-node::after {
-  display: none;
-}
-${scope} .jot-tree[data-dir="split"] .jot-tree-node[data-side="left"] { order: -1; }
-/* Left branches mirror: text right-aligned, spine and elbow on the right. */
-${scope} .jot-tree[data-dir="split"] .jot-tree-node[data-side="left"],
-${scope} .jot-tree[data-dir="split"] .jot-tree-node[data-side="left"] .jot-tree-node { text-align: right; }
-${scope} .jot-tree[data-dir="split"] .jot-tree-node[data-side="left"] .jot-tree-kids { padding-left: 0; padding-right: ${ROW}px; }
-${scope} .jot-tree[data-dir="split"] .jot-tree-node[data-side="left"] .jot-tree-kids > .jot-tree-node { padding-left: 0; padding-right: ${ROW / 2}px; }
-${scope} .jot-tree[data-dir="split"] .jot-tree-node[data-side="left"] .jot-tree-kids > .jot-tree-node::before { left: auto; right: 0; }
-${scope} .jot-tree[data-dir="split"] .jot-tree-node[data-side="left"] .jot-tree-kids > .jot-tree-node::after { left: auto; right: 0; }
-
+${renderTreeCss(scope)}
 /* ── Nested blocks ──────────────────────────────────────────────────── */
 /* A block inside a block. Chrome is deliberately lighter at depth: a card
    inside a card with the same border and shadow reads as clutter. The nested
@@ -1185,10 +640,31 @@ ${scope} .jot-error {
   padding: 0 ${ROW / 2}px;
 }
 
+/* ── Print: real A4 pages (ARC-14) ──────────────────────────────────── */
+/* Page size and margins live in renderPageCss() (page.ts), because @page cannot
+   be scoped. What follows is scoped like everything else. */
+@media print {
+  /* Browsers drop backgrounds when printing unless told otherwise. Here the
+     paper, the ruling and the card fills ARE the document. */
+  ${scope} { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  /* The page is the frame now; its margins come from @page. */
+  ${scope} .jot-doc { max-width: none; margin: 0; padding: 0; }
+  ${scope}[data-mode="doc"] { background: none; padding: 0; }
+  ${scope}[data-mode="doc"] .jot-doc { border: 0; box-shadow: none; border-radius: 0; padding: 0; }
+  /* A block moves to the next page whole rather than being cut in two… */
+  ${scope} .jot-row:has(> .jot-body[data-kind="block"]) { break-inside: avoid; }
+  /* …unless it is taller than a page, which the renderer knows and marks. */
+  ${scope} .jot-row:has(.jot-figure[data-tall]) { break-inside: auto; }
+  /* A heading never ends a page. */
+  ${scope} .jot-row:has(> .jot-body[data-kind="heading"]) { break-after: avoid; }
+  /* A figure too wide for portrait gets a landscape page of its own. */
+  ${scope} .jot-row:has(.jot-figure[data-page="landscape"]) { page: ${LANDSCAPE_PAGE}; }
+}
+
 /* ── Responsive: below the two-column threshold the margin channel folds
    underneath its anchor rather than being dropped. ─────────────────── */
 @media (max-width: 720px) {
-  ${scope} .jot-doc { grid-template-columns: 1fr; }
+  ${scope} .jot-row { grid-template-columns: 1fr; }
   ${scope} .jot-body, ${scope} .jot-aside { grid-column: 1; }
   ${scope} .jot-note { padding-left: ${ROW}px; margin-bottom: ${ROW}px; }
 }
