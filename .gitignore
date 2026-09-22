@@ -26,6 +26,7 @@ docs/go_to_jotstak.md
 docs/PREMORTEM.md
 PRD.md
 jotter-overview.md
+docs/register/
 
 # Fonts are copied from node_modules at build time by apps/web/scripts/copy-fonts.mjs
 apps/web/public/fonts/
