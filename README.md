@@ -39,4 +39,4 @@ npm run typecheck   # tsc -b across every workspace
 
 ## License
 
-Not yet chosen (MIT / Apache-2.0 / source-available — see PRD open questions). Do not assume a license until this is set.
+[MIT](LICENSE) © 2026 Semilore-James.
