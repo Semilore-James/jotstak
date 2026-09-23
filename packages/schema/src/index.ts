@@ -363,6 +363,7 @@ const matrix: PrimitiveSpec = {
   params: [
     { name: "x", type: "string", required: true, description: "Horizontal axis label (left = low, right = high)." },
     { name: "y", type: "string", required: true, description: "Vertical axis label (bottom = low, top = high)." },
+    { name: "style", type: "enum", required: false, description: "How the quadrants are framed. `axes` draws the cross alone, the way you would sketch it by hand; `boxed` adds an outer border, which reads closer to a table.", enumValues: ["axes", "boxed"], default: "axes" },
     { name: "title", type: "string", required: false, description: "Optional title above the matrix." },
   ],
   bodyShape: "indented",
@@ -370,6 +371,7 @@ const matrix: PrimitiveSpec = {
   examples: [
     '@matrix x="Effort" y="Impact"\n  Search at tr\n  Export at tl\n  Dark mode at br\n  Animations at bl',
     '@matrix x="Effort" y="Impact" title="Q4 prioritization"\n  Search at top-right\n  Export at top-left',
+    '@matrix(x="Effort" y="Impact" style=boxed)\n  Search at tr\n  Export at tl\n  Dark mode at br\n  Animations at bl',
   ],
 };
 

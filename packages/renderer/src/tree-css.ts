@@ -49,6 +49,12 @@ ${scope} .jot-figure {
   margin-inline: 0;
   background: var(--jot-surface);
 }
+/* A figure that is a REGION rather than a drawing — a matrix, a timeline —
+   takes the whole width it is given instead of shrinking to its contents. A
+   2×2 sized to five short labels reads as a stamp on the page, and two of them
+   at different sizes read as two different kinds of thing. --jot-w still sets
+   the scale: below it, everything inside shrinks together. */
+${scope} .jot-figure[data-fill] { width: 100%; }
 ${scope} .jot-figure[data-look="chart"],
 ${scope} .jot-figure[data-look="split"] { margin-inline: auto; }
 

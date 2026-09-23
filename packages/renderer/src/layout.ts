@@ -17,6 +17,7 @@
 import { notebookLayout, spacing, typography } from "./tokens.js";
 import { LANDSCAPE_PAGE, PAGE } from "./page.js";
 import { renderTreeCss } from "./tree-css.js";
+import { renderMatrixCss } from "./matrix-css.js";
 import { FONT_METRICS } from "./font-metrics.js";
 
 const ROW = spacing.baselineGrid; // 28
@@ -143,6 +144,11 @@ ${scope}[data-mode="notebook"] .jot-body {
   background-position: 0 calc(var(--jot-rule-offset) - 1px);
 }
 ${scope}[data-mode="doc"] .jot-body { background-image: none; }
+/* A drawn block clears the ruling — all of it, not just the part under its own
+   box. Painting the figure's own background over the rules left them running
+   down either side of it, so a diagram narrower than the page looked like it
+   had been dropped onto a ruled sheet rather than drawn on one. */
+${scope}[data-mode="notebook"] .jot-body:has(> .jot-figure) { background-image: none; }
 
 /* ── Doc mode ───────────────────────────────────────────────────────── */
 /* Doc mode is not "notebook with the rules switched off" — that reads as a
@@ -574,6 +580,7 @@ ${scope} .jot-card[data-accent="quiet"] {
 }
 
 ${renderTreeCss(scope)}
+${renderMatrixCss(scope)}
 /* ── Nested blocks ──────────────────────────────────────────────────── */
 /* A block inside a block. Chrome is deliberately lighter at depth: a card
    inside a card with the same border and shadow reads as clutter. The nested
