@@ -1,21 +1,20 @@
 ---
-title: "Anatomy of a .jot file"
-description: "What a document is made of, from the first line down."
+title: "What a .jot file looks like"
+description: "The parts of a file, in the order you meet them."
 draft: true
 sidebar:
   order: 1
 ---
 
-<!-- SHELL PAGE. An outline of what this page has to do, not the finished
-     documentation. `draft: true` keeps it out of the built site until it is
-     written. Delete the flag and this comment when it is. -->
+<!-- SHELL PAGE. An outline of what this page covers, not the finished
+     page. `draft: true` keeps it off the site until it is written. -->
 
-Read one real file top to bottom and name every part of it as it goes past. Someone who finishes this page can look at any .jot file and say what each line is doing.
+Read one real file from top to bottom and name each part as it goes past.
 
-## What this page has to cover
+## What this page covers
 
-- The three kinds of line: prose, a directive, a body key
-- `@name(param=value)` — the shape of every block, with no exceptions
-- Document metadata at the top, and what it is for
-- Where the margin channel comes from
-- What Markdown does unchanged (everything)
+- A line of prose is just prose
+- A line starting with `@` begins a block
+- The indented lines under it are its content
+- `key: value` lines are fields
+- Any `.md` file already works — nothing to convert

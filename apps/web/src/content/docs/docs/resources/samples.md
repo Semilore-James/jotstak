@@ -1,20 +1,19 @@
 ---
 title: "Samples"
-description: "Whole documents you can open, edit and print."
+description: "Whole documents you can open and edit."
 draft: true
 sidebar:
   order: 2
 ---
 
-<!-- SHELL PAGE. An outline of what this page has to do, not the finished
-     documentation. `draft: true` keeps it out of the built site until it is
-     written. Delete the flag and this comment when it is. -->
+<!-- SHELL PAGE. An outline of what this page covers, not the finished
+     page. `draft: true` keeps it off the site until it is written. -->
 
-Every shipped sample, what it demonstrates, and a link that opens it in the playground. These are tested files, not snippets.
+Every sample that ships, what it shows, and a link that opens it in the playground.
 
-## What this page has to cover
+## What this page covers
 
-- What each sample in `samples/` shows
-- Open in the playground, one click
-- Templates versus samples: which to start from
-- Contributing one
+- What each sample demonstrates
+- Open one in the playground
+- Templates versus samples
+- Adding one

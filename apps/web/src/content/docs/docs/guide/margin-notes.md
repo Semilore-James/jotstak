@@ -1,21 +1,19 @@
 ---
 title: "Notes in the margin"
-description: "The aside that does not interrupt the sentence."
+description: "Asides that sit beside the text instead of interrupting it."
 draft: true
 sidebar:
   order: 4
 ---
 
-<!-- SHELL PAGE. An outline of what this page has to do, not the finished
-     documentation. `draft: true` keeps it out of the built site until it is
-     written. Delete the flag and this comment when it is. -->
+<!-- SHELL PAGE. An outline of what this page covers, not the finished
+     page. `draft: true` keeps it off the site until it is written. -->
 
-Margin notes are the most notebook-like thing in the tool and the least like other document editors. Show what they anchor to, how they are placed, and why they never overlap.
+A margin note is the aside you would scribble in a real notebook. Write `>>` and it appears beside the paragraph above it.
 
-## What this page has to cover
+## What this page covers
 
-- `>>` at line start, or `@note` with parameters
-- What a note anchors to, and what happens when its anchor moves
-- How overlapping notes are nudged apart, so you never place one by hand
-- The channel is always there, whether or not a block uses it
-- Notes in print: same column, same rules
+- `>>` at the start of a line, or `@note`
+- A note sits beside the paragraph it follows
+- Text makes room for a note; without one it uses the full width
+- Two notes close together are moved apart for you

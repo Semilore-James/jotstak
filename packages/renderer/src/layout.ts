@@ -217,6 +217,12 @@ ${scope}[data-mode="doc"] .jot-note {
 
 ${scope} .jot-body { grid-column: 1; min-width: 0; }
 ${scope} .jot-aside { grid-column: 2; min-width: 0; }
+/* A block with nothing beside it takes the whole width.
+   The channel is room for a note, not a permanent indent. Reserving it on
+   every block left prose and headings stopping short of the page for no
+   reason the reader could see. Write a note and the text makes room for it,
+   which is the only time the narrower column means anything. */
+${scope} .jot-row:has(> .jot-aside:empty) > .jot-body { grid-column: 1 / -1; }
 
 /* Deterministic vertical rhythm.
    \`flow-root\` stops child margins collapsing out of the cell: without it a

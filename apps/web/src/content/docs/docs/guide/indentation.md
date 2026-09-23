@@ -1,21 +1,19 @@
 ---
-title: "Indentation decides structure"
-description: "The sharpest edge in the language, documented rather than discovered."
+title: "Indentation"
+description: "Spaces decide what belongs to what."
 draft: true
 sidebar:
   order: 3
 ---
 
-<!-- SHELL PAGE. An outline of what this page has to do, not the finished
-     documentation. `draft: true` keeps it out of the built site until it is
-     written. Delete the flag and this comment when it is. -->
+<!-- SHELL PAGE. An outline of what this page covers, not the finished
+     page. `draft: true` keeps it off the site until it is written. -->
 
-Indentation is load-bearing — it decides parent and child — and a one-space overshoot silently changes the document's shape. Say so plainly, show the failure, and show what the editor does to help.
+Indentation is how the file says one thing belongs to another. It is easy to get wrong by one space, so this page shows what goes wrong and how the editor helps.
 
-## What this page has to cover
+## What this page covers
 
-- Two spaces, four spaces, a tab: pick one, the file must be consistent
-- The failure it causes: a sibling becomes a child and a diagram loses a whole side
-- The diagnostic that reports it, and how to read it
-- Editor assistance: Enter carries indent, Tab and Shift-Tab move whole lines
-- Why the renderer judges consistency and never step size
+- Pick two spaces or four and stay with it
+- What a stray space does: a sibling quietly becomes a child
+- The message you get when lines do not line up
+- Enter keeps your indent; Tab and Shift-Tab move whole lines

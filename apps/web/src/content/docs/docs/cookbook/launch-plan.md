@@ -1,21 +1,18 @@
 ---
-title: "A launch plan on one page"
-description: "Dates, owners and the risk you are actually carrying."
+title: "A launch plan"
+description: "Dates, owners, and the one risk that moves the date."
 draft: true
 sidebar:
   order: 6
 ---
 
-<!-- SHELL PAGE. An outline of what this page has to do, not the finished
-     documentation. `draft: true` keeps it out of the built site until it is
-     written. Delete the flag and this comment when it is. -->
+<!-- SHELL PAGE. An outline of what this page covers, not the finished
+     page. `draft: true` keeps it off the site until it is written. -->
 
-A plan that fits on a page is a plan people read. Show the sequence, the owners, and the one risk that decides the date.
+A plan that fits on a page is a plan people read.
 
-## What this page has to cover
+## What this page covers
 
-- The sequence as a timeline (when `@timeline` is built)
-- Owners as fields, not as a paragraph
-- The gate that has to pass before launch
-- `@risk` for the one that would move the date
-- What the plan says when the date slips
+- The usual way: a Gantt chart nobody opens twice
+- In .jot: the sequence, the owners, the gate before launch
+- What changed: it is one page and it diffs

@@ -347,6 +347,35 @@ export function parseTokens(
     markdownStart = null;
   };
 
+  /**
+   * Flush the run of prose so far, but leave its LAST paragraph as a block of
+   * its own — because a margin note is about the paragraph it follows, not
+   * about everything written since the last directive.
+   *
+   * It matters visually: a block with a note beside it narrows to make room,
+   * and without this the note narrowed every paragraph back to the top of the
+   * run. Only a plain final paragraph is split off; a list, a quote, a table
+   * or anything near a fence is left whole, because cutting one of those in
+   * half would change what it means.
+   */
+  const flushMarkdownKeepingLastParagraph = (): void => {
+    while (markdownBuf.length > 0 && markdownBuf[markdownBuf.length - 1] === "") {
+      markdownBuf.pop();
+    }
+    const blank = markdownBuf.lastIndexOf("");
+    const last = markdownBuf.slice(blank + 1);
+    const fenced = markdownBuf.some((l) => l.trimStart().startsWith("```"));
+    const plain = last.length > 0 && last.every((l) => /^\S/.test(l) && !/^([-*+>#|]|\d+[.)])\s/.test(l));
+
+    if (blank > 0 && plain && !fenced && markdownStart) {
+      const head = markdownBuf.slice(0, blank);
+      children.push({ type: "markdown", text: head.join("\n"), position: markdownStart });
+      markdownBuf = last;
+      markdownStart = { ...markdownStart, line: markdownStart.line + blank + 1 };
+    }
+    flushMarkdown();
+  };
+
   let i = 0;
   while (i < tokens.length) {
     const t = tokens[i]!;
@@ -469,7 +498,7 @@ export function parseTokens(
       }
 
       case "margin_note": {
-        flushMarkdown();
+        flushMarkdownKeepingLastParagraph();
         children.push({
           type: "margin_note",
           lines: [t.content],
@@ -481,9 +510,12 @@ export function parseTokens(
       }
 
       case "directive": {
-        flushMarkdown();
         const written = t.name!;
         const spec = getPrimitive(written);
+        // `@note` is the long form of `>>` and attaches the same way: to the
+        // paragraph it follows, not to everything written before it.
+        if (spec?.name === "note") flushMarkdownKeepingLastParagraph();
+        else flushMarkdown();
         const startPos = posOf(t);
         const collected = collectBody(tokens, i + 1);
         i = collected.next;

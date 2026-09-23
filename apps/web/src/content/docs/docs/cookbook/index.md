@@ -1,23 +1,20 @@
 ---
 title: "Cookbook"
-description: "Whole documents, end to end, with the reasoning kept in."
+description: "The same document in a normal doc tool, and in .jot."
 draft: true
 sidebar:
   order: 1
 ---
 
-<!-- SHELL PAGE. An outline of what this page has to do, not the finished
-     documentation. `draft: true` keeps it out of the built site until it is
-     written. Delete the flag and this comment when it is. -->
+<!-- SHELL PAGE. An outline of what this page covers, not the finished
+     page. `draft: true` keeps it off the site until it is written. -->
 
-The cookbook is the strongest argument the docs can make: real documents someone actually had to write, in full, with the decisions behind their shape explained. Every recipe follows the same seven beats so they can be read in any order.
+Each recipe takes a document people actually write, shows what it looks like the usual way, then shows the same thing in .jot — and what changed. The point is the comparison, not the syntax.
 
-## What this page has to cover
+## What this page covers
 
-- **The situation** — who is writing, what is due, what is at stake
-- **What this normally takes** — the three tools and where they drift
-- **The file** — the complete .jot source, nothing elided
-- **The result** — the rendered page
-- **Why it is shaped this way** — which primitive earns its place, and what was rejected
-- **Variations** — what to change for a different context
-- **Take it** — copy the template
+- **The document** — what it is and who reads it
+- **The usual way** — Docs for the prose, Sheets for the numbers, Miro for the diagram
+- **In .jot** — the whole thing, one file, shown rendered
+- **What changed** — what got shorter, what stopped drifting, what you can now diff
+- **Take it** — copy the file and edit the words
