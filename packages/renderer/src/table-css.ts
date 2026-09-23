@@ -26,7 +26,7 @@ ${scope} .jot-table-wrap {
    the note, because they asked. */
 ${scope} .jot-body:has(> .jot-table-wrap[data-width="full"][data-pinned]) { grid-column: 1 / -1; }
 
-${scope} .jot-table-caption {
+${scope} .jot-table-wrap .jot-table-caption {
   margin: 0;
   font-family: var(--jot-font-label);
   font-size: ${TABLE.headSize}px;

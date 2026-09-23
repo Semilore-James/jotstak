@@ -382,16 +382,17 @@ const timeline: PrimitiveSpec = {
   name: "timeline",
   group: "diagrams",
   summary:
-    "Sequence of events over time. Events alternate above/below the line by default; override with `above` or `below`. Each event is a line starting with its date/label, optionally followed by indented detail.",
+    "Events on a line. Each one is `Date: What happened`, with any detail indented under it; the date is optional, so a plain sequence of steps works too. Events alternate above and below the line, which is not decoration — it is what lets each card be twice as wide, because its nearest neighbour on its own side is two columns away. Seven events fit a portrait page; past that use `dir=vertical`, which runs down the page and has no limit.",
   params: [
     { name: "title", type: "string", required: false, description: "Title above the timeline." },
-    { name: "dir", type: "enum", required: false, description: "Direction.", enumValues: ["horizontal", "vertical"], default: "horizontal" },
-    { name: "alternate", type: "boolean", required: false, description: "Alternate events above/below the line.", default: "true" },
+    { name: "dir", type: "enum", required: false, description: "`horizontal` draws a line across the page. `vertical` runs down it — no sides, no scaling, and no limit on how many events.", enumValues: ["horizontal", "vertical"], default: "horizontal" },
+    { name: "alternate", type: "boolean", required: false, description: "Alternate events above and below the line. Turning it off puts everything underneath, and halves how wide each card can be.", default: "true" },
   ],
   bodyShape: "indented",
   breaksRuling: true,
   examples: [
-    '@timeline title="Project milestones"\n  Q3 2026: Discovery\n    Interviews, synthesis, personas\n  Oct 2026: Alpha\n    Core primitives, extension preview\n  Dec 2026: Beta above\n    Full primitive set, docs\n  Q1 2027: Launch below\n    Marketplace, site, community',
+    '@timeline title="Project milestones"\n  Q3 2026: Discovery\n    Interviews, synthesis, personas\n  Oct 2026: Alpha\n    Core primitives, extension preview\n  Dec 2026: Beta\n    Full primitive set, docs\n  Q1 2027: Launch\n    Marketplace, site, community',
+    '@timeline(dir=vertical)\n  Q3 2026: Discovery\n    Interviews, synthesis, personas\n  Oct 2026: Alpha\n    Core primitives, extension preview\n  Dec 2026: Beta\n  Q1 2027: Launch',
   ],
 };
 

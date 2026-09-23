@@ -82,9 +82,13 @@ export function placeFigure(
   const room = placement.page === "landscape" ? land : placement.width === "full" ? content : column;
   if (sized) {
     if (pinned === "auto" && placement.page === "landscape" && size.w <= land) {
+      // The hint belongs here too, and did not used to be: a timeline sent to
+      // a landscape page never mentioned that `dir=vertical` would have kept
+      // it on the page it was already on.
       note(
         "info",
-        `This ${opts.noun} is about ${px(size.w)} wide — more than a portrait page (${px(content)}) — so it prints on a landscape page of its own. On screen it is shown scaled to fit.`,
+        `This ${opts.noun} is about ${px(size.w)} wide — more than a portrait page (${px(content)}) — so it prints on a landscape page of its own. On screen it is shown scaled to fit.` +
+          (opts.hint ? ` ${opts.hint}` : ""),
       );
     } else if (size.w > room) {
       const scale = room / size.w;

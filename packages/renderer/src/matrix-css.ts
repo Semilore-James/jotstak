@@ -23,8 +23,8 @@ ${scope} .jot-matrix {
 }
 ${scope}[data-mode="doc"] .jot-matrix { --jot-matrix-frame: var(--jot-color-doc-sheet-border); }
 
-${scope} .jot-matrix-title,
-${scope} .jot-matrix-axis {
+${scope} .jot-matrix .jot-matrix-title,
+${scope} .jot-matrix .jot-matrix-axis {
   font-family: var(--jot-font-label);
   font-size: ${u(MATRIX.axisSize)};
   line-height: ${u(MATRIX.row)};
@@ -32,7 +32,7 @@ ${scope} .jot-matrix-axis {
   color: var(--jot-matrix-axis-ink);
   letter-spacing: 0.04em;
 }
-${scope} .jot-matrix-title {
+${scope} .jot-matrix .jot-matrix-title {
   font-size: ${u(MATRIX.titleSize)};
   text-transform: uppercase;
   font-weight: 600;
@@ -41,8 +41,8 @@ ${scope} .jot-matrix-title {
 /* The y label sits above the plot at the left and the x label under it at the
    right, each with an arrow towards "high". No rotated text: it cannot sit on
    a rule, and on paper it makes the reader turn the page. */
-${scope} .jot-matrix-axis[data-axis="y"] { text-align: left; }
-${scope} .jot-matrix-axis[data-axis="x"] { text-align: right; }
+${scope} .jot-matrix .jot-matrix-axis[data-axis="y"] { text-align: left; }
+${scope} .jot-matrix .jot-matrix-axis[data-axis="x"] { text-align: right; }
 
 /* The plot takes whatever height is left after the labels, which is a whole
    number of rows because the figure's height is. */

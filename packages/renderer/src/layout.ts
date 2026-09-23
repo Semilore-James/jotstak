@@ -18,6 +18,7 @@ import { notebookLayout, spacing, typography } from "./tokens.js";
 import { LANDSCAPE_PAGE, PAGE } from "./page.js";
 import { renderTreeCss } from "./tree-css.js";
 import { renderMatrixCss } from "./matrix-css.js";
+import { renderTimelineCss } from "./timeline-css.js";
 import { renderTableCss, renderTablePrintCss } from "./table-css.js";
 import { FONT_METRICS } from "./font-metrics.js";
 
@@ -582,6 +583,7 @@ ${scope} .jot-card[data-accent="quiet"] {
 
 ${renderTreeCss(scope)}
 ${renderMatrixCss(scope)}
+${renderTimelineCss(scope)}
 ${renderTableCss(scope)}
 /* ── Nested blocks ──────────────────────────────────────────────────── */
 /* A block inside a block. Chrome is deliberately lighter at depth: a card
