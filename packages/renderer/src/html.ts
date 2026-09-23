@@ -9,6 +9,7 @@
 import MarkdownIt from "markdown-it";
 import { renderTree as renderTreeFigure } from "./tree.js";
 import { renderMatrix as renderMatrixFigure } from "./matrix.js";
+import { renderTable as renderTableFigure } from "./table.js";
 // @ts-expect-error — markdown-it-mark ships no type declarations.
 import markPlugin from "markdown-it-mark";
 import { getPrimitive } from "@jotstak/schema";
@@ -350,8 +351,14 @@ function renderMatrixDiagram(n: BlockNode, diagnostics: Diagnostic[]): string {
   return renderMatrixFigure(n, diagnostics, { inline, escapeHtml, attr }, nested);
 }
 
+function renderTableBlock(n: BlockNode, diagnostics: Diagnostic[]): string {
+  const nested = n.children.map((c) => renderNode(c, diagnostics)).join("");
+  return renderTableFigure(n, diagnostics, { inline, escapeHtml, attr }, nested);
+}
+
 function renderBlock(n: BlockNode, diagnostics: Diagnostic[]): string {
   if (n.name in PANELS) return renderCard(n, diagnostics);
+  if (n.name === "table") return renderTableBlock(n, diagnostics);
   if (n.name === "tree") return renderTreeDiagram(n, diagnostics);
   if (n.name === "matrix") return renderMatrixDiagram(n, diagnostics);
   if (n.name === "columns") return renderColumns(n, diagnostics);

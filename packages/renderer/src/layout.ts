@@ -18,6 +18,7 @@ import { notebookLayout, spacing, typography } from "./tokens.js";
 import { LANDSCAPE_PAGE, PAGE } from "./page.js";
 import { renderTreeCss } from "./tree-css.js";
 import { renderMatrixCss } from "./matrix-css.js";
+import { renderTableCss, renderTablePrintCss } from "./table-css.js";
 import { FONT_METRICS } from "./font-metrics.js";
 
 const ROW = spacing.baselineGrid; // 28
@@ -581,6 +582,7 @@ ${scope} .jot-card[data-accent="quiet"] {
 
 ${renderTreeCss(scope)}
 ${renderMatrixCss(scope)}
+${renderTableCss(scope)}
 /* ── Nested blocks ──────────────────────────────────────────────────── */
 /* A block inside a block. Chrome is deliberately lighter at depth: a card
    inside a card with the same border and shadow reads as clutter. The nested
@@ -701,6 +703,7 @@ ${scope} .jot-error {
   ${scope} .jot-row:has(> .jot-body[data-kind="heading"]) { break-after: avoid; }
   /* A figure too wide for portrait gets a landscape page of its own. */
   ${scope} .jot-row:has(.jot-figure[data-page="landscape"]) { page: ${LANDSCAPE_PAGE}; }
+${renderTablePrintCss(scope)}
 }
 
 /* ── Responsive: below the two-column threshold the margin channel folds

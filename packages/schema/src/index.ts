@@ -280,17 +280,20 @@ const table: PrimitiveSpec = {
   name: "table",
   group: "lists",
   summary:
-    "A table. No pipes: first row is the header, rows are comma-separated (quote cells that contain commas). Use the record form for few rows with rich cells. Pipe-tables still parse for paste-in compatibility.",
+    "A table. No pipes: first row is the header, rows are comma-separated (quote cells that contain commas). Use the record form for few rows with rich cells. Pipe-tables still parse for paste-in compatibility. A table is the one figure that is never scaled — its cells are text, so it widens and then wraps, and the type stays the size of the prose around it.",
   params: [
-    { name: "style", type: "enum", required: false, description: "Visual style.", enumValues: ["ruled", "sketch", "plain"], default: "ruled" },
+    { name: "style", type: "enum", required: false, description: "How the table is lined. `ruled` sets it on the page's own ruling, so the paper draws the rows; `sketch` draws its own grid and clears the ruling behind it; `plain` is alignment and nothing else — no header either, so the first line is an ordinary row.", enumValues: ["ruled", "sketch", "plain"], default: "ruled" },
     { name: "sep", type: "enum", required: false, description: "Cell delimiter for compact rows.", enumValues: ["comma", "tab"], default: "comma" },
-    { name: "align", type: "string", required: false, description: 'Per-column alignment, e.g. "left,left,right".' },
+    { name: "align", type: "string", required: false, description: 'Per-column alignment, e.g. "left,left,right". A column of nothing but figures is right-aligned on its own.' },
   ],
   bodyShape: "mixed",
-  breaksRuling: true,
+  // Only style=sketch draws a grid of its own; the default sits ON the rules
+  // and lets the paper draw the rows, which is the whole point of ruled paper.
+  breaksRuling: false,
   examples: [
     "@table\n  Feature, Status, Owner\n  Search, Shipped, Ana\n  Export, In progress, Ben",
     "@table\n  - Feature: Search\n    Status: Shipped\n    Owner: Ana\n  - Feature: Export\n    Status: In progress\n    Owner: Ben",
+    '@table(style=sketch) Q4 status\n  Area, Owner, Confidence\n  Search, Ana, 0.8\n  Export, Ben, 0.4',
   ],
 };
 
