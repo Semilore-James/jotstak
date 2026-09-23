@@ -114,8 +114,8 @@ describe("parser — shorthand and directive produce the same node", () => {
     expect((first("@divider style=wave") as DividerNode).style).toBe("wave");
   });
 
-  it(">> and @note both produce a margin note", () => {
-    const a = first(">> revisit at scale") as MarginNoteNode;
+  it("takes a margin note inline or as a body", () => {
+    const a = first("@note revisit at scale") as MarginNoteNode;
     const b = first("@note\n  revisit at scale") as MarginNoteNode;
 
     expect(a.type).toBe("margin_note");
@@ -225,7 +225,7 @@ describe("parser — whole documents", () => {
       "  context: must handle .jot and .md",
       "  choice: hand-written scanner + markdown-it",
       "",
-      ">> hardest call so far",
+      "@note hardest call so far",
       "",
       "- First",
       "- Second",

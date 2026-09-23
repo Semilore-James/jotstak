@@ -5,7 +5,7 @@
 
 @heading Overview
 Problem, who it is for, and why now.
->> keep this to a paragraph you would say out loud
+@note keep this to a paragraph you would say out loud
 
 @decision title="The core bet"
   context: what is true today that makes this worth doing

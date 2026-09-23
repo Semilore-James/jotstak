@@ -22,13 +22,14 @@ Everything below is optional, and you can stop at any rung.
 
 ## 1. Add a note in the margin
 
-Start a line with `>>`. It floats beside the block it follows, in the margin
-channel, in a handwritten face.
+Write `@note` followed by the text. It floats beside the block it follows, in
+the margin channel, in a handwritten face — and that block makes room for it,
+while everything else keeps the full width of the page.
 
 ```jot-demo
 Pricing is the fastest lever we have.
 
->> ask Ana before Friday
+@note ask Ana before Friday
 ```
 
 ## 2. Add a block

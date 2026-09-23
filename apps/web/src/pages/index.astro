@@ -11,7 +11,7 @@ const source = `# Q3 pricing review
 
 Three tools, one decision. Everything lives here.
 
->> ask Ana before Friday
+@note ask Ana before Friday
 
 - Usage-based beat seat-based in 4 of 5 interviews
 - Finance needs 30 days' notice to change billing
@@ -115,8 +115,10 @@ const extraCss = `
 // Minimal highlighting for the source pane so .jot reads as a language.
 const highlighted = source
   .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+  // @note first: it is a directive like any other, but marginalia gets its own
+  // colour, and the general directive rule below would otherwise claim it.
+  .replace(/^(@note\b.*)$/gm, '<span class="m">$1</span>')
   .replace(/^(@[a-z_]+.*)$/gm, '<span class="d">$1</span>')
-  .replace(/^(&gt;&gt; .*)$/gm, '<span class="m">$1</span>')
   .replace(/^(#{1,3} .*)$/gm, '<span class="s">$1</span>');
 ---
 

@@ -18,6 +18,11 @@ All notable changes to Jotstak are recorded here. Format loosely follows [Keep a
 - `@footnote` now uses the universal `id` param (`@footnote id=<id>`); `@doodle` drawing area params renamed `width`/`height` → `cols`/`rows`.
 - Web deploy workflow is manual-only until M1 (no Cloudflare project or secrets yet).
 
+### Removed (the `>>` shorthand)
+- **Margin notes are written `@note`.** `>>` is gone. It was not just a second way to write one thing: `>> text` is valid Markdown — a blockquote inside a blockquote — so every `.md` file that quoted a quote had its inner quote silently moved into the margin. A superset does not get to redefine Markdown it finds convenient.
+- The principle, written down: Jotstak borrows Markdown's shorthands (`#`, `-`, `|`, `>`) because `.md` files have to keep working, and invents none of its own.
+- `@note your text` works inline, or indent the text under `@note`.
+
 ### Added (the page — A4, print-true)
 - **A document is A4.** Page geometry is derived from the paper size and the 28px baseline, not typed in: 36 whole rows on a portrait page, 24 on landscape, and a vertical margin of whatever is left over, so the ruling stays in phase across a page break.
 - **Print cuts pages; the screen stays continuous.** Print CSS keeps blocks and their margin notes together and never breaks a heading from what follows it.

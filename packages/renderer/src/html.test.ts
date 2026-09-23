@@ -72,7 +72,7 @@ describe("render — document shell", () => {
 
 describe("render — structure", () => {
   it("puts a margin note in the aside cell beside its anchor", () => {
-    const { html } = render("Some prose.\n>> a note", { mode: "notebook" });
+    const { html } = render("Some prose.\n@note a note", { mode: "notebook" });
     const row = /<div class="jot-body"[^>]*>(.*?)<\/div><div class="jot-aside">(.*?)<\/div>/s.exec(html);
     expect(row).not.toBeNull();
     expect(row![1]).toContain("Some prose.");

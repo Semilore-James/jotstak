@@ -15,7 +15,6 @@ export type LineKind =
   | "numbered"      // 1. item
   | "divider"       // ---
   | "blockquote"    // > text (Markdown blockquote)
-  | "margin_note"   // >> text
   | "comment"       // // text
   | "body"          // indented continuation line
   | "blank"         // empty or whitespace-only
@@ -170,7 +169,6 @@ const BULLET_RE = /^-\s+(.*)/;
 const NUMBERED_RE = /^\d+\.\s+(.*)/;
 const DIVIDER_RE = /^---+\s*$/;
 const BLOCKQUOTE_RE = /^>\s(.*)/;
-const MARGIN_NOTE_RE = /^>>\s*(.*)/;
 const COMMENT_RE = /^\/\/\s?(.*)/;
 
 function measureIndent(raw: string): { indent: number; stripped: string } {
@@ -240,11 +238,14 @@ function classifyLine(
     return { ...base, kind: "body", content: stripped };
   }
 
-  // Margin note: >> must come before blockquote > to avoid ambiguity
-  const marginMatch = MARGIN_NOTE_RE.exec(stripped);
-  if (marginMatch) {
-    return { ...base, kind: "margin_note", content: marginMatch[1] ?? "" };
-  }
+  // `>>` used to mean a margin note here. It does not any more, and that is a
+  // correctness fix rather than a preference: `>> text` is valid Markdown — a
+  // blockquote inside a blockquote — so every .md file that quoted a quote
+  // rendered its inner quote as a note in the margin. A superset that changes
+  // what existing Markdown means is not a superset.
+  //
+  // The Markdown shorthands (#, -, |, >) exist because .md files must keep
+  // working. Jotstak's own blocks use Jotstak's own syntax: @note.
 
   // Comment
   const commentMatch = COMMENT_RE.exec(stripped);

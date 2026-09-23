@@ -36,27 +36,27 @@ describe("the margin channel", () => {
 
 describe("what a margin note attaches to", () => {
   it("takes the paragraph it follows, not the whole run of prose", () => {
-    expect(rows(["First.", "", "Second.", "", "Third, with the note.", "", ">> a note"].join("\n"))).toEqual([
+    expect(rows(["First.", "", "Second.", "", "Third, with the note.", "", "@note a note"].join("\n"))).toEqual([
       ["First. Second.", false],
       ["Third, with the note.", true],
     ]);
   });
 
-  it("reads @note the same way as >>", () => {
-    expect(rows(["First.", "", "Second, with the note.", "", '@note text="a note"'].join("\n"))).toEqual([
+  it("reads an inline @note the same way as an indented one", () => {
+    expect(rows(["First.", "", "Second, with the note.", "", "@note", "  a note"].join("\n"))).toEqual([
       ["First.", false],
       ["Second, with the note.", true],
     ]);
   });
 
   it("leaves a single paragraph alone", () => {
-    expect(rows(["Only one.", "", ">> a note"].join("\n"))).toEqual([["Only one.", true]]);
+    expect(rows(["Only one.", "", "@note a note"].join("\n"))).toEqual([["Only one.", true]]);
   });
 
   it("never cuts a fenced block in half", () => {
     // The blank line inside the fence is not a paragraph break, and splitting
     // there would put half the code in one block and half in another.
-    const out = rows(["Intro.", "", "```js", "const x = 1;", "", "const y = 2;", "```", "", ">> a note"].join("\n"));
+    const out = rows(["Intro.", "", "```js", "const x = 1;", "", "const y = 2;", "```", "", "@note a note"].join("\n"));
     expect(out).toHaveLength(1);
     expect(out[0]![1]).toBe(true);
     expect(out[0]![0]).toContain("const x = 1;");
@@ -64,7 +64,7 @@ describe("what a margin note attaches to", () => {
   });
 
   it("never cuts a table in half", () => {
-    const out = rows(["Intro.", "", "| a | b |", "| --- | --- |", "| 1 | 2 |", "", ">> a note"].join("\n"));
+    const out = rows(["Intro.", "", "| a | b |", "| --- | --- |", "| 1 | 2 |", "", "@note a note"].join("\n"));
     expect(out).toHaveLength(1);
     expect(out[0]![1]).toBe(true);
   });

@@ -51,10 +51,13 @@ describe("lexer — line classification", () => {
     expect(t.content).toBe("A wise thought");
   });
 
-  it("classifies margin notes (>> must beat >)", () => {
+  it("hands >> to Markdown, where it is a quote inside a quote", () => {
+    // It used to mean a margin note. That silently changed the meaning of any
+    // .md file that quoted a quote, which a superset may not do. Margin notes
+    // are written @note. `> ` with a space is still our blockquote shorthand;
+    // `>>` has no space, so it falls through to markdown-it, which nests it.
     const t = lexOne(">> check this later");
-    expect(t.kind).toBe("margin_note");
-    expect(t.content).toBe("check this later");
+    expect(t.kind).toBe("text");
   });
 
   it("classifies comments", () => {
@@ -170,7 +173,7 @@ describe("lexer — multi-line documents", () => {
       "  context: need to handle both .jot and .md",
       "  choice: hand-written scanner + markdown-it",
       "",
-      ">> this was the hardest call",
+      "@note this was the hardest call",
       "",
       "- First item",
       "- Second item",
@@ -192,7 +195,8 @@ describe("lexer — multi-line documents", () => {
     expect(tokens[7]!.kind).toBe("body");
     expect(tokens[8]!.kind).toBe("body");
     expect(tokens[9]!.kind).toBe("blank");
-    expect(tokens[10]!.kind).toBe("margin_note");
+    expect(tokens[10]!.kind).toBe("directive");
+    expect(tokens[10]!.name).toBe("note");
     expect(tokens[11]!.kind).toBe("blank");
     expect(tokens[12]!.kind).toBe("bullet");
     expect(tokens[13]!.kind).toBe("bullet");

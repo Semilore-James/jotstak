@@ -27,8 +27,8 @@ looks: `@tree(dir=right)`. Written `param` in the reference tables.
 **Nesting** — putting a block inside another block, by indenting it further.
 Anything can go inside anything.
 
-**Margin note** — an aside beside the text, in handwriting. Write `>>` at the
-start of a line and it appears next to the paragraph above it.
+**Margin note** — an aside beside the text, in handwriting. Write
+`@note your text` and it appears next to the paragraph above it.
 
 **Ruled lines** — the faint horizontal lines across the page. Text sits on
 them, the way handwriting sits on lined paper.

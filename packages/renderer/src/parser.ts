@@ -497,23 +497,11 @@ export function parseTokens(
         break;
       }
 
-      case "margin_note": {
-        flushMarkdownKeepingLastParagraph();
-        children.push({
-          type: "margin_note",
-          lines: [t.content],
-          params: {},
-          position: posOf(t),
-        });
-        i++;
-        break;
-      }
-
       case "directive": {
         const written = t.name!;
         const spec = getPrimitive(written);
-        // `@note` is the long form of `>>` and attaches the same way: to the
-        // paragraph it follows, not to everything written before it.
+        // A note attaches to the paragraph it follows, not to everything
+        // written before it.
         if (spec?.name === "note") flushMarkdownKeepingLastParagraph();
         else flushMarkdown();
         const startPos = posOf(t);

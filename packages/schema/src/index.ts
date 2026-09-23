@@ -206,7 +206,7 @@ const note: PrimitiveSpec = {
   name: "note",
   group: "text",
   summary:
-    "Margin note in the handwritten typeface. By default it anchors to the block it follows in source and floats beside it in the margin channel, joined by a tick rule. Shorthand: `>> ` at line start. Overlapping notes are nudged apart by the renderer — you never place them by hand.",
+    "Margin note in the handwritten typeface. By default it anchors to the block it follows in source and floats beside it in the margin channel, joined by a tick rule. The block it is attached to narrows to make room; every other block keeps the full page width. Overlapping notes are nudged apart by the renderer — you never place them by hand.",
   params: [
     { name: "side", type: "enum", required: false, description: "Which margin channel. `right` is default; `left` uses the left channel (requires @page margin: left or both).", enumValues: ["right", "left"], default: "right" },
     { name: "align", type: "enum", required: false, description: "Vertical alignment against its anchor block — matters when the anchor is tall, like a diagram.", enumValues: ["top", "middle", "bottom"], default: "top" },
@@ -216,7 +216,7 @@ const note: PrimitiveSpec = {
   bodyShape: "plain",
   breaksRuling: false,
   examples: [
-    ">> revisit this at scale",
+    "@note revisit this at scale",
     "@note side=left align=middle\n  The fan-out here is the risky part.",
     '@decision title="Use Astro" id=astro-choice\n\n@note at=astro-choice\n  Revisit when traffic grows past the free tier.',
     "@note loose\n  General thoughts on this section, not tied to any one line.",

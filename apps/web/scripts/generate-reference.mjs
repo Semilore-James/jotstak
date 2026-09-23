@@ -59,7 +59,7 @@ const FUNCTIONS = {
   },
   columns: { title: "Columns", blurb: "Places regions side by side. Each `key:` in the body becomes a column." },
   quote: { title: "Quote", blurb: "Someone else's words, with as much provenance as you have. A pull quote and a research citation are the same thing — one just attaches less attribution." },
-  margin: { title: "Margin notes", blurb: "An annotation in the margin channel, beside the block it follows. The `>>` shorthand is how most people write these." },
+  margin: { title: "Margin notes", blurb: "An annotation in the margin channel, beside the block it follows. The block it is attached to narrows to make room for it; every other block keeps the full width of the page." },
   heading: { title: "Headings", blurb: "Section titles. `@cover` is the full-width variant that introduces a major section." },
   list: { title: "Lists", blurb: "Bullets and numbered lists, nested by indentation. Usually written with plain Markdown `-` and `1.`." },
   divider: { title: "Dividers", blurb: "A horizontal break between sections." },

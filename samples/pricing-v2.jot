@@ -11,7 +11,7 @@
   segment and the first to post about a change.
   mitigation: Grandfather existing plans for 12 months.
 
->> this is the one that worries me
+@note this is the one that worries me
 
 @metric(name="Weekly active teams" value="1,240" target="2,000" trend=up status=on-track)
   Growing 8% week-over-week since the playground shipped.

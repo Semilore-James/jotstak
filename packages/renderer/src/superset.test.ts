@@ -99,6 +99,11 @@ describe("superset — Markdown constructs survive", () => {
     ["nested list", "- a\n  - b", /<ul>[\s\S]*<ul>/],
     ["ordered list", "1. one\n2. two", /<ol>/],
     ["blockquote", "> quoted", /jot-quote/],
+    // `>>` is a quote inside a quote. Jotstak used to read it as its own
+    // margin-note shorthand, so any .md file that quoted a quote lost the
+    // inner one to the margin. A superset does not get to redefine Markdown
+    // it happens to find convenient — margin notes are written @note.
+    ["nested blockquote", "> outer\n>> inner", /<blockquote[\s\S]*<blockquote/],
     ["thematic break", "---", /jot-divider/],
     ["h1/h2/h3", "# a\n\n## b\n\n### c", /jot-h3/],
   ];

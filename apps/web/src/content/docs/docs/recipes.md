@@ -21,7 +21,7 @@ when it was made. Record that and the reasoning survives the people.
   choice: Usage-based, billed monthly, with a floor
   consequences: Revenue is lumpier; forecasting needs rework
 
->> Ana disagreed; worth revisiting in Q1
+@note Ana disagreed; worth revisiting in Q1
 ```
 
 ## A risk with its mitigation attached
@@ -94,7 +94,7 @@ Writing one PRD means five tools. The cost is not the writing, it is
 everything after: context lost on the seams, versions drifting, and no
 cheap answer to "what changed since last sprint?"
 
->> this is the whole bet
+@note this is the whole bet
 
 @panel(title="Fragmentation leads" label="Decision" badge=accepted)
   reasoning: Nobody switches tools because something is prettier.
