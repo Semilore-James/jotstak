@@ -1,20 +1,23 @@
 ---
 title: "Cookbook"
-description: "The same document in a normal doc tool, and in .jot."
-draft: true
+description: "Real documents, written in .jot, with the reasoning kept in."
 sidebar:
   order: 1
 ---
 
-<!-- SHELL PAGE. An outline of what this page covers, not the finished
-     page. `draft: true` keeps it off the site until it is written. -->
+Each recipe takes a document people actually write, says what it normally takes
+to produce one, then shows the same thing as a single `.jot` file — rendered,
+in full, nothing elided.
 
-Each recipe takes a document people actually write, shows what it looks like the usual way, then shows the same thing in .jot — and what changed. The point is the comparison, not the syntax.
+The point is the comparison, not the syntax. If a recipe does not make the
+document shorter to write or harder to let rot, it does not belong here.
 
-## What this page covers
+Every recipe follows the same three beats:
 
-- **The document** — what it is and who reads it
-- **The usual way** — Docs for the prose, Sheets for the numbers, Miro for the diagram
-- **In .jot** — the whole thing, one file, shown rendered
-- **What changed** — what got shorter, what stopped drifting, what you can now diff
-- **Take it** — copy the file and edit the words
+1. **The document** — what it is, and who has to read it.
+2. **The file** — the whole thing, with its rendered page beneath it.
+3. **What changed** — what got shorter, what stopped drifting, what you can
+   now review in a pull request.
+
+The examples are real products, described at the level anyone would see on
+first use: what the parts are, what is inside them, what they are for.
