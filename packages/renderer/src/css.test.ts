@@ -3,7 +3,8 @@ import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { FONT_FACES, renderThemeCss } from "./css.js";
-import { renderLayoutCss } from "./layout.js";
+import { BASELINE_OFFSET, baselineShift, renderLayoutCss } from "./layout.js";
+import { FONT_METRICS } from "./font-metrics.js";
 import { colors } from "./tokens.js";
 
 const require = createRequire(import.meta.url);
@@ -98,5 +99,47 @@ describe("tokens", () => {
 
   it("matches the reviewed snapshot", () => {
     expect(renderThemeCss({ assetBase: "/assets" })).toMatchSnapshot();
+  });
+});
+
+describe("headings sit on the ruling", () => {
+  const css = renderLayoutCss();
+  const rule = (cls: string) => {
+    // The first `.jot-hN` rule is the shared one (family, colour, space above);
+    // the one that sizes the heading is the next. Take the one with a size.
+    const m = [...css.matchAll(new RegExp(`\\.${cls}[ ,][^{}]*\\{([^}]*)\\}`, "g"))].find((r) =>
+      r[1].includes("font-size"),
+    );
+    if (!m) throw new Error(`no sizing rule for .${cls}`);
+    const num = (prop: string) => {
+      const d = new RegExp(`${prop}:\\s*([\\d.]+)px`).exec(m[1]);
+      return d ? parseFloat(d[1]) : 0;
+    };
+    return { size: num("font-size"), line: num("line-height"), pad: num("padding-top"), below: num("margin-bottom") };
+  };
+
+  /** Distance to the nearest whole row, either side — so 27.9999 reads as 0. */
+  const offGrid = (px: number) => {
+    const rem = ((px % 28) + 28) % 28;
+    return Math.min(rem, 28 - rem);
+  };
+
+  // Every heading, by the arithmetic the renderer itself uses.
+  it.each(["jot-h1", "jot-h2", "jot-h3"])("%s puts its first baseline on a rule", (cls) => {
+    const { size, line, pad } = rule(cls);
+    const half = (line - size * (FONT_METRICS.lora.ascent + FONT_METRICS.lora.descent + FONT_METRICS.lora.lineGap)) / 2;
+    const baseline = pad + half + size * FONT_METRICS.lora.ascent;
+    // On a rule means: a whole number of rows below the body baseline.
+    expect(offGrid(baseline - BASELINE_OFFSET)).toBeCloseTo(0, 3);
+  });
+
+  it.each(["jot-h1", "jot-h2", "jot-h3"])("%s still occupies whole rows", (cls) => {
+    const { line, pad, below } = rule(cls);
+    // margin-top (one row) + padding + line box + margin-bottom.
+    expect(offGrid(28 + pad + line + below)).toBeCloseTo(0, 3);
+  });
+
+  it("a heading that needed no shift keeps a full row beneath it", () => {
+    expect(baselineShift(16, 28)).toBeCloseTo(0, 3);
   });
 });

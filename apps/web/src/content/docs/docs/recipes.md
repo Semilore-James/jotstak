@@ -1,12 +1,14 @@
 ---
-title: Recipes
-description: Whole documents, not individual functions. Copy one and edit it.
+title: Patterns
+description: Short answers to the shapes that come up constantly. For whole documents, see the cookbook.
 sidebar:
   order: 2
 ---
 
-The [function pages](/docs/functions/) describe pieces. This page is about the
-documents PMs actually write. Copy one and change the words.
+The [function pages](/docs/functions/) describe pieces one at a time. This page
+is the shapes that come up over and over — a decision, a risk, a number worth
+quoting. Copy one and change the words. For whole documents end to end, see the
+[cookbook](/docs/cookbook/).
 
 ## A decision worth finding again in six months
 

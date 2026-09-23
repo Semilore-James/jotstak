@@ -65,6 +65,35 @@ export function toWholeRows(px: number): number {
   return Math.ceil(px / ROW) * ROW;
 }
 
+/**
+ * How far a line box has to drop for its FIRST BASELINE to land on a rule.
+ *
+ * Whole rows are not enough. A heading in a 56px box is two rows tall, so the
+ * page below it stays in phase — and the heading itself still floats, because
+ * where the baseline sits *inside* that box depends on the font size:
+ *
+ *   36px Lora in a 56px box puts its baseline 41.18px down. The rule is at
+ *   47.86px. The heading hangs 6.7px above its line, which is exactly what
+ *   "the headers just float on their own" looks like.
+ *
+ * The drift tests never caught it because they measure block heights, and the
+ * heights were right. This measures the thing you can actually see.
+ *
+ * The shift is added as padding-top and taken back off margin-bottom, so the
+ * block occupies exactly the rows it did before.
+ */
+export function baselineShift(fontPx: number, lineHeightPx: number, face = LORA): number {
+  const halfLead = (lineHeightPx - fontPx * (face.ascent + face.descent + face.lineGap)) / 2;
+  const baseline = halfLead + fontPx * face.ascent;
+  return +(((BASELINE_OFFSET - baseline) % ROW + ROW) % ROW).toFixed(3);
+}
+
+/** The two declarations that put a line of type on its rule and keep the row count. */
+function sitsOnRule(fontSize: string, lineHeightPx: number, face = LORA): string {
+  const shift = baselineShift(parseFloat(fontSize), lineHeightPx, face);
+  return `padding-top: ${shift}px; margin-bottom: ${+(ROW - shift).toFixed(3)}px;`;
+}
+
 export function renderLayoutCss(scope = ".jotstak"): string {
   return `
 /* ── Page frame ─────────────────────────────────────────────────────── */
@@ -250,9 +279,9 @@ ${scope} .jot-h3 {
   margin-top: ${ROW}px;
   font-weight: 600;
 }
-${scope} .jot-h1 { font-size: ${typography.headline.xl.size}; line-height: ${ROW * 2}px; letter-spacing: ${typography.headline.xl.letterSpacing}; }
-${scope} .jot-h2 { font-size: ${typography.headline.lg.size}; line-height: ${ROW * 2}px; letter-spacing: ${typography.headline.lg.letterSpacing}; }
-${scope} .jot-h3 { font-size: ${typography.headline.md.size}; line-height: ${ROW}px; letter-spacing: ${typography.headline.md.letterSpacing}; }
+${scope} .jot-h1 { font-size: ${typography.headline.xl.size}; line-height: ${ROW * 2}px; letter-spacing: ${typography.headline.xl.letterSpacing}; ${sitsOnRule(typography.headline.xl.size, ROW * 2)} }
+${scope} .jot-h2 { font-size: ${typography.headline.lg.size}; line-height: ${ROW * 2}px; letter-spacing: ${typography.headline.lg.letterSpacing}; ${sitsOnRule(typography.headline.lg.size, ROW * 2)} }
+${scope} .jot-h3 { font-size: ${typography.headline.md.size}; line-height: ${ROW}px; letter-spacing: ${typography.headline.md.letterSpacing}; ${sitsOnRule(typography.headline.md.size, ROW)} }
 ${scope} .jot-doc > .jot-row:first-child > .jot-body > :first-child { margin-top: 0; }
 
 ${scope} .jot-body strong { font-weight: 600; }
