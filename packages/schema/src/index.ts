@@ -329,14 +329,15 @@ const star_model: PrimitiveSpec = {
   name: "star_model",
   group: "diagrams",
   summary:
-    "Relationship map using real star-schema vocabulary. The bare text after the shortcode is the model's TITLE; `fact:` names the central entity; each `dim` is a satellite. Dimensions auto-arrange clockwise from 12 in written order; override per-dimension with `at <clock|anchor>`. Terse form `dim: A, B, C` when you don't care about placement.",
+    "A relationship map: one thing in the middle, the things that describe it around it, in star-schema vocabulary. The bare text after the shortcode is the TITLE; `fact:` names the centre, with its fields on indented lines; each `dim` is a satellite. Dimensions spread evenly clockwise from 12 in written order — place one yourself with `at 4` or `at top-right`. Terse form `dim: A, B, C` when placement does not matter. The ring grows until nothing collides, so the size comes from the content rather than a fixed radius.",
   params: [
-    { name: "layout", type: "enum", required: false, description: "Arrangement mode.", enumValues: ["auto", "clock", "fan", "list"], default: "auto" },
+    { name: "layout", type: "enum", required: false, description: "`clock` arranges the dimensions around the fact. `list` writes it out instead — a star model with fifteen dimensions is a list of fifteen dimensions, and a wheel of tiny text helps nobody.", enumValues: ["clock", "list"], default: "clock" },
   ],
   bodyShape: "mixed",
   breaksRuling: true,
   examples: [
-    '@star_model Telemetry Data Warehouse layout=clock\n  fact: TaskExecutionEvents\n  dim Agents at 12\n  dim Models at 3\n  dim LatencyBuckets at 6\n  dim CostCenters at 9',
+    '@star_model Telemetry warehouse\n  fact: TaskExecutionEvents\n  dim Agents at 12\n  dim Models at 3\n  dim LatencyBuckets at 6\n  dim CostCenters at 9',
+    '@star_model(layout=list) Order analytics\n  fact: Orders\n  dim: Customer, Product, Date, Store, Channel, Device, Campaign',
     "@star_model Order analytics\n  fact: Orders\n  dim: Customer, Product, Date, Store",
     "@star_model Event model\n  fact: TaskExecutionEvents\n    event_uuid: uuid, pk\n    agent_id: fk -> Agents\n    latency_ms: int\n  dim Agents at 12\n  dim Models at 4",
   ],

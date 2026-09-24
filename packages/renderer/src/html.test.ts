@@ -27,7 +27,10 @@ function gridLineHeights(): string {
     .replace(/\.jot-body mark \{[^}]*\}/g, "")
     // A boxed tree node budgets line-height + border + margin to one row,
     // rather than making the line itself a row. Asserted separately.
-    .replace(/\[data-nodes="boxed"\] \.jot-tree-label \{[^}]*\}/g, "");
+    .replace(/\[data-nodes="boxed"\] \.jot-tree-label \{[^}]*\}/g, "")
+    // Same budget, same reason: the fact box in a listed star model is a
+    // bordered line, so 26px of line plus 2px of border is the row.
+    .replace(/\[data-layout="list"\] \.jot-star-fact \{[^}]*\}/g, "");
 }
 
 /**
@@ -102,10 +105,11 @@ describe("render — structure", () => {
   });
 
   it("keeps an unrendered primitive's content instead of dropping it", () => {
-    // @star_model has no renderer yet. Until it does, its content must still
-    // appear, with an info diagnostic rather than silence — a half-written
+    // @doodle has no renderer yet — the free-placement escape hatch, and the
+    // last primitive still unbuilt. Until it is drawn, its content must still
+    // appear, with an info diagnostic rather than silence: a half-written
     // document should render something.
-    const { html, diagnostics } = render("@star_model Orders\n  fact: Orders\n  dim Customer", {
+    const { html, diagnostics } = render("@doodle\n  circle at 10,10\n  label Customer", {
       mode: "notebook",
     });
     expect(html).toContain("Customer");
@@ -169,6 +173,16 @@ describe("render — the ruled-line contract", () => {
     const css = renderLayoutCss();
     expect(css).toContain('[data-mode="notebook"] .jot-body');
     expect(css).toContain('[data-mode="doc"] .jot-body { background-image: none; }');
+  });
+
+  it("budgets a bordered line's border into its row rather than adding to it", () => {
+    // The exceptions stripped above are not exempt — they are asserted here,
+    // because a 1px border on each side of a 26px line is exactly one row and
+    // anything else walks the ruling out of phase.
+    const css = renderLayoutCss();
+    const fact = css.split("}").find((r) => r.includes('[data-layout="list"] .jot-star-fact'))!;
+    const line = Number(/line-height:\s*(\d+)px/.exec(fact)![1]);
+    expect(line + 2).toBe(ROW);
   });
 
   it("uses whole-row line heights for every block element", () => {
