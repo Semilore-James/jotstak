@@ -298,7 +298,14 @@ ${scope} .jot-h2 { font-size: ${typography.headline.lg.size}; line-height: ${ROW
 ${scope} .jot-h3 { font-size: ${typography.headline.md.size}; line-height: ${ROW}px; letter-spacing: ${typography.headline.md.letterSpacing}; ${sitsOnRule(typography.headline.md.size, ROW)} }
 ${scope} .jot-doc > .jot-row:first-child > .jot-body > :first-child { margin-top: 0; }
 
-${scope} .jot-body strong { font-weight: 600; }
+/* Bold is one step heavier than whatever it is inside, so it has to sit above
+   the 600 the document already uses for emphasis-by-role — a heading, a pill,
+   a table header, a timeline event. At 600 it was a no-op in every one of
+   those: correct markup, correct stylesheet, identical glyphs. Applied inside
+   figures too, which is where it was noticed, because .jot-figure lives in
+   .jot-body and a figure's labels are exactly the 600 text this is about. */
+${scope} .jot-body strong,
+${scope} .jot-body b { font-weight: 700; }
 /* \`==highlight==\`. Like inline code, its box is capped below the line strut so
    a highlighted phrase cannot stretch the row it sits in. */
 ${scope} .jot-body mark {

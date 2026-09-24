@@ -87,3 +87,49 @@ describe("figure type out-ranks prose type", () => {
     expect(prose!.body).toMatch(/font-size:/);
   });
 });
+
+// ── Bold has to have somewhere to go ─────────────────────────────────────
+//
+// The sibling of the cascade bug above, and it shipped for the same reason:
+// the markup was right, the stylesheet was right, and the glyphs were
+// identical. The document uses 600 for emphasis-by-role — a heading, a tree
+// pill, a timeline event, a table header, a margin note in handwriting. With
+// `strong` also at 600, writing **bold** in any of those changed nothing.
+//
+// Bold means "one step heavier than whatever this is". That only works if a
+// step above 600 exists IN THE FAMILY the text is set in, which is why this
+// checks every family the document uses, not just the body face.
+
+describe("bold is heavier than the weight it lands on", () => {
+  const css = renderLayoutCss();
+
+  it("sets strong above the 600 used for emphasis-by-role", () => {
+    const rule = css
+      .replace(/\/\*[\s\S]*?\*\//g, "")
+      .split("}")
+      .find((r) => r.includes(".jot-body strong"));
+    const weight = Number(/font-weight:\s*(\d+)/.exec(rule ?? "")?.[1]);
+    expect(weight).toBeGreaterThan(600);
+  });
+
+  it("ships that weight in every family the document sets text in", async () => {
+    const { FONT_FACES, renderThemeCss } = await import("./css.js");
+    const theme = renderThemeCss({ assetBase: "" });
+
+    // The families actually reachable by prose. Mono is excluded: `**bold**`
+    // inside a code span is literal text, not emphasis.
+    const families = [...theme.matchAll(/--jot-font-(?!mono)[a-z]+:\s*"([^"]+)"/g)].map((m) => m[1]!);
+    expect(families.length).toBeGreaterThan(0);
+
+    for (const family of new Set(families)) {
+      const weights = FONT_FACES.filter((f) => f.family === family && f.style === "normal").map(
+        (f) => f.weight,
+      );
+      expect(weights, `${family} has no face for text to be set in`).not.toHaveLength(0);
+      expect(
+        Math.max(...weights),
+        `**bold** in ${family} falls back to ${Math.max(...weights)}, which is a weight the document already uses`,
+      ).toBeGreaterThanOrEqual(700);
+    }
+  });
+});

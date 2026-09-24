@@ -33,7 +33,32 @@ import type { Diagnostic, RenderMode } from "./index.js";
 // promise because core Markdown gives `==` no meaning, unlike `__`, which is
 // already bold — the TextMate grammar used to claim `__` meant underline, so the
 // editor coloured it one way while the renderer produced another.
-const md = new MarkdownIt({ html: false, linkify: true, typographer: true }).use(markPlugin);
+//
+// Two parsers, differing in one option, because one option is a fork in the
+// language (UX-45).
+//
+// Markdown says a single newline is a space: only a blank line starts a new
+// paragraph, and a line break needs two trailing spaces. That rule is from
+// 2004, when prose was hard-wrapped to 80 columns in a terminal, and every
+// writing tool built since — GitHub, Slack, Notion — has abandoned it.
+//
+// Jotstak is ruled paper. A line you ended is a line. So `breaks` is on, and
+// `@page breaks=off` restores CommonMark exactly, for pasting a .md file that
+// WAS hard-wrapped and whose wrap points must not become real breaks. That
+// keeps the superset promise honest rather than quietly redefining it.
+type Markdown = InstanceType<typeof MarkdownIt>;
+
+const parser = (breaks: boolean): Markdown =>
+  new MarkdownIt({ html: false, linkify: true, typographer: true, breaks }).use(markPlugin);
+
+const MD = { on: parser(true), off: parser(false) } as const;
+
+// Which one is in force. Set once per document, at the top of renderDocument,
+// because every renderer below reaches for `block()` and `inline()` and
+// threading a flag through all of them would touch every signature for one
+// boolean. Safe because rendering is synchronous and single-pass: nothing runs
+// between the assignment and the render that could observe a different value.
+let md: Markdown = MD.on;
 
 const escapeHtml = (s: string): string =>
   s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -432,6 +457,12 @@ export function renderDocument(
   diagnostics: Diagnostic[],
 ): string {
   const cls = (options.scope ?? "jotstak").replace(/^\./, "");
+
+  // `@page breaks=off` before anything is rendered, since it changes how every
+  // line of prose in the document is read.
+  const page = ast.children.find((n): n is BlockNode => n.type === "block" && n.name === "page");
+  md = page?.params.breaks === "off" ? MD.off : MD.on;
+
   const cells = toRows(ast.children)
     .map((row) => {
       const body = row.content.map((n) => renderNode(n, diagnostics)).join("");

@@ -44,11 +44,30 @@ export const FONT_FACES: readonly FontFace[] = [
   face("lora", "Lora", 400, "italic"),
   face("lora", "Lora", 500),
   face("lora", "Lora", 600),
+  face("lora", "Lora", 600, "italic"),
+  // 700 exists so that **bold** has somewhere to GO.
+  //
+  // The document uses 600 for emphasis-by-role — a heading, a pill, a timeline
+  // event, a table header. With `strong` also pinned at 600, writing **bold**
+  // in any of those places changed nothing at all: the markup was right, the
+  // stylesheet was right, and the glyphs were identical. Bold now means "one
+  // step heavier than whatever this is", which needs a step above 600 to
+  // exist. The italic is here for the same reason — emphasis inside a 600
+  // label would otherwise be a synthesised slant.
+  face("lora", "Lora", 700),
+  face("lora", "Lora", 700, "italic"),
   face("ibm-plex-mono", "IBM Plex Mono", 400),
   face("ibm-plex-mono", "IBM Plex Mono", 500),
   face("caveat", "Caveat", 600),
+  // Bold has to have somewhere to go in EVERY family, not just the body face.
+  // A table header, a timeline date, a matrix title and a figure caption are
+  // all set in the label face at 600, and a margin note is handwriting at 600
+  // — so **bold** in any of them fell back to the weight already there and
+  // changed nothing, exactly as it did in Lora.
+  face("caveat", "Caveat", 700),
   face("inter", "Inter", 500),
   face("inter", "Inter", 600),
+  face("inter", "Inter", 700),
 ];
 
 const kebab = (s: string) => s.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase();

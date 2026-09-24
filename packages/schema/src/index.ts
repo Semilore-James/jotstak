@@ -78,6 +78,7 @@ const page: PrimitiveSpec = {
     { name: "margin_width", type: "enum", required: false, description: "How much page the margin channel takes.", enumValues: ["narrow", "normal", "wide"], default: "normal" },
     { name: "rule", type: "enum", required: false, description: "Paper ruling behind the text.", enumValues: ["ruled", "dotted", "grid", "blank"], default: "ruled" },
     { name: "rhythm", type: "number", required: false, description: "Baseline grid in px. Everything locks to this; drawn blocks round up to whole multiples of it.", default: "28" },
+    { name: "breaks", type: "enum", required: false, description: "What a single Enter does in prose. `on` (the default) keeps the line you broke — this is ruled paper, and a line you ended is a line. `off` restores Markdown's own rule, where a single newline is a space and only a blank line starts a paragraph: set it when pasting a .md file that was hard-wrapped to a column width, so its wrap points do not become real breaks.", enumValues: ["on", "off"], default: "on" },
   ],
   bodyShape: "none",
   breaksRuling: false,

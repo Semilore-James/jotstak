@@ -385,13 +385,30 @@ describe("render — body prose is prose, not a list", () => {
     expect(html).toContain("<p>Small teams");
   });
 
-  it("joins a wrapped line instead of making it a second item", () => {
+  it("keeps a second line as a line, not as a second item", () => {
+    // Two lines in a card body are two lines of one paragraph — a break, never
+    // a bullet. The break itself is UX-45: this is ruled paper, so a line the
+    // author ended is a line. It used to join them into one run, which is
+    // Markdown's 2004 rule and reads as the tool ignoring what you typed.
     const { html } = render(
       '@risk(level=low title="X")\n  A sentence that wraps onto\n  a second line.',
       { mode: "notebook" },
     );
-    expect(html).toMatch(/A sentence that wraps onto\s*\n?\s*a second line\./);
+    expect(html).toMatch(/A sentence that wraps onto<br>\s*a second line\./);
     expect((html.match(/<li>/g) ?? []).length).toBe(0);
+    expect((html.match(/<p>/g) ?? []).length).toBe(1);
+  });
+
+  it("restores Markdown's own rule when the page asks for it", () => {
+    // `@page breaks=off` is the escape hatch for a pasted .md that was
+    // hard-wrapped to a column width, where the wrap points are not breaks
+    // the author meant.
+    const { html } = render(
+      '@page breaks=off\n\n@risk(level=low title="X")\n  A sentence that wraps onto\n  a second line.',
+      { mode: "notebook" },
+    );
+    expect(html).not.toContain("<br>");
+    expect(html).toMatch(/A sentence that wraps onto\s*\n?\s*a second line\./);
   });
 
   it("still makes a real list when the author writes one", () => {
