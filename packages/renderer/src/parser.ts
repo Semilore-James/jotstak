@@ -586,6 +586,21 @@ export function parseTokens(
             break;
           }
           default: {
+            // `@journey(dir=vertical) title="Onboarding"` reads as a block
+            // whose TITLE is the eight characters `title="Onboarding"`, which
+            // is correct and useless. Params in brackets are a closed set, so
+            // anything after them is bare text — and a bare text that is
+            // shaped like a param is always a mistake. Caught here rather than
+            // per primitive, because every primitive can be written this way.
+            const stray = /^([a-z_]+)\s*=\s*"?([^"]*)"?\s*$/i.exec(resolved.title.trim());
+            if (stray && spec.params.some((p) => p.name === stray[1]!.toLowerCase())) {
+              diagnostics.push({
+                severity: "warning",
+                message: `\`${stray[1]}\` is a parameter, but it is written after the brackets, so it is being read as this block's text. Move it inside: \`@${written}(… ${stray[1]}="${stray[2]}")\`.`,
+                line: startPos.line,
+                column: startPos.column,
+              });
+            }
             children.push({
               type: "block",
               name: spec.name,

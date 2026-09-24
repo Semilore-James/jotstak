@@ -346,10 +346,10 @@ const journey: PrimitiveSpec = {
   name: "journey",
   group: "diagrams",
   summary:
-    "User journey / flow. Stages run left to right. Each stage has a name and an optional emotion (happy/neutral/frustrated). Add touchpoints, actions, or pain points as indented lines under a stage. Use `track` to define parallel swim lanes (e.g. frontstage / backstage).",
+    "A user journey. Stages run left to right, each written `stage <name>` with an optional `feeling=happy|neutral|frustrated`; touchpoints, actions and pain points go on indented lines under it. The feelings are drawn as a line above a neutral baseline, which is the point of the diagram — you can see where the experience falls over before reading a word. Use `track` for parallel swim lanes (frontstage / backstage, customer / support). Seven stages fit a portrait page; past that use `dir=vertical`.",
   params: [
     { name: "title", type: "string", required: false, description: "Journey title shown above the diagram." },
-    { name: "dir", type: "enum", required: false, description: "Flow direction.", enumValues: ["horizontal", "vertical"], default: "horizontal" },
+    { name: "dir", type: "enum", required: false, description: "`horizontal` draws stages across the page with the emotion line under their names. `vertical` runs down the page — no line, the feeling is carried by the mark beside each stage — and fits any number of stages.", enumValues: ["horizontal", "vertical"], default: "horizontal" },
   ],
   bodyShape: "indented",
   breaksRuling: true,
