@@ -1,6 +1,10 @@
-# vsce packages this folder; the bundle is the only code that ships.
+# vsce packages this folder; the bundle in dist/ is the only code that ships.
 src/**
+test/**
 scripts/**
 tsconfig*.json
+vitest.config.*
 node_modules/**
 **/*.map
+**/*.test.*
+tsconfig.tsbuildinfo
