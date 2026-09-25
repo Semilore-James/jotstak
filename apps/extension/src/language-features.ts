@@ -29,41 +29,76 @@ const GROUP: Record<PrimitiveSpec["group"], string> = {
   expressive: "expressive",
 };
 
-function describeParam(p: ParamSpec): string {
-  const type = p.type === "enum" && p.enumValues ? p.enumValues.join(" | ") : p.type;
-  const bits = [`\`${p.name}\``, `_${type}_`];
-  if (p.required) bits.push("**required**");
-  else if (p.default !== undefined) bits.push(`default \`${p.default}\``);
-  return `- ${bits.join(" · ")}  \n  ${p.description}`;
+/**
+ * The short form of a parameter's description.
+ *
+ * The schema's descriptions are written for a documentation page, where there
+ * is room to explain the reasoning: the longest is 444 characters and fifteen
+ * of them turn on an em dash before the part that qualifies the first half. On
+ * a hover card that is a wall, and a wall gets skipped.
+ *
+ * So the card takes what comes before the first full stop or the first em
+ * dash, whichever arrives first. That is reliably the sentence that says what
+ * the parameter IS; everything after it is why.
+ */
+const CARD_LIMIT = 120;
+
+function oneLine(text: string): string {
+  // A full stop followed by a CAPITAL, so `e.g.` and `i.e.` do not count as
+  // the end of anything. Cutting on any full stop turned "kicker above the
+  // title, e.g. "Risk"" into "kicker above the title, e.g".
+  const cut = /^(.*?)(?:\.\s+(?=[A-Z])|\s—\s|$)/s.exec(text.trim());
+  const first = (cut?.[1] ?? text).trim().replace(/[.;,]$/, "");
+  if (first.length <= CARD_LIMIT) return first;
+
+  // Still a paragraph: some descriptions carry the whole argument in one
+  // sentence. Cut at a word rather than mid-word, and say it was cut.
+  const clipped = first.slice(0, CARD_LIMIT);
+  return clipped.slice(0, clipped.lastIndexOf(" ")) + "…";
 }
 
-/** Everything the schema knows about one primitive, as Markdown. */
+function describeParam(p: ParamSpec): string {
+  const type = p.type === "enum" && p.enumValues ? p.enumValues.join(" | ") : p.type;
+  const tail = p.required ? " (required)" : p.default !== undefined ? ` (default ${p.default})` : "";
+  return `- \`${p.name}\` _${type}_${tail}  \n  ${oneLine(p.description)}`;
+}
+
+/**
+ * What the editor shows for a primitive.
+ *
+ * Ordered for someone who has just typed `@` and wants to know whether this is
+ * the block they want: the name, one line saying what it is, then an example,
+ * then the parameters. The example sits above the parameter list because it
+ * answers the question faster than any prose does — you can see the shape.
+ *
+ * The schema's full `summary` is deliberately not here. It is a paragraph
+ * written for a documentation page somebody chose to read, and a hover card
+ * long enough to scroll is one nobody reads to the end of.
+ */
 export function describe(spec: PrimitiveSpec): vscode.MarkdownString {
   const md = new vscode.MarkdownString();
   md.supportHtml = false;
 
-  md.appendMarkdown(`**@${spec.name}** — ${GROUP[spec.group]}\n\n`);
-  md.appendMarkdown(`${spec.summary}\n\n`);
+  md.appendMarkdown(`**@${spec.name}** · ${GROUP[spec.group]}\n\n`);
+  md.appendMarkdown(`${spec.short}\n`);
 
-  if (spec.aliases?.length) {
-    md.appendMarkdown(`Also written ${spec.aliases.map((a) => `\`@${a}\``).join(", ")}.\n\n`);
-  }
-
-  if (spec.params.length > 0) {
-    md.appendMarkdown(`**Parameters**\n\n${spec.params.map(describeParam).join("\n")}\n\n`);
-  }
-
-  // One example, not all of them: a hover card long enough to scroll is one
-  // nobody reads to the end of. The rest are a click away in the docs.
   const example = spec.examples[0];
   if (example) md.appendCodeblock(example, "jot");
 
-  // Said last because it is the same for every primitive, and repeating it at
-  // the top would bury the thing the reader came for.
+  if (spec.aliases?.length) {
+    md.appendMarkdown(`\nAlso ${spec.aliases.map((a) => `\`@${a}\``).join(", ")}.\n`);
+  }
+
+  if (spec.params.length > 0) {
+    md.appendMarkdown(`\n**Parameters**\n\n${spec.params.map(describeParam).join("\n")}\n`);
+  }
+
+  // Last, because it is the same for every primitive and putting it first
+  // would bury the thing the reader came for.
   md.appendMarkdown(
-    `\n_Every block also takes ${UNIVERSAL_PARAMS.slice(0, 3)
+    `\n_Plus ${UNIVERSAL_PARAMS.slice(0, 3)
       .map((p) => `\`${p.name}\``)
-      .join(", ")} and others._`,
+      .join(", ")} on any block._`,
   );
   return md;
 }

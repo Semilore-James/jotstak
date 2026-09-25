@@ -40,6 +40,16 @@ export interface PrimitiveSpec {
   /** Aliases that also resolve to this primitive (e.g. @warn → @callout warn). */
   aliases?: string[];
   group: PrimitiveGroup;
+  /**
+   * One plain line: what this is, for someone who has just typed it and wants
+   * to know whether it is the right block. No jargon, no em dashes, no
+   * sentence that needs a second one to finish it.
+   *
+   * Separate from `summary` because they answer different questions. The
+   * summary is a paragraph for a documentation page somebody chose to read;
+   * this is what fits on a hover card without being scrolled.
+   */
+  short: string;
   summary: string;
   params: ParamSpec[];
   /** Body lines: "none" | "plain" | "keyed" | "indented" | "mixed". */
@@ -56,6 +66,8 @@ export interface PrimitiveSpec {
 const meta: PrimitiveSpec = {
   name: "meta",
   group: "structure",
+  short:
+    "The document's project, owner, status and dates, as a row of chips at the top.",
   summary:
     "Document metadata. Freeform `key: value` lines — project, pillar, status, owner, updated, whatever your team tracks. Renders as a compact chip row at the top of the document. This is data, not decoration: a future cross-file search reads @meta, which is why it is one extensible block rather than a primitive per field.",
   params: [
@@ -71,6 +83,8 @@ const meta: PrimitiveSpec = {
 const page: PrimitiveSpec = {
   name: "page",
   group: "structure",
+  short:
+    "Page setup for the whole document: margins, ruling, and what Enter does.",
   summary:
     "Page setup for the rendered document. Controls which margin channels exist, how wide they are, and what the paper ruling looks like. Declare once near the top; it applies to the whole document. Every field is optional with a sensible default.",
   params: [
@@ -96,6 +110,8 @@ const page: PrimitiveSpec = {
 const panel: PrimitiveSpec = {
   name: "panel",
   group: "structure",
+  short:
+    "A box that holds anything. @decision, @risk and the rest are presets over it.",
   summary:
     "A bounded region that clears the ruling and holds anything: fields, prose, or other blocks. This is the general container — @decision, @risk, @assumption and @persona are presets over it, so the PM vocabulary is available but never required. Use @panel directly when none of the presets fit, or when a document should not read as jargon.",
   params: [
@@ -115,6 +131,8 @@ const panel: PrimitiveSpec = {
 const columns: PrimitiveSpec = {
   name: "columns",
   group: "structure",
+  short:
+    "Puts regions side by side. Each key in the body becomes a column.",
   summary:
     "Places regions side by side. Each `key:` in the body is a column, and its indented content — text or nested blocks — fills it. Replaces the separate two-page spread and feature-pillars primitives, which were the same mechanic with different names.",
   params: [
@@ -132,6 +150,8 @@ const columns: PrimitiveSpec = {
 const heading: PrimitiveSpec = {
   name: "heading",
   group: "structure",
+  short:
+    "A section heading, levels 1 to 6.",
   summary:
     "Section heading. Write it as `# `, `## `, `### ` at the start of a line, or as `@heading` with a level, or as `@h1` to `@h6`. Markdown has six levels and so does this; the type scale has three sizes and stops there, so a level 4, 5 or 6 is set like a level 3 while the document outline still sees the depth you gave it.",
   aliases: ["h1", "h2", "h3", "h4", "h5", "h6"],
@@ -150,6 +170,8 @@ const heading: PrimitiveSpec = {
 const bullet: PrimitiveSpec = {
   name: "bullet",
   group: "structure",
+  short:
+    "A bullet list, usually written with a plain dash.",
   summary:
     "Bullet list. Nesting up to 3 levels via indentation. Shorthand: `- ` at line start (nested by indent). No `@` needed for plain bullets — the parser recognizes `- ` lines.",
   params: [],
@@ -163,6 +185,8 @@ const bullet: PrimitiveSpec = {
 const numbered: PrimitiveSpec = {
   name: "numbered",
   group: "structure",
+  short:
+    "A numbered list. It renumbers itself, so the digit you type does not matter.",
   summary:
     "Numbered list. Shorthand: `1. ` at line start. Auto-numbers; the actual digit you type is ignored.",
   params: [],
@@ -177,6 +201,8 @@ const pagebreak: PrimitiveSpec = {
   name: "pagebreak",
   aliases: ["newpage"],
   group: "structure",
+  short:
+    "Starts the next block on a new printed sheet.",
   summary:
     "Start the next block on a new sheet. Printing already cuts the document into real A4 pages on its own, and keeps blocks whole while doing it — this is for the breaks it cannot guess: an appendix, a section someone will detach, a cover that should stand alone. On screen it draws where the page will end, so you can see it working without printing.",
   params: [
@@ -190,6 +216,8 @@ const pagebreak: PrimitiveSpec = {
 const divider: PrimitiveSpec = {
   name: "divider",
   group: "structure",
+  short:
+    "A break between two sections.",
   summary: "Horizontal rule between sections. Shorthand: `---` on its own line.",
   params: [
     { name: "style", type: "enum", required: false, description: "Visual style.", enumValues: ["line", "dots", "wave"], default: "line" },
@@ -202,6 +230,8 @@ const divider: PrimitiveSpec = {
 const cover: PrimitiveSpec = {
   name: "cover",
   group: "structure",
+  short:
+    "A full width opener for a major section.",
   summary:
     "Section cover / divider page. A full-width visual break introducing a major section. Takes a title and optional subtitle.",
   params: [
@@ -222,6 +252,8 @@ const cover: PrimitiveSpec = {
 const note: PrimitiveSpec = {
   name: "note",
   group: "text",
+  short:
+    "A handwritten note in the margin, beside the block it follows.",
   summary:
     "Margin note in the handwritten typeface. By default it anchors to the block it follows in source and floats beside it in the margin channel, joined by a tick rule. The block it is attached to narrows to make room; every other block keeps the full page width. Overlapping notes are nudged apart by the renderer — you never place them by hand.",
   params: [
@@ -243,6 +275,8 @@ const note: PrimitiveSpec = {
 const quote: PrimitiveSpec = {
   name: "quote",
   group: "text",
+  short:
+    "Someone else's words, with as much attribution as you have.",
   summary:
     "Someone else's words, with optional attribution. Covers both a pull quote and a research citation — `by`, `source`, `date` and `tag` carry the provenance. Shorthand: `> ` at line start. Distinct from @callout, which is the author's own voice.",
   params: [
@@ -263,6 +297,8 @@ const callout: PrimitiveSpec = {
   name: "callout",
   aliases: ["info", "warn", "tip", "question"],
   group: "text",
+  short:
+    "A boxed aside. The first word picks the flavour.",
   summary:
     "Boxed callout. The flavor is the first word after `@callout`, or use the alias directly: `@tip`, `@warn`, `@info`, `@question`. No `type=` param — the flavor IS the shortcode.",
   params: [
@@ -279,6 +315,8 @@ const callout: PrimitiveSpec = {
 const footnote: PrimitiveSpec = {
   name: "footnote",
   group: "text",
+  short:
+    "A note at the foot of the page, pointed at from the text with [^id].",
   summary:
     "Footnote. Reference in body text with `[^id]`, then define the note anywhere with `@footnote id=<id>` — it uses the universal `id` param, which is effectively required here (the renderer reports a footnote without one). Renders at the bottom of the page in notebook mode.",
   params: [],
@@ -296,6 +334,8 @@ const footnote: PrimitiveSpec = {
 const table: PrimitiveSpec = {
   name: "table",
   group: "lists",
+  short:
+    "Rows and columns, written as comma separated lines. No pipes needed.",
   summary:
     "A table. No pipes: first row is the header, rows are comma-separated (quote cells that contain commas). Use the record form for few rows with rich cells. Pipe-tables still parse for paste-in compatibility. A table is the one figure that is never scaled — its cells are text, so it widens and then wraps, and the type stays the size of the prose around it. A cell that needs two lines takes a `\n` where the break goes, since a row is one line of source.",
   params: [
@@ -317,6 +357,8 @@ const table: PrimitiveSpec = {
 const tree: PrimitiveSpec = {
   name: "tree",
   group: "lists",
+  short:
+    "A hierarchy, shaped by how far you indent each line.",
   summary:
     "A hierarchy defined by indentation. `dir` is the way it grows: `down` (the default) reads as an outline, `right` puts each level in its own column, and `split` balances branches either side of a centre — prefix a branch with > or < to pin its side. `nodes=boxed` draws every node as a pill.",
   params: [
@@ -344,6 +386,8 @@ const tree: PrimitiveSpec = {
 const star_model: PrimitiveSpec = {
   name: "star_model",
   group: "diagrams",
+  short:
+    "One thing in the middle, the things that describe it around the outside.",
   summary:
     "A relationship map: one thing in the middle, the things that describe it around it, in star-schema vocabulary. The bare text after the shortcode is the TITLE; `fact:` names the centre, with its fields on indented lines; each `dim` is a satellite. Dimensions spread evenly clockwise from 12 in written order — place one yourself with `at 4` or `at top-right`. Terse form `dim: A, B, C` when placement does not matter. The ring grows until nothing collides, so the size comes from the content rather than a fixed radius.",
   params: [
@@ -362,6 +406,8 @@ const star_model: PrimitiveSpec = {
 const journey: PrimitiveSpec = {
   name: "journey",
   group: "diagrams",
+  short:
+    "Stages across the page, with a line showing how each one felt.",
   summary:
     "A user journey. Stages run left to right, each written `stage <name>` with an optional `feeling=happy|neutral|frustrated`; touchpoints, actions and pain points go on indented lines under it. The feelings are drawn as a line above a neutral baseline, which is the point of the diagram — you can see where the experience falls over before reading a word. Use `track` for parallel swim lanes (frontstage / backstage, customer / support). Seven stages fit a portrait page; past that use `dir=vertical`.",
   params: [
@@ -379,6 +425,8 @@ const journey: PrimitiveSpec = {
 const matrix: PrimitiveSpec = {
   name: "matrix",
   group: "diagrams",
+  short:
+    "A 2x2. Name the two axes, then place items with 'at top-right'.",
   summary:
     "2×2 prioritization matrix. Name the two axes; place items in quadrants using `at <quadrant>`. Quadrant names are `top-left`, `top-right`, `bottom-left`, `bottom-right` — or short forms `tl`, `tr`, `bl`, `br`.",
   params: [
@@ -399,6 +447,8 @@ const matrix: PrimitiveSpec = {
 const timeline: PrimitiveSpec = {
   name: "timeline",
   group: "diagrams",
+  short:
+    "Events on a line, alternating above and below it.",
   summary:
     "Events on a line. Each one is `Date: What happened`, with any detail indented under it; the date is optional, so a plain sequence of steps works too. Events alternate above and below the line, which is not decoration — it is what lets each card be twice as wide, because its nearest neighbour on its own side is two columns away. Seven events fit a portrait page; past that use `dir=vertical`, which runs down the page and has no limit.",
   params: [
@@ -417,6 +467,8 @@ const timeline: PrimitiveSpec = {
 const doodle: PrimitiveSpec = {
   name: "doodle",
   group: "diagrams",
+  short:
+    "Free placement, for anything the other blocks cannot say.",
   summary:
     "Freeform space for anything the structured primitives cannot express. The only primitive that accepts coordinate-style placement. Body is a mini drawing language (lines, circles, labels, arrows with positions). This is the escape hatch — reach for a named primitive first.",
   params: [
@@ -438,6 +490,8 @@ const doodle: PrimitiveSpec = {
 const decision: PrimitiveSpec = {
   name: "decision",
   group: "pm-artifacts",
+  short:
+    "What was decided, why, and what it costs.",
   summary:
     "An architectural decision block: context, choice, consequences. Body uses `key: value` lines.",
   params: [
@@ -456,6 +510,8 @@ const decision: PrimitiveSpec = {
 const metric: PrimitiveSpec = {
   name: "metric",
   group: "pm-artifacts",
+  short:
+    "A number that matters, with its target and which way it is going.",
   summary:
     "KPI / metric block. Renders as a compact card with the metric name, current value, target, and optional trend.",
   params: [
@@ -476,6 +532,8 @@ const metric: PrimitiveSpec = {
 const persona: PrimitiveSpec = {
   name: "persona",
   group: "pm-artifacts",
+  short:
+    "Who you are building for, as a card of named fields.",
   summary:
     "Persona card. Body uses `key: value` lines for structured fields. Keys are freeform — use whatever fields suit the persona (name, role, goal, frustration, quote, tools, context). Renders as a styled card with the name prominent.",
   params: [
@@ -493,6 +551,8 @@ const persona: PrimitiveSpec = {
 const risk: PrimitiveSpec = {
   name: "risk",
   group: "pm-artifacts",
+  short:
+    "Something that could go wrong, how bad it would be, and what you would do.",
   summary:
     "Risk entry with severity level and optional mitigation. Body is the risk description; mitigation is a keyed field.",
   params: [
@@ -509,6 +569,8 @@ const risk: PrimitiveSpec = {
 const assumption: PrimitiveSpec = {
   name: "assumption",
   group: "pm-artifacts",
+  short:
+    "Something you are treating as true that the plan depends on.",
   summary:
     "Assumption entry. A thing believed to be true that the plan depends on. Body is the assumption; `validation` is how to test it.",
   params: [
@@ -531,6 +593,8 @@ const assumption: PrimitiveSpec = {
 const sticky: PrimitiveSpec = {
   name: "sticky",
   group: "expressive",
+  short:
+    "A sticky note. Several in a row cluster together.",
   summary:
     "Sticky note for cluster synthesis. Multiple stickies in sequence render as a cluster on the page. Color sets the sticky background.",
   params: [
@@ -548,6 +612,8 @@ const sticky: PrimitiveSpec = {
 const icon: PrimitiveSpec = {
   name: "icon",
   group: "expressive",
+  short:
+    "A small icon inside a line of text.",
   summary:
     "Inline icon from the bundled Lucide set. Renders at line height, inherits the text color. Use the Lucide icon name (kebab-case).",
   params: [

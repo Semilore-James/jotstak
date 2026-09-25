@@ -17,13 +17,10 @@ group("the hover card", () => {
     const card = hoverFor(spec).value;
 
     expect(card, "does not name the primitive").toContain(`**@${spec.name}**`);
-    // The summary, not a truncation of it: a hover that stops mid-sentence is
-    // worse than none, because you go and look it up anyway.
-    expect(card, "does not carry the schema's summary").toContain(spec.summary);
+    expect(card, "does not say what it is").toContain(spec.short);
 
     for (const p of spec.params) {
       expect(card, `omits the ${p.name} parameter`).toContain(`\`${p.name}\``);
-      expect(card, `omits what ${p.name} does`).toContain(p.description);
     }
   });
 
@@ -41,8 +38,34 @@ group("the hover card", () => {
 
   it("marks a required parameter as required and an optional one's default", () => {
     const matrix = hoverFor(getPrimitive("matrix")!).value;
-    expect(matrix).toContain("**required**");
-    expect(matrix).toContain("default `axes`");
+    expect(matrix).toContain("(required)");
+    expect(matrix).toContain("(default axes)");
+  });
+
+  it("stays short: one line to say what it is, not a paragraph", () => {
+    // A hover card long enough to scroll is one nobody reads to the end of.
+    for (const spec of PRIMITIVES) {
+      expect(spec.short.length, `@${spec.name}'s one-liner is a paragraph`).toBeLessThan(90);
+      expect(spec.short, `@${spec.name}'s one-liner has an em dash`).not.toContain("—");
+      // One sentence. A line that needs a second one is not a one-liner.
+      expect(
+        spec.short.replace(/(e\.g|i\.e)\./g, "").split(". ").length,
+        `@${spec.name}'s one-liner is two sentences`,
+      ).toBeLessThanOrEqual(2);
+    }
+  });
+
+  it("puts the example above the parameters, because the shape reads faster", () => {
+    const card = hoverFor(getPrimitive("matrix")!).value;
+    expect(card.indexOf("```")).toBeLessThan(card.indexOf("**Parameters**"));
+  });
+
+  it("cuts a parameter description at its first sentence", () => {
+    // The schema's descriptions are written for a docs page — the longest is
+    // 444 characters. The card takes the part that says what the thing IS.
+    const page = hoverFor(getPrimitive("page")!).value;
+    expect(page).toContain("What a single Enter does in prose");
+    expect(page).not.toContain("this is ruled paper");
   });
 
   it("lists an enum's choices rather than the word 'enum'", () => {
