@@ -241,3 +241,41 @@ describe("lexer — multi-line documents", () => {
     expect(diagnostics).toHaveLength(0);
   });
 });
+
+describe("an unknown @name says which kind of mistake it is", () => {
+  const first = (src: string) => lex(src).diagnostics[0]?.message ?? "";
+
+  it("names the block a parameter belongs on", () => {
+    // Someone wrote `@label The problem is fragmentation` inside a @panel.
+    // "Unknown primitive" is a true sentence that helps nobody: label IS a
+    // real thing, it is just written on the block's line rather than as a
+    // block of its own. That distinction is the one people get wrong.
+    const message = first("@label The problem");
+    expect(message).toContain("is a parameter");
+    expect(message).toContain("@panel");
+    expect(message).toContain('@panel(label="');
+  });
+
+  it("does not list every owner when a parameter is on many blocks", () => {
+    // `title` is on seven. A message that names all seven is one nobody reads.
+    const message = first("@title Something");
+    expect(message).toMatch(/and \d+ others/);
+  });
+
+  it("covers a parameter that every block takes", () => {
+    // `width` belongs to no primitive in particular, which is the point of it.
+    const message = first("@width full");
+    expect(message).toContain("every block");
+    expect(message).toContain('width="');
+  });
+
+  it("suggests a near miss on a real primitive", () => {
+    expect(first("@tabel")).toContain("@table");
+  });
+
+  it("still just says unknown when it is nothing at all", () => {
+    const message = first("@nonsense");
+    expect(message).toContain('Unknown primitive "@nonsense"');
+    expect(message).not.toContain("Did you mean");
+  });
+});

@@ -38,3 +38,6 @@ apps/web/src/content/docs/docs/functions/
 
 # Generated at build time alongside the function pages
 apps/web/public/jotstak-demo.css
+
+# Somewhere to try things without the samples test having an opinion.
+scratch.jot

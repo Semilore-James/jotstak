@@ -2,7 +2,7 @@
 // Reads raw source, splits into lines, classifies each line by its leading
 // syntax. Does NOT build a tree; the parser (Step 4) consumes these tokens.
 
-import { getPrimitive, getAllParams, UNIVERSAL_PARAMS } from "@jotstak/schema";
+import { getPrimitive, getAllParams, PRIMITIVES, UNIVERSAL_PARAMS } from "@jotstak/schema";
 import type { ParamSpec } from "@jotstak/schema";
 import type { Diagnostic } from "./index.js";
 import type { HeadingLevel } from "./ast.js";
@@ -192,6 +192,43 @@ function measureIndent(raw: string): { indent: number; stripped: string } {
 /** An opening or closing code fence: three or more backticks or tildes. */
 const FENCE_RE = /^(`{3,}|~{3,})\s*(.*)$/;
 
+
+/**
+ * What went wrong when `@something` is not a primitive.
+ *
+ * Almost always one of two things, and saying which turns a dead end into a
+ * correction. Someone wrote `@label The problem is fragmentation` inside a
+ * @panel, and "Unknown primitive" is a true sentence that helps nobody: label
+ * IS a real thing, it is just a PARAMETER, and parameters are written on the
+ * block's own line rather than as blocks of their own.
+ *
+ * The other case is a near miss on a real name, which is worth catching for
+ * the same reason.
+ */
+function unknownDirective(name: string): string {
+  const owners = PRIMITIVES.filter((p) => p.params.some((x) => x.name === name)).map((p) => p.name);
+  if (owners.length > 0 || UNIVERSAL_PARAMS.some((x) => x.name === name)) {
+    // Naming all seven owners of `title` would be a message nobody reads.
+    const where =
+      owners.length === 0
+        ? "every block"
+        : owners.length <= 3
+          ? owners.map((o) => `@${o}`).join(", ")
+          : `@${owners[0]} and ${owners.length - 1} others`;
+    const on = owners[0] ?? "panel";
+    return (
+      `\`${name}\` is a parameter of ${where}, not a block of its own. ` +
+      `Write it on the block's line: \`@${on}(${name}="…")\`.`
+    );
+  }
+
+  const near = PRIMITIVES.map((p) => p.name).find(
+    (n) => n.startsWith(name.slice(0, 3)) || name.startsWith(n.slice(0, 3)),
+  );
+  return `Unknown primitive "@${name}".` + (near ? ` Did you mean \`@${near}\`?` : "");
+}
+
+
 function classifyLine(
   raw: string,
   lineNum: number,
@@ -264,7 +301,7 @@ function classifyLine(
     if (!spec) {
       diagnostics.push({
         severity: "error",
-        message: `Unknown primitive "@${name}".`,
+        message: unknownDirective(name),
         line: lineNum,
         column,
       });
