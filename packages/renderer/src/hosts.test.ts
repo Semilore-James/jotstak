@@ -26,8 +26,9 @@ const HOSTS: Record<string, RegExp> = {
   // The extension's live preview, and the HTML it exports. Added the day they
   // were written rather than the week after someone noticed: the three above
   // were all caught by eye, and being a new host is exactly when it is easiest
-  // to invent a fifth way to size a page.
-  "apps/extension/src/preview.ts": /#sheet\b/,
+  // to invent a fifth way to size a page. The preview's markup lives in a file
+  // of its own so this test reads the thing that draws the page, not a copy.
+  "apps/extension/src/webview-shell.ts": /#sheet\b/,
   "apps/extension/src/export.ts": /#sheet\b/,
 };
 

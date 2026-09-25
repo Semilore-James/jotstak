@@ -10,6 +10,8 @@ import * as vscode from "vscode";
 import { render } from "@jotstak/renderer";
 import { JotPreview } from "./preview.js";
 import { createDiagnostics } from "./diagnostics.js";
+import { registerIndentation } from "./indentation.js";
+import { registerExtentRuler } from "./extent-ruler.js";
 
 /** The .jot file the command should act on, or a complaint if there is none. */
 function activeJot(): vscode.TextDocument | undefined {
@@ -21,6 +23,11 @@ function activeJot(): vscode.TextDocument | undefined {
 
 export function activate(context: vscode.ExtensionContext): void {
   createDiagnostics(context);
+  // Indentation decides what a block owns, so a wrong indent changes meaning
+  // rather than erroring. These two take the edge off it: the rules stop you
+  // making the mistake, the ruler shows you what you already have.
+  registerIndentation(context);
+  registerExtentRuler(context);
 
   context.subscriptions.push(
     vscode.commands.registerCommand("jotstak.openPreview", () => {

@@ -1,0 +1,19 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Build the extension",
+      "type": "shell",
+      "command": "npm run build -w apps/extension",
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "Watch the extension",
+      "type": "shell",
+      "command": "npm run watch -w apps/extension",
+      "isBackground": true,
+      "problemMatcher": []
+    }
+  ]
+}

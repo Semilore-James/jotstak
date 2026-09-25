@@ -1,0 +1,16 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Run the Jotstak extension",
+      "type": "extensionHost",
+      "request": "launch",
+      "args": [
+        "--extensionDevelopmentPath=${workspaceFolder}/apps/extension",
+        "${workspaceFolder}/samples/showcase.jot"
+      ],
+      "outFiles": ["${workspaceFolder}/apps/extension/dist/**/*.js"],
+      "preLaunchTask": "Build the extension"
+    }
+  ]
+}

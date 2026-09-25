@@ -13,11 +13,9 @@
 // past 1:1, nothing scrolling and nothing deciding the width on its own.
 
 import * as vscode from "vscode";
-import { render, renderThemeCss, renderLayoutCss, renderPageCss, PAGE } from "@jotstak/renderer";
+import { render } from "@jotstak/renderer";
 import type { RenderMode } from "@jotstak/renderer";
-
-/** A whole sheet of A4 at 96dpi: the printable width plus the page margins. */
-const SHEET = PAGE.portrait.content + 2 * PAGE.marginX;
+import { shellHtml } from "./webview-shell.js";
 
 /** Long enough that typing is not re-rendering every keystroke, short enough to feel live. */
 const SETTLE_MS = 120;
@@ -30,6 +28,9 @@ export class JotPreview {
   private timer: ReturnType<typeof setTimeout> | undefined;
   private doc: vscode.TextDocument | undefined;
   private mode: RenderMode = "notebook";
+  /** The page only listens once its script has run; until then, hold the newest render. */
+  private ready = false;
+  private pending: string | undefined;
 
   static show(context: vscode.ExtensionContext, doc: vscode.TextDocument): void {
     if (JotPreview.current) {
@@ -60,9 +61,23 @@ export class JotPreview {
       },
     );
 
+    // The shell is written ONCE. Every later render is a message, not a new
+    // document — replacing `webview.html` reloads the whole page, which throws
+    // away the scroll position and flashes, and doing that on a timer while
+    // someone is typing is unusable. The styles never change, so there is
+    // nothing in the shell that a re-render would need to replace.
+    this.panel.webview.html = this.shell();
+
     this.disposables.push(
       this.panel.onDidDispose(() => this.dispose()),
-      // Re-render as the file changes, and follow the author between files.
+      this.panel.webview.onDidReceiveMessage((m: { type?: string }) => {
+        if (m?.type !== "ready") return;
+        this.ready = true;
+        if (this.pending !== undefined) {
+          void this.panel.webview.postMessage({ type: "render", html: this.pending });
+          this.pending = undefined;
+        }
+      }),
       vscode.workspace.onDidChangeTextDocument((e) => {
         if (e.document === this.doc) this.schedule();
       }),
@@ -93,60 +108,27 @@ export class JotPreview {
   private draw(): void {
     if (!this.doc) return;
     const { html } = render(this.doc.getText(), { mode: this.mode });
-    this.panel.webview.html = this.shell(html);
+    if (!this.ready) {
+      this.pending = html;
+      return;
+    }
+    void this.panel.webview.postMessage({ type: "render", html });
   }
 
   /**
-   * The page the webview loads.
-   *
-   * Styles are inlined rather than linked because the renderer hands them over
-   * as strings — every host needs them differently, and a webview cannot fetch
-   * a stylesheet it has no server for. Fonts are the exception: they are real
-   * files, so they come through `asWebviewUri` and the CSP allows exactly that
-   * one origin.
+   * The page the webview loads, once. The markup lives in webview-shell.ts so
+   * it can be run in a browser without an extension host — a webview is
+   * otherwise only testable by opening it and looking.
    */
-  private shell(body: string): string {
+  private shell(): string {
     const { webview } = this.panel;
-    const media = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, "media"));
-    const nonce = Math.random().toString(36).slice(2);
-
-    return `<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8" />
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; font-src ${webview.cspSource}; img-src ${webview.cspSource} data:; script-src 'nonce-${nonce}';" />
-<style>
-${renderThemeCss({ assetBase: media.toString() })}
-${renderLayoutCss()}
-${renderPageCss()}
-/* The pane is the desk the sheet sits on, so it takes the editor's own
-   background rather than the paper's — the sheet has to read as a sheet. */
-body {
-  margin: 0;
-  padding: 20px 16px 40px;
-  background: var(--vscode-editor-background);
-  container-type: inline-size;
-}
-#sheet { width: ${SHEET}px; max-width: 100%; margin: 0 auto; box-shadow: 0 2px 16px rgba(0, 0, 0, 0.22); }
-/* Fit to the pane, never magnified past 1:1 — the same fit every other host
-   uses. No overflow: if something ever fails to fit it should hang over the
-   edge where it can be seen, not be quietly cut. */
-#sheet > .jotstak { zoom: min(1, calc(100cqw / ${SHEET}px)); }
-#sheet .jot-doc { padding-inline: ${PAGE.marginX}px; }
-</style>
-</head>
-<body>
-<div id="sheet">${body}</div>
-<script nonce="${nonce}">
-  // Keep the reading position across a re-render, or typing on page four
-  // throws you back to page one on every keystroke.
-  const key = "jotstak.scroll";
-  const saved = Number(sessionStorage.getItem(key) ?? "0");
-  if (saved) window.scrollTo(0, saved);
-  addEventListener("scroll", () => sessionStorage.setItem(key, String(window.scrollY)), { passive: true });
-</script>
-</body>
-</html>`;
+    return shellHtml({
+      assetBase: webview
+        .asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, "media"))
+        .toString(),
+      cspSource: webview.cspSource,
+      nonce: Math.random().toString(36).slice(2),
+    });
   }
 
   private dispose(): void {

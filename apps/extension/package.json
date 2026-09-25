@@ -75,7 +75,8 @@
     "package": "npm run build && vsce package --no-dependencies",
     "publish:vsce": "npm run build && vsce publish --no-dependencies",
     "publish:ovsx": "npm run build && ovsx publish --no-dependencies",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
   },
   "dependencies": {
     "@jotstak/renderer": "*",
