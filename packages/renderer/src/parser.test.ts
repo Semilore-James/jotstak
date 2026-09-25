@@ -482,12 +482,12 @@ describe("heading levels", () => {
     }
   });
 
-  it("stops the type scale at three, and says so in the class", () => {
-    // The tag is the level the author wrote, so an outline and a screen reader
-    // see the real depth. The look stops at 3 because the scale has 3 sizes.
+  it("gives the tag and the class the same level, all the way down", () => {
+    // They used to collapse onto .jot-h3 past three, which made a level 4 and
+    // a level 5 indistinguishable from each other and from a 3.
     expect(level("### three")).toEqual({ tag: 3, styled: 3 });
-    expect(level("#### four")).toEqual({ tag: 4, styled: 3 });
-    expect(level("###### six")).toEqual({ tag: 6, styled: 3 });
+    expect(level("#### four")).toEqual({ tag: 4, styled: 4 });
+    expect(level("###### six")).toEqual({ tag: 6, styled: 6 });
   });
 
   it("reads the same whichever of the three ways it is written", () => {
@@ -500,8 +500,75 @@ describe("heading levels", () => {
 
   it("keeps every level on the baseline grid", () => {
     const css = renderLayoutCss();
-    // Only .jot-h1..3 exist, which is exactly why 4–6 must carry one of them.
-    for (const n of [1, 2, 3]) expect(css).toContain(`.jot-h${n} {`);
-    expect(css).not.toContain(".jot-h4");
+    for (let n = 1; n <= 6; n++) expect(css).toContain(`.jot-h${n} {`);
+    // Every line-height is a whole number of rows, or the ruling drifts.
+    for (const [, value] of css.matchAll(/\.jot-h\d \{[^}]*line-height:\s*(\d+)px/g)) {
+      expect(Number(value) % 28).toBe(0);
+    }
+  });
+});
+
+describe("parameters on the line below the directive", () => {
+  const N = String.fromCharCode(10);
+  const panel = (src: string) => render(src, { mode: "notebook" });
+
+  it("reads them as parameters, not as body text", () => {
+    // `@panel` then an indented `(title="…")` is a natural thing to write once
+    // the list is long enough to want its own line, and ADR-003 already
+    // blesses a parenthesised list that spans lines. It used to fall through
+    // as prose: the panel held the literal characters `(title="…")` and said
+    // nothing about it.
+    const { html, diagnostics } = panel('@panel' + N + '  (accent=alert title="The risk")');
+    expect(html).toContain('<p class="jot-card-title">The risk</p>');
+    expect(html).toContain('data-accent="alert"');
+    expect(html).not.toContain("(accent=alert");
+    expect(diagnostics).toEqual([]);
+  });
+
+  it("leaves a paragraph that merely starts with a bracket alone", () => {
+    // Swallowing prose would trade one silent loss for another.
+    const { html } = panel('@panel' + N + '  (this is just prose, not params)');
+    expect(html).toContain("(this is just prose, not params)");
+  });
+
+  it("says so when a parameter is written with a colon", () => {
+    // A colon never matched the param pattern, so it never reached the
+    // unknown-param check either: the value silently went nowhere.
+    const { diagnostics } = panel('@panel' + N + '  (color:yellow title="The risk")');
+    const warn = diagnostics.find((d) => d.message.includes("not"));
+    expect(warn?.severity).toBe("warning");
+    expect(warn?.message).toContain("color=yellow");
+  });
+
+  it("does not mistake a colon inside a quoted value for one", () => {
+    expect(panel('@panel(title="Ratio 3:1 matters")').diagnostics).toEqual([]);
+  });
+});
+
+describe("six heading levels, six looks", () => {
+  it("gives each level its own class", () => {
+    // They used to collapse onto .jot-h3 past three, which made @h4 and @h5
+    // indistinguishable from each other and from @h3. Six levels that produce
+    // three looks are not six levels.
+    for (let n = 1; n <= 6; n++) {
+      expect(render(`@h${n} X`, { mode: "notebook" }).html).toContain(`class="jot-h${n}"`);
+    }
+  });
+
+  it("styles all six, and no two the same", () => {
+    const css = renderLayoutCss();
+    const sizes = new Set<string>();
+    for (let n = 1; n <= 6; n++) {
+      const rule = css
+        .split("}")
+        .filter((r) => r.includes(`.jot-h${n} {`) && /font-size:/.test(r))
+        .pop();
+      expect(rule, `.jot-h${n} is not styled`).toBeDefined();
+      const size = /font-size:\s*([^;]+)/.exec(rule!)?.[1];
+      const weight = /font-weight:\s*(\d+)/.exec(rule!)?.[1] ?? "600";
+      expect(size, `.jot-h${n} has no size`).toBeDefined();
+      sizes.add(`${size}/${weight}`);
+    }
+    expect(sizes.size, "two levels look identical").toBe(6);
   });
 });

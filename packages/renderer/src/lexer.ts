@@ -85,6 +85,20 @@ function splitParenRegion(text: string): { inside: string; after: string } | nul
   return { inside: trimmed.slice(1), after: "" };
 }
 
+/**
+ * Parse a parenthesised parameter list that was written on its own line,
+ * under the directive it belongs to. The parser reaches for this when a
+ * block's first body line opens with `(` — see the note there.
+ */
+export function lexParams(
+  text: string,
+  primitiveName: string,
+  lineNum: number,
+  diagnostics: Diagnostic[],
+): DirectiveParams {
+  return parseInlineParams(text.trimStart(), primitiveName, lineNum, diagnostics);
+}
+
 function parseInlineParams(
   text: string,
   primitiveName: string,
@@ -106,6 +120,22 @@ function parseInlineParams(
     const value = match[2] ?? match[3] ?? match[4] ?? "";
     params[key] = value;
     lastIndex = PARAM_RE.lastIndex;
+  }
+
+  // `key: value` where `key=value` was meant.
+  //
+  // PARAM_RE only matches `=`, so a colon never became a param and never
+  // reached the unknown-param check below either: someone wrote
+  // `(color:yellow title="…")` and the colour silently went nowhere. Quoted
+  // values are blanked first, so a colon inside a title is not a mistake.
+  const unquoted = scan.replace(/"[^"]*"|'[^']*'/g, (m) => " ".repeat(m.length));
+  for (const m of unquoted.matchAll(/([a-zA-Z_][a-zA-Z0-9_]*)\s*:\s*(\S+)/g)) {
+    diagnostics.push({
+      severity: "warning",
+      message: `Parameters use \`=\`, not \`:\`. Write \`${m[1]}=${m[2]}\` on @${primitiveName}.`,
+      line: lineNum,
+      column: 0,
+    });
   }
 
   const allParams = getAllParams(primitiveName);

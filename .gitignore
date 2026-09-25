@@ -41,3 +41,4 @@ apps/web/public/jotstak-demo.css
 
 # Somewhere to try things without the samples test having an opinion.
 scratch.jot
+apps/extension/dist/

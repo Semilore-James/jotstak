@@ -5,7 +5,7 @@
 
 import { getPrimitive } from "@jotstak/schema";
 import type { PrimitiveSpec } from "@jotstak/schema";
-import { lex } from "./lexer.js";
+import { lex, lexParams } from "./lexer.js";
 import type { LineToken } from "./lexer.js";
 import type {
   BlockBody,
@@ -518,6 +518,31 @@ export function parseTokens(
         const startPos = posOf(t);
         const collected = collectBody(tokens, i + 1);
         i = collected.next;
+
+        // Parameters written on the line BELOW the directive.
+        //
+        // `@panel` then an indented `(title="…")` is a natural thing to write
+        // once a parameter list is long enough to want its own line, and
+        // ADR-003 already blesses a parenthesised list that spans lines. It
+        // used to fall through as body text: the panel came out holding the
+        // literal characters `(title="…")`, with no diagnostic, so the only
+        // signal was that the block looked wrong.
+        const opener = collected.body.find((b) => b.kind !== "blank");
+        if (opener && opener.content.trimStart().startsWith("(")) {
+          // Only if it really is a parameter list. A paragraph that happens to
+          // open with a bracket is prose, and swallowing it would trade one
+          // silent loss for another.
+          const probe: Diagnostic[] = [];
+          const extra = lexParams(opener.content, written, t.line, probe);
+          if (Object.keys(extra.params).length > 0) {
+            diagnostics.push(...probe);
+            t.directive = {
+              params: { ...(t.directive?.params ?? {}), ...extra.params },
+              rest: [t.directive?.rest, extra.rest].filter(Boolean).join(" "),
+            };
+            collected.body.splice(collected.body.indexOf(opener), 1);
+          }
+        }
 
         if (!spec) {
           // The lexer already reported the unknown primitive; keep the text.

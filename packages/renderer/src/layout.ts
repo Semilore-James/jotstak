@@ -300,9 +300,23 @@ ${scope} .jot-body blockquote p {
 }
 
 
+/* ── Headings: six levels, six looks ────────────────────────────────── */
+/* There were three. Levels 4, 5 and 6 carried .jot-h3 and came out identical
+   to it in size, weight and everything else, which makes @h4 and @h5
+   decoration rather than structure — if the language offers six levels they
+   have to be six visibly different things, or it should not offer six.
+
+   Below level 3 the sizes run out: 22, 18, and then there is nowhere to go
+   that is still readable. So the last two carry their rank with WEIGHT and
+   case instead of size — h5 sits at body size and is heavier than the prose
+   around it, h6 is a small label. That is how a type scale normally bottoms
+   out, and it keeps every level on the 28px grid. */
 ${scope} .jot-h1,
 ${scope} .jot-h2,
-${scope} .jot-h3 {
+${scope} .jot-h3,
+${scope} .jot-h4,
+${scope} .jot-h5,
+${scope} .jot-h6 {
   font-family: var(--jot-font-heading);
   color: var(--jot-ink);
   margin-top: ${ROW}px;
@@ -311,6 +325,19 @@ ${scope} .jot-h3 {
 ${scope} .jot-h1 { font-size: ${typography.headline.xl.size}; line-height: ${ROW * 2}px; letter-spacing: ${typography.headline.xl.letterSpacing}; ${sitsOnRule(typography.headline.xl.size, ROW * 2)} }
 ${scope} .jot-h2 { font-size: ${typography.headline.lg.size}; line-height: ${ROW * 2}px; letter-spacing: ${typography.headline.lg.letterSpacing}; ${sitsOnRule(typography.headline.lg.size, ROW * 2)} }
 ${scope} .jot-h3 { font-size: ${typography.headline.md.size}; line-height: ${ROW}px; letter-spacing: ${typography.headline.md.letterSpacing}; ${sitsOnRule(typography.headline.md.size, ROW)} }
+${scope} .jot-h4 { font-size: ${typography.headline.sm.size}; line-height: ${ROW}px; ${sitsOnRule(typography.headline.sm.size, ROW)} }
+/* Body size, but heavier than the prose it introduces — a run-in heading. */
+${scope} .jot-h5 { font-size: ${typography.body.lg.size}; line-height: ${ROW}px; font-weight: 700; ${sitsOnRule(typography.body.lg.size, ROW)} }
+/* The bottom of the scale is a label, not a smaller heading. */
+${scope} .jot-h6 {
+  font-family: var(--jot-font-label);
+  font-size: ${typography.label.md.size};
+  line-height: ${ROW}px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--jot-ink-muted);
+}
 ${scope} .jot-doc > .jot-row:first-child > .jot-body > :first-child { margin-top: 0; }
 
 /* Bold is one step heavier than whatever it is inside, so it has to sit above

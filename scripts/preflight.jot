@@ -1,0 +1,48 @@
+// Preflight: one document that exercises everything reported broken, so a
+// build can be LOOKED AT before it is handed over. Not a sample — it is
+// deliberately ugly and exhaustive.
+
+@h1 Heading one
+@h2 Heading two
+@h3 Heading three
+@h4 Heading four
+@h5 Heading five
+@h6 Heading six
+
+#### Four hashes, which is a heading too
+
+Prose with **bold**, *italic*, `code` and ==highlight==.
+A second line, which should be a second line.
+
+@quote A quote must never be a dark box, whatever the editor thinks.
+
+---
+
+@panel
+  (accent=alert title="Parameters on the line below")
+  Body text under them.
+
+@panel(title="Parameters inline")
+  Body text.
+
+@table Q4
+  Area, Owner, Notes
+  Search, Ana, "one \n two"
+  Export, Ben, single line
+
+@timeline title="Four events"
+  Q3 2026: Discovery
+    twelve interviews
+  Oct 2026: **Alpha**
+  Dec 2026: Beta
+  Q1 2027: Launch
+
+@matrix(x="Effort" y="Impact" title="Two by two")
+  Search at tr
+  Export at bl
+
+@note a margin note, in handwriting
+
+@pagebreak label="Appendix"
+
+@h2 After the break

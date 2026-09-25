@@ -30,15 +30,15 @@ What makes Jotstak worth choosing is what comes out the other end.
 The bet: documents people enjoy re-reading get re-read, and re-read documents keep
 teams aligned. Aesthetic is a retention feature, not decoration.
 
+
 @decision title="Fragmentation leads, the notebook differentiates" status=accepted date=2026-09-18
   context: Two framings were live and contradicted each other — tool fragmentation, and documents treated as freight nobody reopens.
   choice: Lead with fragmentation as the pain; keep the notebook rendering as the reason to pick this over another all-in-one.
   consequences: Sets the landing headline, the README opening, and what the survey is actually testing.
 
-@note settled 18 Sept
-somebody \n shout 
-@sticky 
-  @note
+
+@sticky(color=green)
+  The notebook is the differentiator
 
 
 The deciding argument was falsifiability. *"Would you like nicer documents?"* gets
@@ -51,7 +51,8 @@ This still rests on a single-user hypothesis — the author's own pain. That is 
 legitimate origin, and many tools started there, but it stays named rather than
 hidden until the survey returns data.
 
-@panel 
-  
+@panel(accent=alert title="The risk is that the problem is not real")
+  A single-user hypothesis is a starting point, not a finding. The survey is
+  what turns it into one, or kills it.
 
 @note a null result gets recorded, not buried
