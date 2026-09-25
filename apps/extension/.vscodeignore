@@ -8,3 +8,4 @@ node_modules/**
 **/*.map
 **/*.test.*
 tsconfig.tsbuildinfo
+dist/shell.mjs
