@@ -133,15 +133,17 @@ const heading: PrimitiveSpec = {
   name: "heading",
   group: "structure",
   summary:
-    "Section heading. Level 1–3 set by param or shorthand: `# `, `## `, `### ` at line start. Plain `@heading` defaults to level 1.",
+    "Section heading. Write it as `# `, `## `, `### ` at the start of a line, or as `@heading` with a level, or as `@h1` to `@h6`. Markdown has six levels and so does this; the type scale has three sizes and stops there, so a level 4, 5 or 6 is set like a level 3 while the document outline still sees the depth you gave it.",
+  aliases: ["h1", "h2", "h3", "h4", "h5", "h6"],
   params: [
-    { name: "level", type: "enum", required: false, description: "Heading depth.", enumValues: ["1", "2", "3"], default: "1" },
+    { name: "level", type: "enum", required: false, description: "Heading depth, 1 to 6.", enumValues: ["1", "2", "3", "4", "5", "6"], default: "1" },
   ],
   bodyShape: "plain",
   breaksRuling: false,
   examples: [
     "@heading Overview",
     "## Goals and non-goals",
+    "@h2 Goals and non-goals",
   ],
 };
 

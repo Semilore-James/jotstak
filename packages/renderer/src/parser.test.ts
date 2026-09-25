@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { render, renderLayoutCss } from "./index.js";
 import { parse } from "./parser.js";
 import type { BlockNode, HeadingNode, ListNode, MarginNoteNode, QuoteNode, MarkdownNode, DividerNode } from "./ast.js";
 
@@ -460,5 +461,47 @@ describe("parser — indentation is the sharpest edge, so it is reported", () =>
     const warnings = indentWarnings(src);
     expect(warnings).toHaveLength(1);
     expect(warnings[0]!.message).toContain("the other top-level lines");
+  });
+});
+
+describe("heading levels", () => {
+  const level = (src: string) => {
+    const { html } = render(src, { mode: "notebook" });
+    const m = /<h(\d) class="jot-h(\d)"/.exec(html);
+    return m ? { tag: Number(m[1]), styled: Number(m[2]) } : undefined;
+  };
+
+  it("takes all six, because Markdown has six", () => {
+    // `#### four` used to fall through to markdown-it as a bare <h4> with no
+    // class — browser-default size and margins, which is not a whole number of
+    // rows, so every line after it landed off the rule. A .md file with four
+    // levels is ordinary, and the superset promise covers it.
+    for (let n = 1; n <= 6; n++) {
+      expect(level("#".repeat(n) + " Heading"), `${n} hashes`).toBeDefined();
+      expect(level("#".repeat(n) + " Heading")!.tag).toBe(n);
+    }
+  });
+
+  it("stops the type scale at three, and says so in the class", () => {
+    // The tag is the level the author wrote, so an outline and a screen reader
+    // see the real depth. The look stops at 3 because the scale has 3 sizes.
+    expect(level("### three")).toEqual({ tag: 3, styled: 3 });
+    expect(level("#### four")).toEqual({ tag: 4, styled: 3 });
+    expect(level("###### six")).toEqual({ tag: 6, styled: 3 });
+  });
+
+  it("reads the same whichever of the three ways it is written", () => {
+    expect(level("## Goals")).toEqual(level("@heading(level=2) Goals"));
+    expect(level("## Goals")).toEqual(level("@h2 Goals"));
+    // And a level past the scale is not an error in any of them.
+    expect(render("@heading(level=5) Five", { mode: "notebook" }).diagnostics).toEqual([]);
+    expect(render("@h5 Five", { mode: "notebook" }).diagnostics).toEqual([]);
+  });
+
+  it("keeps every level on the baseline grid", () => {
+    const css = renderLayoutCss();
+    // Only .jot-h1..3 exist, which is exactly why 4–6 must carry one of them.
+    for (const n of [1, 2, 3]) expect(css).toContain(`.jot-h${n} {`);
+    expect(css).not.toContain(".jot-h4");
   });
 });

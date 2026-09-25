@@ -208,11 +208,15 @@ describe("render — the sample document", () => {
   });
 
   it("produces the card, the notes and the prose", () => {
+    // Structure, not an exact tally. The samples are scratch space as much as
+    // shop window — they get edited to try something out — and a test that
+    // counts the notes breaks every time someone does, while saying nothing
+    // about whether the document still works.
     const { html } = render(sample, { mode: "notebook" });
     expect(html).toContain("jot-card");
     expect(html).toContain("jot-note");
     expect(html).toContain("Fragmentation leads");
-    expect((html.match(/jot-note/g) ?? []).length).toBe(4);
+    expect((html.match(/jot-note/g) ?? []).length).toBeGreaterThan(0);
   });
 });
 

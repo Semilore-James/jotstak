@@ -11,6 +11,7 @@ import type {
   BlockBody,
   DocumentNode,
   Field,
+  HeadingLevel,
   Node,
   Position,
   TreeNode,
@@ -304,10 +305,20 @@ function applyShorthandParams(
   const out = { ...params };
 
   if (writtenName !== spec.name) {
-    const target = spec.params.find(
+    // An alias either IS the value — `@warn` meaning `flavor=warn` — or carries
+    // it as a trailing number: `@h2` meaning `level=2`. The second form is how
+    // headings get six shortcodes without six primitives.
+    const byValue = spec.params.find(
       (p) => p.type === "enum" && p.enumValues?.includes(writtenName),
     );
-    if (target && !(target.name in out)) out[target.name] = writtenName;
+    const suffix = /^[a-z]+(\d+)$/.exec(writtenName)?.[1];
+    const bySuffix =
+      byValue || !suffix
+        ? undefined
+        : spec.params.find((p) => p.type === "enum" && p.enumValues?.includes(suffix));
+
+    const target = byValue ?? bySuffix;
+    if (target && !(target.name in out)) out[target.name] = byValue ? writtenName : suffix!;
   }
 
   const first = spec.params[0];
@@ -423,7 +434,7 @@ export function parseTokens(
         flushMarkdown();
         children.push({
           type: "heading",
-          level: (t.headingLevel ?? 1) as 1 | 2 | 3,
+          level: (t.headingLevel ?? 1) as HeadingLevel,
           text: t.content,
           params: {},
           position: posOf(t),
@@ -539,7 +550,7 @@ export function parseTokens(
             const lvl = Number(resolved.params.level ?? "1");
             children.push({
               type: "heading",
-              level: (lvl >= 1 && lvl <= 3 ? lvl : 1) as 1 | 2 | 3,
+              level: (lvl >= 1 && lvl <= 6 ? lvl : 1) as HeadingLevel,
               text: resolved.title || bodyToLines(body)[0] || "",
               params: resolved.params,
               position: startPos,

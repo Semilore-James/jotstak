@@ -61,9 +61,17 @@ export interface BlockNode {
   position: Position;
 }
 
+/**
+ * Markdown has six, and a .jot file is a superset of Markdown. The type scale
+ * has three sizes and stops there — 4, 5 and 6 are set like a 3 — but the tag
+ * is the level the author wrote, so an outline, a screen reader and a table of
+ * contents all still see the structure they were given.
+ */
+export type HeadingLevel = 1 | 2 | 3 | 4 | 5 | 6;
+
 export interface HeadingNode {
   type: "heading";
-  level: 1 | 2 | 3;
+  level: HeadingLevel;
   text: string;
   params: Record<string, string>;
   position: Position;

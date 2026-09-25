@@ -2,11 +2,12 @@
 
 Writing a single PRD means scattering it across five tools: Google Docs for prose,
 Sheets for tables, Miro for diagrams, Notion as the hub, Jira for the tasks it
-spawns. The cost is not the writing. It is everything after.
+spawns. 
+The cost is not the writing. It is everything after.
 
 @note this is the whole bet
 
-- **Context is lost on the seams.** The diagram explaining the paragraph lives in
+@note **Context is lost on the seams.** The diagram explaining the paragraph lives in
   a different tool from the paragraph.
 - **Versions drift silently.** The board gets updated, the doc that embeds it does
   not, and nothing warns anyone.
@@ -17,12 +18,12 @@ spawns. The cost is not the writing. It is everything after.
 
 ---
 
-## What makes this one different
+@heading What makes this one different
 
 Solving fragmentation alone gets you another all-in-one tool, and there are many.
 What makes Jotstak worth choosing is what comes out the other end.
 
-> None of them treat the document as an artifact worth caring about.
+@quote None of them treat the document as an artifact worth caring about.
 
 @note notebook is the differentiator, not the pitch
 
@@ -35,6 +36,8 @@ teams aligned. Aesthetic is a retention feature, not decoration.
   consequences: Sets the landing headline, the README opening, and what the survey is actually testing.
 
 @note settled 18 Sept
+
+
 
 The deciding argument was falsifiability. *"Would you like nicer documents?"* gets
 a yes from everyone and tells you nothing. *"How many tools did your last PRD

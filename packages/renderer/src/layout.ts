@@ -410,6 +410,25 @@ ${scope} .jot-body ul ol,
 ${scope} .jot-body ol ul { margin-bottom: 0; }
 ${scope} .jot-body li::marker { color: var(--jot-accent); }
 
+/* ── The host's defaults stop at the paper ──────────────────────────── */
+/* The theme is careful never to restyle its host. The converse has to be true
+   as well, and was not: a host may inject element defaults into the page the
+   document is embedded in, and VS Code gives every webview a stylesheet with
+   blockquote, table and link rules in the EDITOR's colours.
+
+   A quote came out as a dark grey box on cream paper because of it — our quote
+   rule set a border and a colour and never a background, so the editor's
+   blockquote background won by default. Nothing was wrong with the markup or
+   with any rule we had written; the gap WAS the rule we had not written.
+
+   So the document declares its own value for anything a host is likely to
+   claim, rather than relying on it to leave the element alone. */
+${scope} .jot-quote,
+${scope} .jot-body blockquote,
+${scope} .jot-body table,
+${scope} .jot-body kbd,
+${scope} .jot-body figure { background: none; }
+
 /* ── Quote ──────────────────────────────────────────────────────────── */
 ${scope} .jot-quote {
   padding-left: ${ROW - 1}px;

@@ -5,12 +5,13 @@
 import { getPrimitive, getAllParams, UNIVERSAL_PARAMS } from "@jotstak/schema";
 import type { ParamSpec } from "@jotstak/schema";
 import type { Diagnostic } from "./index.js";
+import type { HeadingLevel } from "./ast.js";
 
 // ── Token types ──────────────────────────────────────────────────────────
 
 export type LineKind =
   | "directive"     // @primitive [params]
-  | "heading"       // # / ## / ###
+  | "heading"       // # through ######
   | "bullet"        // - item
   | "numbered"      // 1. item
   | "divider"       // ---
@@ -48,7 +49,7 @@ export interface LineToken {
 
   // ── Only set for kind === "heading" ──
   /** 1, 2, or 3. */
-  headingLevel?: number;
+  headingLevel?: HeadingLevel;
 }
 
 // ── Param parser ─────────────────────────────────────────────────────────
@@ -164,7 +165,7 @@ function validateParamValue(
 // ── Line classification ──────────────────────────────────────────────────
 
 const DIRECTIVE_RE = /^@([a-zA-Z_][a-zA-Z0-9_]*)\s*(.*)/;
-const HEADING_RE = /^(#{1,3})\s+(.*)/;
+const HEADING_RE = /^(#{1,6})\s+(.*)/;
 const BULLET_RE = /^-\s+(.*)/;
 const NUMBERED_RE = /^\d+\.\s+(.*)/;
 const DIVIDER_RE = /^---+\s*$/;
@@ -300,14 +301,14 @@ function classifyLine(
     };
   }
 
-  // Heading: # / ## / ###
+  // Heading: # through ######
   const headingMatch = HEADING_RE.exec(stripped);
   if (headingMatch) {
     return {
       ...base,
       kind: "heading",
       content: headingMatch[2] ?? "",
-      headingLevel: headingMatch[1]!.length as 1 | 2 | 3,
+      headingLevel: headingMatch[1]!.length as HeadingLevel,
     };
   }
 

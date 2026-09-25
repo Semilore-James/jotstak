@@ -78,7 +78,11 @@ const attr = (name: string, value: string | undefined): string =>
 
 function renderHeading(n: HeadingNode): string {
   const id = n.params.id;
-  return `<h${n.level} class="jot-h${n.level}"${attr("id", id)}>${inline(n.text)}</h${n.level}>`;
+  // The tag is the level the author wrote; the CLASS stops at 3, because the
+  // type scale has three sizes. A level past that keeps the third one's look
+  // while the document outline still sees the depth it was given.
+  const look = Math.min(n.level, 3);
+  return `<h${n.level} class="jot-h${look}"${attr("id", id)}>${inline(n.text)}</h${n.level}>`;
 }
 
 function renderTree(items: TreeNode[], ordered: boolean): string {

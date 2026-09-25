@@ -15,6 +15,7 @@
 // nothing decides the document's width on its own.
 
 import { describe, expect, it } from "vitest";
+import { renderLayoutCss } from "./index.js";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
@@ -72,5 +73,38 @@ describe.each(Object.keys(HOSTS))("%s", (path) => {
         /max-width:/,
       );
     }
+  });
+});
+
+// ── The host's defaults stop at the paper ────────────────────────────────
+//
+// The mirror of the rule above. Those tests stop a host deciding how wide the
+// document is; this one stops a host deciding what it looks like.
+//
+// VS Code injects an element stylesheet into every webview — blockquote, table
+// and link rules in the editor's own colours. A quote rendered as a dark grey
+// box on cream paper because of it, and nothing was wrong with the markup or
+// with any rule we had written: the gap was the rule we had NOT written. Our
+// quote rule set a border and a colour and never a background, so the host's
+// background won by default.
+describe("a host cannot restyle the document", () => {
+  const css = renderLayoutCss();
+
+  /** Elements a host is likely to have an opinion about. */
+  const CLAIMED = ["blockquote", "table", "kbd", "code", "pre"];
+
+  it.each(CLAIMED)("%s has a background of our own", (element) => {
+    const owns = rules(css).some(
+      ([selector, body]) =>
+        new RegExp(`\\b${element}\\b`).test(selector) && /background(-color)?:/.test(body),
+    );
+    expect(owns, `nothing declares a background for ${element}, so the host's wins`).toBe(true);
+  });
+
+  it("covers the quote by its class as well as its element", () => {
+    // @quote renders a <blockquote class="jot-quote">, and a host rule for the
+    // bare element reaches it either way.
+    const quote = rules(css).filter(([s]) => /\.jot-quote\b/.test(s));
+    expect(quote.some(([, body]) => /background:/.test(body))).toBe(true);
   });
 });
