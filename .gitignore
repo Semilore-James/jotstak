@@ -28,8 +28,10 @@ PRD.md
 jotter-overview.md
 docs/register/
 
-# Fonts are copied from node_modules at build time by apps/web/scripts/copy-fonts.mjs
+# Fonts are copied from node_modules at build time — by
+# apps/web/scripts/copy-fonts.mjs and apps/extension/scripts/build.mjs.
 apps/web/public/fonts/
+apps/extension/media/fonts/
 
 # Generated from the schema at build time by apps/web/scripts/generate-reference.mjs
 apps/web/src/content/docs/docs/functions/
