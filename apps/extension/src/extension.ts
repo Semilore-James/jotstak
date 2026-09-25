@@ -1,27 +1,67 @@
 // Jotstak VS Code extension entry point.
-// Registers the live preview webview (which imports @jotstak/renderer) and the
-// command-palette actions. The LSP for autocomplete is wired from @jotstak/schema.
+//
+// Two things make this worth installing, and everything else is a convenience:
+// the live preview (preview.ts), because the promise is that what you type and
+// what prints are the same document; and the diagnostics (diagnostics.ts),
+// because the renderer already explains itself and those explanations belong
+// where you are typing rather than in a list on a website.
 
 import * as vscode from "vscode";
+import { render } from "@jotstak/renderer";
+import { JotPreview } from "./preview.js";
+import { createDiagnostics } from "./diagnostics.js";
+
+/** The .jot file the command should act on, or a complaint if there is none. */
+function activeJot(): vscode.TextDocument | undefined {
+  const doc = vscode.window.activeTextEditor?.document;
+  if (doc?.languageId === "jot") return doc;
+  void vscode.window.showInformationMessage("Open a .jot file first.");
+  return undefined;
+}
 
 export function activate(context: vscode.ExtensionContext): void {
+  createDiagnostics(context);
+
   context.subscriptions.push(
     vscode.commands.registerCommand("jotstak.openPreview", () => {
-      // TODO(v1): create/show a webview panel, render active .jot on change.
+      const doc = activeJot();
+      if (doc) JotPreview.show(context, doc);
     }),
+
     vscode.commands.registerCommand("jotstak.toggleMode", () => {
-      // TODO(v1): flip notebook <-> doc mode in the active preview.
+      const preview = JotPreview.active;
+      if (!preview) {
+        void vscode.window.showInformationMessage("Open the preview first.");
+        return;
+      }
+      preview.toggleMode();
     }),
-    vscode.commands.registerCommand("jotstak.exportHtml", () => {
-      // TODO(v1): render current doc to a self-contained HTML file.
+
+    vscode.commands.registerCommand("jotstak.exportHtml", async () => {
+      const doc = activeJot();
+      if (!doc) return;
+      const target = await vscode.window.showSaveDialog({
+        filters: { HTML: ["html"] },
+        defaultUri: vscode.Uri.file(doc.fileName.replace(/\.jot$/, "") + ".html"),
+      });
+      if (!target) return;
+
+      const { exportHtml } = await import("./export.js");
+      const media = vscode.Uri.joinPath(context.extensionUri, "media").fsPath;
+      const title = doc.fileName.split(/[\\/]/).pop()?.replace(/\.jot$/, "") ?? "Document";
+      const html = exportHtml(doc.getText(), media, title);
+      await vscode.workspace.fs.writeFile(target, Buffer.from(html, "utf8"));
+      void vscode.window.showInformationMessage(`Exported ${target.path.split("/").pop()}.`);
     }),
-    vscode.commands.registerCommand("jotstak.copyMarkdown", () => {
-      // TODO(v1): render current doc to clean Markdown, copy to clipboard.
-    }),
+
     vscode.commands.registerCommand("jotstak.learnSyntax", () => {
-      // TODO(v1): open the interactive welcome .jot tour.
+      void vscode.env.openExternal(vscode.Uri.parse("https://jotstak.com/docs/"));
     }),
   );
+
+  // Rendering on activation warms the module graph, so the first preview does
+  // not pay for parsing the renderer while the author is watching.
+  void render("", { mode: "notebook" });
 }
 
 export function deactivate(): void {}

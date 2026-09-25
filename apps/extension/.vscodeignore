@@ -1,0 +1,6 @@
+# vsce packages this folder; the bundle is the only code that ships.
+src/**
+scripts/**
+tsconfig*.json
+node_modules/**
+**/*.map

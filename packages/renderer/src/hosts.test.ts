@@ -23,6 +23,12 @@ const HOSTS: Record<string, RegExp> = {
   "apps/web/src/pages/playground.astro": /#out-wrap|#out\b/,
   "apps/web/src/pages/index.astro": /\.rendered/,
   "apps/web/scripts/generate-reference.mjs": /\.jot-demo-out/,
+  // The extension's live preview, and the HTML it exports. Added the day they
+  // were written rather than the week after someone noticed: the three above
+  // were all caught by eye, and being a new host is exactly when it is easiest
+  // to invent a fifth way to size a page.
+  "apps/extension/src/preview.ts": /#sheet\b/,
+  "apps/extension/src/export.ts": /#sheet\b/,
 };
 
 const read = (path: string) =>

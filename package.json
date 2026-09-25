@@ -1,5 +1,5 @@
 {
-  "name": "jotstak",
+  "name": "jotstak-monorepo",
   "version": "0.0.0",
   "private": true,
   "description": "A code-first document tool for product managers, rendered as a warm, hand-kept notebook.",
@@ -12,7 +12,7 @@
     "build": "tsc -b && npm run build -w @jotstak/web",
     "typecheck": "tsc -b && npm run typecheck -w @jotstak/web",
     "dev:web": "npm run dev -w @jotstak/web",
-    "dev:ext": "npm run watch -w @jotstak/extension",
+    "dev:ext": "npm run watch -w apps/extension",
     "test": "npm run test --workspaces --if-present",
     "clean": "tsc -b --clean"
   },

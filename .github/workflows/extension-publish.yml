@@ -15,12 +15,12 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npm run build -w @jotstak/extension
+      - run: npm run build -w apps/extension
       - name: Publish to VS Code Marketplace
-        run: npm run publish:vsce -w @jotstak/extension
+        run: npm run publish:vsce -w apps/extension
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
       - name: Publish to Open VSX
-        run: npm run publish:ovsx -w @jotstak/extension
+        run: npm run publish:ovsx -w apps/extension
         env:
           OVSX_PAT: ${{ secrets.OVSX_PAT }}
