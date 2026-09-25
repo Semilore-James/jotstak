@@ -27,7 +27,8 @@
   ],
   "main": "./dist/extension.js",
   "activationEvents": [
-    "onLanguage:jot"
+    "onLanguage:jot",
+    "workspaceContains:**/*.jot"
   ],
   "contributes": {
     "languages": [

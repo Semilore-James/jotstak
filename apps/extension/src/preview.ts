@@ -13,6 +13,7 @@
 // past 1:1, nothing scrolling and nothing deciding the width on its own.
 
 import * as vscode from "vscode";
+import { isJot } from "./jot-files.js";
 import { render } from "@jotstak/renderer";
 import type { RenderMode } from "@jotstak/renderer";
 import { shellHtml } from "./webview-shell.js";
@@ -82,7 +83,7 @@ export class JotPreview {
         if (e.document === this.doc) this.schedule();
       }),
       vscode.window.onDidChangeActiveTextEditor((editor) => {
-        if (editor?.document.languageId === "jot") this.bind(editor.document);
+        if (editor && isJot(editor.document)) this.bind(editor.document);
       }),
     );
 

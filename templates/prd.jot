@@ -1,7 +1,7 @@
 // Starter template — Product Requirements Document
 // Copy this file, rename it, and fill it in. Every block below is a Jotstak primitive.
 
-@banner Product Requirements — <Feature name>
+@cover Product Requirements — <Feature name>
 
 @heading Overview
 Problem, who it is for, and why now.

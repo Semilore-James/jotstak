@@ -1,6 +1,6 @@
 // Starter template — Weekly / sprint retro
 
-@banner Retro — <sprint or week>
+@cover Retro — <sprint or week>
 
 @heading What went well
 @sticky color=green

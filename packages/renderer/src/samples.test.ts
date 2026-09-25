@@ -10,23 +10,34 @@
 // The lesson is not "remember to grep after a rename". It is that the sample
 // documents are the tool's shop window and were the only artefacts with no
 // coverage at all. Now a cut primitive breaks the build.
+//
+// And it happened AGAIN, to the other half of the shop window: both starter
+// templates opened with `@banner`, which was folded into `@cover` at some
+// point, so the first file a new user copies rendered a red error banner. This
+// test had been written for precisely that and was only pointed at samples/.
+// A guard aimed at one of two directories is a guard that will miss.
 
 import { describe, expect, it } from "vitest";
 import { readFileSync, readdirSync } from "node:fs";
-import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { render } from "./index.js";
 
-const samplesDir = fileURLToPath(new URL("../../../samples", import.meta.url));
-const samples = readdirSync(samplesDir).filter((f) => f.endsWith(".jot"));
+/** Every .jot file this repository hands to someone else. */
+const shipped = ["samples", "templates"].flatMap((dir) => {
+  const path = fileURLToPath(new URL(`../../../${dir}`, import.meta.url));
+  return readdirSync(path)
+    .filter((f) => f.endsWith(".jot"))
+    .map((f) => `${dir}/${f}`);
+});
 
-describe("shipped sample documents", () => {
-  it("finds the samples directory", () => {
-    expect(samples.length).toBeGreaterThan(0);
+describe("shipped .jot documents", () => {
+  it("finds both directories, so neither can go unchecked", () => {
+    expect(shipped.filter((f) => f.startsWith("samples/")).length).toBeGreaterThan(0);
+    expect(shipped.filter((f) => f.startsWith("templates/")).length).toBeGreaterThan(0);
   });
 
-  it.each(samples)("%s renders without errors or warnings", (file) => {
-    const src = readFileSync(join(samplesDir, file), "utf8");
+  it.each(shipped)("%s renders without errors or warnings", (file) => {
+    const src = readFileSync(fileURLToPath(new URL(`../../../${file}`, import.meta.url)), "utf8");
 
     for (const mode of ["notebook", "doc"] as const) {
       const { html, diagnostics } = render(src, { mode });

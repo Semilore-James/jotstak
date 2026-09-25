@@ -12,11 +12,14 @@ import { JotPreview } from "./preview.js";
 import { createDiagnostics } from "./diagnostics.js";
 import { registerIndentation } from "./indentation.js";
 import { registerExtentRuler } from "./extent-ruler.js";
+import { isJot, offerAssociation } from "./jot-files.js";
 
 /** The .jot file the command should act on, or a complaint if there is none. */
 function activeJot(): vscode.TextDocument | undefined {
   const doc = vscode.window.activeTextEditor?.document;
-  if (doc?.languageId === "jot") return doc;
+  // By NAME as well as by language id: another extension may have claimed the
+  // association, and a file called .jot is ours either way (jot-files.ts).
+  if (doc && isJot(doc)) return doc;
   void vscode.window.showInformationMessage("Open a .jot file first.");
   return undefined;
 }
@@ -28,6 +31,14 @@ export function activate(context: vscode.ExtensionContext): void {
   // making the mistake, the ruler shows you what you already have.
   registerIndentation(context);
   registerExtentRuler(context);
+
+  // If something else has taken .jot, say so once and offer to settle it —
+  // otherwise the highlighting and indentation are silently another
+  // language's, with nothing on screen to explain why.
+  const offer = (doc: vscode.TextDocument): void => void offerAssociation(context, doc);
+  context.subscriptions.push(vscode.workspace.onDidOpenTextDocument(offer));
+  const open = vscode.window.activeTextEditor?.document;
+  if (open) offer(open);
 
   context.subscriptions.push(
     vscode.commands.registerCommand("jotstak.openPreview", () => {

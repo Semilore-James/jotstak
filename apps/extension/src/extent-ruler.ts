@@ -12,6 +12,7 @@
 // contain?".
 
 import * as vscode from "vscode";
+import { isJot } from "./jot-files.js";
 import { blockExtent } from "./indentation.js";
 
 const RULER = vscode.window.createTextEditorDecorationType({
@@ -42,7 +43,7 @@ function openerAbove(doc: vscode.TextDocument, line: number): number | undefined
 
 export function registerExtentRuler(context: vscode.ExtensionContext): void {
   const draw = (editor: vscode.TextEditor | undefined): void => {
-    if (!editor || editor.document.languageId !== "jot") return;
+    if (!editor || !isJot(editor.document)) return;
     const line = editor.selection.active.line;
     const opener = openerAbove(editor.document, line);
     const extent = opener === undefined ? undefined : blockExtent(editor.document, opener);

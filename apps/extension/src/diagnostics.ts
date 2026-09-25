@@ -10,6 +10,7 @@
 // hover, while you type.
 
 import * as vscode from "vscode";
+import { isJot } from "./jot-files.js";
 import { render } from "@jotstak/renderer";
 import type { Diagnostic as JotDiagnostic } from "@jotstak/renderer";
 
@@ -27,7 +28,7 @@ export function createDiagnostics(context: vscode.ExtensionContext): void {
   context.subscriptions.push(collection);
 
   const check = (doc: vscode.TextDocument): void => {
-    if (doc.languageId !== "jot") return;
+    if (!isJot(doc)) return;
     const { diagnostics } = render(doc.getText(), { mode: "notebook" });
     collection.set(doc.uri, diagnostics.map((d) => toVscode(d, doc)));
   };
