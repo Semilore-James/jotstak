@@ -297,7 +297,7 @@ const table: PrimitiveSpec = {
   name: "table",
   group: "lists",
   summary:
-    "A table. No pipes: first row is the header, rows are comma-separated (quote cells that contain commas). Use the record form for few rows with rich cells. Pipe-tables still parse for paste-in compatibility. A table is the one figure that is never scaled — its cells are text, so it widens and then wraps, and the type stays the size of the prose around it.",
+    "A table. No pipes: first row is the header, rows are comma-separated (quote cells that contain commas). Use the record form for few rows with rich cells. Pipe-tables still parse for paste-in compatibility. A table is the one figure that is never scaled — its cells are text, so it widens and then wraps, and the type stays the size of the prose around it. A cell that needs two lines takes a `\n` where the break goes, since a row is one line of source.",
   params: [
     { name: "style", type: "enum", required: false, description: "How the table is lined. `ruled` sets it on the page's own ruling, so the paper draws the rows; `sketch` draws its own grid and clears the ruling behind it; `plain` is alignment and nothing else — no header either, so the first line is an ordinary row.", enumValues: ["ruled", "sketch", "plain"], default: "ruled" },
     { name: "sep", type: "enum", required: false, description: "Cell delimiter for compact rows.", enumValues: ["comma", "tab"], default: "comma" },

@@ -254,3 +254,46 @@ describe("a table on ruled paper", () => {
     expect(css).toContain(".jot-table tr { break-inside: avoid; }");
   });
 });
+
+describe("a line break inside a cell", () => {
+  // Enter breaks a line in prose, but a table row is one line of source per
+  // row — so a cell that wants two lines has nowhere to put the second one.
+  // A real backslash-n in the SOURCE, which is what an author types.
+  const BROKEN = src("@table", "  Area, Notes", '  Search, "one\\ntwo"', "  Export, single");
+
+  it("splits on a backslash-n and draws the break", () => {
+    const html = out(BROKEN).html;
+    expect(html).toContain("<td>one<br>two</td>");
+    expect(html).toContain("<td>single</td>");
+    expect(out(BROKEN).diagnostics).toEqual([]);
+  });
+
+  it("measures the widest line, not the joined string", () => {
+    // Measuring the join would size the column for text that is no longer on
+    // one line — the same drift that made the timeline stand a row too tall.
+    const broken = measureTable({
+      head: ["Notes"],
+      rows: [["a fairly long first half\\nand a second"]],
+      align: ["left"],
+      caption: "",
+    });
+    const joined = measureTable({
+      head: ["Notes"],
+      rows: [["a fairly long first half and a second"]],
+      align: ["left"],
+      caption: "",
+    });
+    expect(broken.natural).toBeLessThan(joined.natural);
+  });
+
+  it("lets a header break where it is asked to, nowrap or not", () => {
+    // A short header is normally held on one line so it cannot be squeezed
+    // below its own width. Asking for a break outranks that.
+    const html = out(src("@table", '  "Next\\nstep", B', "  x, y")).html;
+    expect(html).toMatch(/<th data-wrap>Next<br>step<\/th>/);
+  });
+
+  it("leaves a cell with no break exactly as it was", () => {
+    expect(out(BROKEN).html).not.toContain("<td>Search<br>");
+  });
+});

@@ -23,7 +23,7 @@
 // of Markdown (the superset promise — .jot has no pipe syntax of its own, but
 // it must not choke on one).
 
-import { ESTIMATE_SAFETY, measureText } from "./measure.js";
+import { ESTIMATE_SAFETY, measureText, segments } from "./measure.js";
 import { ROW } from "./figure.js";
 import { PAGE } from "./page.js";
 import type { BlockNode, TreeNode } from "./ast.js";
@@ -281,7 +281,12 @@ function headWidth(text: string): number {
 }
 
 function cellWidth(text: string): number {
-  return measureText(text, "lora-400", TABLE.cellSize) * ESTIMATE_SAFETY;
+  // The widest line, not the whole string: a cell the author broke in two is
+  // as wide as its longer half, and measuring the join would size the column
+  // for text that is no longer on one line.
+  return Math.max(
+    ...segments(text).map((part) => measureText(part, "lora-400", TABLE.cellSize) * ESTIMATE_SAFETY),
+  );
 }
 
 export interface TableMetrics {
@@ -356,8 +361,12 @@ export function renderTable(
 
   const cell = (tag: "th" | "td", text: string, c: number): string => {
     const align = model.align[c] && model.align[c] !== "left" ? ` style="text-align:${model.align[c]}"` : "";
-    const wrap = tag === "th" && text.length > TABLE.headWrapAt ? " data-wrap" : "";
-    return `<${tag}${align}${wrap}>${h.inline(text)}</${tag}>`;
+    const parts = segments(text);
+    // A header held on one line cannot also honour a break the author asked
+    // for, so asking for one opts that header out of the nowrap rule.
+    const forced = parts.length > 1;
+    const wrap = tag === "th" && (forced || text.length > TABLE.headWrapAt) ? " data-wrap" : "";
+    return `<${tag}${align}${wrap}>${parts.map(h.inline).join("<br>")}</${tag}>`;
   };
 
   // `plain` means alignment and nothing else, and that has to include the

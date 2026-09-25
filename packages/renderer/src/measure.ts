@@ -39,3 +39,23 @@ export function measureText(text: string, face: Face, sizePx: number): number {
  * so estimates round up, never down.
  */
 export const ESTIMATE_SAFETY = 1.03;
+
+/**
+ * A forced line break inside a label or a cell.
+ *
+ * Enter breaks a line in prose (UX-45), but there are places a line has
+ * nowhere to go: a table row is one line of source per row, and a diagram
+ * label is a single line by construction. `\n` is the escape hatch for those —
+ * two characters everybody already reads as "new line", and two characters
+ * that plain Markdown has no meaning for, so the superset promise is intact.
+ *
+ * Splitting is a MEASUREMENT concern as much as a rendering one: a cell broken
+ * into two lines is as wide as its widest half and twice as tall, and a
+ * renderer that draws the break without measuring it would size the column for
+ * text that is no longer on one line.
+ */
+export function segments(text: string): string[] {
+  // A literal backslash followed by `n`, as typed in the source — not a real
+  // newline, which cannot reach here: a cell and a label are one line each.
+  return text.split(/\\n/).map((s) => s.trim());
+}

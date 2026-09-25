@@ -497,7 +497,12 @@ ${scope} .jot-divider::after {
   left: 50%;
   transform: translateX(-50%);
   top: calc(var(--jot-rule-offset) - 1px);
-  width: 18%;
+  /* 40%, not 18%. The reasoning for a short centred mark stands — a full-width
+     line drawn ON a rule just makes one rule slightly darker — but at 18% it
+     read as something that had been cut off rather than as a deliberate
+     ornament. Wide enough to look chosen, short enough not to be mistaken for
+     the ruling. */
+  width: 40%;
   min-width: 84px;
   border-top: 2px solid var(--jot-accent);
 }
