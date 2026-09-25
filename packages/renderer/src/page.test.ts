@@ -58,3 +58,33 @@ describe("the page (ARC-14: print-true A4, continuous screen)", () => {
     expect(html).toMatch(/<div class="jot-row"><div class="jot-body"[^>]*>.*?<\/div><div class="jot-aside">.*?a note.*?<\/div><\/div>/s);
   });
 });
+
+describe("the margin channel folds on the page's width, not the window's", () => {
+  const css = renderLayoutCss();
+
+  it("asks how wide the page is, because every host zooms a whole sheet to fit", () => {
+    // UX-36: on a phone the sheet is still the full printable width inside —
+    // it is only drawn smaller. A viewport query fired anyway and folded the
+    // channel of a document that had plenty of room for it, leaving notes
+    // stacked under their anchors inside an already-scaled sheet.
+    expect(css).toMatch(/@container jot-page \(max-width: \d+px\)/);
+    expect(css).not.toContain("@media (max-width:");
+  });
+
+  it("declares the container it queries", () => {
+    // A container query against a container that does not exist is not an
+    // error — it simply never matches, which would silently drop the fold.
+    const doc = css.split("}").find((r) => r.includes(".jot-doc {"))!;
+    expect(doc).toContain("container-type: inline-size");
+    expect(doc).toContain("container-name: jot-page");
+  });
+
+  it("folds below the width where the channel stops holding a note", () => {
+    const at = Number(/@container jot-page \(max-width: (\d+)px\)/.exec(css)![1]);
+    // Narrower than a whole page, or it would fold at full size.
+    expect(at).toBeLessThan(PAGE.portrait.content);
+    // And wide enough that the channel is genuinely unusable by then: a
+    // couple of words of handwriting, not a readable aside.
+    expect((at - 28) * notebookLayout.marginChannelRatio).toBeLessThan(120);
+  });
+});

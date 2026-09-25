@@ -27,6 +27,15 @@ import { FONT_METRICS } from "./font-metrics.js";
 const ROW = spacing.baselineGrid; // 28
 
 /**
+ * The page width below which the margin channel folds under its anchor.
+ *
+ * Not a device breakpoint. It is the width at which the channel can no longer
+ * hold a note: below it the 23% track is a couple of words of handwriting, and
+ * a note stacked under its anchor is more use than a note in a sliver.
+ */
+const FOLD = 520;
+
+/**
  * Distance from the top of a line box down to the text baseline, for body text.
  *
  *   half-leading = (lineHeight - fontSize * (ascent + descent + lineGap)) / 2
@@ -111,6 +120,10 @@ ${scope} .jot-doc {
   box-sizing: content-box;
   margin: 0 auto;
   padding: ${ROW}px 0;
+  /* Named so the fold below can ask how wide the PAGE is, rather than how
+     wide the window is. See the note at the bottom of this file. */
+  container-type: inline-size;
+  container-name: jot-page;
 }
 /* One row per block: the block beside its margin notes. Rows are separate
    elements rather than cells of one document-wide grid because print needs
@@ -721,7 +734,26 @@ ${renderTablePrintCss(scope)}
 
 /* ── Responsive: below the two-column threshold the margin channel folds
    underneath its anchor rather than being dropped. ─────────────────── */
-@media (max-width: 720px) {
+/* Keyed to the PAGE's own width, not the viewport's, and that is the whole
+   point of the rule.
+
+   Every surface shows a whole A4 sheet zoomed to fit (UX-36), so on a phone
+   the sheet is still ${PAGE.portrait.content}px wide internally — it is only
+   drawn smaller. A viewport query fired anyway, which folded the margin
+   channel of a document that had plenty of room for it, and left the notes
+   stacked underneath their anchors inside a sheet that was already scaled.
+   The worst of both: a layout for a narrow page, shrunk as if it were a wide
+   one.
+
+   A container query asks the question that actually matters — how much room
+   does this document have — so it stays quiet under a zoom and still fires
+   for a host that lets the document reflow instead.
+
+   ${FOLD}px is where the channel stops being able to hold a note: it is
+   ${notebookLayout.marginChannelRatio} of the width less the gutter, which at
+   that point is about ${Math.round((FOLD - ROW) * notebookLayout.marginChannelRatio)}px —
+   a couple of words of handwriting. */
+@container jot-page (max-width: ${FOLD}px) {
   ${scope} .jot-row { grid-template-columns: 1fr; }
   ${scope} .jot-body, ${scope} .jot-aside { grid-column: 1; }
   ${scope} .jot-note { padding-left: ${ROW}px; margin-bottom: ${ROW}px; }
