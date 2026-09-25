@@ -16,7 +16,7 @@ The cost is not the writing. It is everything after.
 - **There is no diff.** *"What changed in this spec since last sprint?"* has no
   cheap answer.
 
----
+@divider
 
 @heading What makes this one different
 
@@ -48,5 +48,8 @@ touch?"* can come back and say the premise is wrong.
 This still rests on a single-user hypothesis — the author's own pain. That is a
 legitimate origin, and many tools started there, but it stays named rather than
 hidden until the survey returns data.
+
+@panel 
+  
 
 @note a null result gets recorded, not buried

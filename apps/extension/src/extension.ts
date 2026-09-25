@@ -13,6 +13,7 @@ import { createDiagnostics } from "./diagnostics.js";
 import { registerIndentation } from "./indentation.js";
 import { registerExtentRuler } from "./extent-ruler.js";
 import { isJot, offerAssociation } from "./jot-files.js";
+import { registerLanguageFeatures } from "./language-features.js";
 
 /** The .jot file the command should act on, or a complaint if there is none. */
 function activeJot(): vscode.TextDocument | undefined {
@@ -31,6 +32,9 @@ export function activate(context: vscode.ExtensionContext): void {
   // making the mistake, the ruler shows you what you already have.
   registerIndentation(context);
   registerExtentRuler(context);
+  // Hover and autocomplete, formatted straight out of the schema — which had
+  // every word of this and was only ever sending it to the docs site.
+  registerLanguageFeatures(context);
 
   // If something else has taken .jot, say so once and offer to settle it —
   // otherwise the highlighting and indentation are silently another

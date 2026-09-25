@@ -51,8 +51,58 @@ export function doc(source: string): {
 
 export const IndentAction = { None: 0, Indent: 1, IndentOutdent: 2, Outdent: 3 } as const;
 
+/** Enough of MarkdownString to assert on what a hover card actually says. */
+export class MarkdownString {
+  value = "";
+  supportHtml = false;
+  constructor(value = "") {
+    this.value = value;
+  }
+  appendMarkdown(text: string): this {
+    this.value += text;
+    return this;
+  }
+  appendCodeblock(code: string, language = ""): this {
+    this.value += `
+\`\`\`${language}
+${code}
+\`\`\`
+`;
+    return this;
+  }
+}
+
+export class Hover {
+  constructor(
+    readonly contents: MarkdownString,
+    readonly range?: Range,
+  ) {}
+}
+
+export class SnippetString {
+  constructor(readonly value: string) {}
+}
+
+export const CompletionItemKind = { Function: 2, Property: 9 } as const;
+
+export class CompletionItem {
+  detail?: string;
+  documentation?: MarkdownString;
+  insertText?: string | SnippetString;
+  sortText?: string;
+  constructor(
+    readonly label: string,
+    readonly kind?: number,
+  ) {}
+}
+
 /** Enough of the namespace for module-level calls not to throw on import. */
-export const languages = { setLanguageConfiguration: () => ({ dispose() {} }) };
+export const languages = {
+  setLanguageConfiguration: () => ({ dispose() {} }),
+  registerHoverProvider: () => ({ dispose() {} }),
+  registerCompletionItemProvider: () => ({ dispose() {} }),
+  createDiagnosticCollection: () => ({ set() {}, delete() {}, dispose() {} }),
+};
 export const window = {
   createTextEditorDecorationType: () => ({ dispose() {} }),
   onDidChangeTextEditorSelection: () => ({ dispose() {} }),
