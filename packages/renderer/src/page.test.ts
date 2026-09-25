@@ -88,3 +88,42 @@ describe("the margin channel folds on the page's width, not the window's", () =>
     expect((at - 28) * notebookLayout.marginChannelRatio).toBeLessThan(120);
   });
 });
+
+describe("@pagebreak — a cut the printer could not have guessed", () => {
+  const css = renderLayoutCss();
+  const print = css.split("@media print")[1] ?? "";
+
+  it("breaks the page at the row, like the landscape sheet does", () => {
+    // A browser honours this on a block in normal flow, and the rows are the
+    // blocks. Verified against a real PDF, not only this rule: the same
+    // document prints as 1 page without the breaks and 3 pages with them.
+    expect(print).toContain(
+      '.jot-row:has(> .jot-body[data-primitive="pagebreak"]) { break-before: page; }',
+    );
+  });
+
+  it("hides the marker in print, because the paper has already obeyed it", () => {
+    expect(print).toContain(".jot-pagebreak { display: none; }");
+  });
+
+  it("draws on screen, since a break is what an author cannot otherwise check", () => {
+    const { html, diagnostics } = render('@pagebreak label="Appendix"', { mode: "notebook" });
+    expect(diagnostics).toEqual([]);
+    expect(html).toContain('class="jot-pagebreak"');
+    expect(html).toContain("Appendix");
+    expect(html).toContain('role="separator"');
+    // And it says something even when the author named nothing.
+    expect(render("@pagebreak", { mode: "notebook" }).html).toContain("new page");
+  });
+
+  it("answers to @newpage as well, since both names are the obvious one", () => {
+    const a = render("@pagebreak", { mode: "notebook" }).html;
+    const b = render("@newpage", { mode: "notebook" }).html;
+    expect(b).toBe(a);
+  });
+
+  it("is one row tall, so it costs the ruling nothing", () => {
+    const rule = css.split("}").find((r) => r.includes(".jot-pagebreak {"))!;
+    expect(rule).toContain(`height: ${ROW}px`);
+  });
+});

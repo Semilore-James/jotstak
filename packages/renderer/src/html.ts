@@ -173,7 +173,7 @@ export const RENDER_FUNCTIONS: Record<string, readonly string[]> = {
   margin: ["note"],
   heading: ["heading", "cover"],
   list: ["bullet", "numbered"],
-  divider: ["divider"],
+  divider: ["divider", "pagebreak"],
   table: ["table"],
   tree: ["tree"],
   matrix: ["matrix"],
@@ -399,6 +399,27 @@ function renderTableBlock(n: BlockNode, diagnostics: Diagnostic[]): string {
   return renderTableFigure(n, diagnostics, { inline, escapeHtml, attr }, nested);
 }
 
+/**
+ * A break the author asked for, rather than one the paper imposed.
+ *
+ * Printing already cuts the document into real A4 pages and keeps blocks whole
+ * while doing it, so this is only for the breaks pagination cannot guess: an
+ * appendix, a section someone will detach, a cover that should stand alone.
+ *
+ * It draws on SCREEN as well, because otherwise the author is editing blind —
+ * the one thing they cannot check without printing is the thing they just
+ * asked for. One row tall, so it costs the ruling nothing.
+ */
+function renderPagebreak(n: BlockNode): string {
+  const label = n.params.label ?? n.title ?? "";
+  return (
+    `<div class="jot-pagebreak"${attr("id", n.params.id)} role="separator"` +
+    ` aria-label="${label ? escapeHtml(label) : "Page break"}">` +
+    `<span class="jot-pagebreak-label">${label ? inline(label) : "new page"}</span>` +
+    `</div>`
+  );
+}
+
 function renderBlock(n: BlockNode, diagnostics: Diagnostic[]): string {
   if (n.name in PANELS) return renderCard(n, diagnostics);
   if (n.name === "table") return renderTableBlock(n, diagnostics);
@@ -410,6 +431,7 @@ function renderBlock(n: BlockNode, diagnostics: Diagnostic[]): string {
   if (n.name === "columns") return renderColumns(n, diagnostics);
   if (n.name === "callout") return renderCallout(n, diagnostics);
   if (n.name === "meta") return renderMeta(n);
+  if (n.name === "pagebreak") return renderPagebreak(n);
   // @page configures the document rather than rendering; handled by the shell.
   if (n.name === "page") return "";
   return renderUnsupported(n, diagnostics);

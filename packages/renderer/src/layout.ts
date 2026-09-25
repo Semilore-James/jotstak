@@ -438,6 +438,40 @@ ${scope} .jot-divider {
   background: none;
   position: relative;
 }
+
+/* ── @pagebreak ─────────────────────────────────────────────────────── */
+/* Drawn on screen, not only in print. A break is the one thing an author
+   cannot check without printing, so the editor shows where the sheet ends:
+   a dashed rule across the page with the reason written into it. One row
+   tall, like a divider, so it costs the ruling nothing.
+   The mark itself never prints — by then the paper has already obeyed it. */
+${scope} .jot-pagebreak {
+  height: ${ROW}px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+${scope} .jot-pagebreak::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(var(--jot-rule-offset) - 1px);
+  border-top: 1px dashed var(--jot-accent);
+}
+${scope} .jot-pagebreak-label {
+  position: relative;
+  font-family: var(--jot-font-label);
+  font-size: ${typography.label.sm.size};
+  font-weight: 600;
+  letter-spacing: ${typography.label.sm.letterSpacing};
+  text-transform: uppercase;
+  color: var(--jot-accent);
+  background: var(--jot-surface);
+  padding: 0 ${ROW / 2}px;
+  line-height: ${ROW}px;
+}
 ${scope} .jot-divider::after {
   content: "";
   position: absolute;
@@ -729,6 +763,13 @@ ${scope} .jot-error {
   ${scope} .jot-row:has(> .jot-body[data-kind="heading"]) { break-after: avoid; }
   /* A figure too wide for portrait gets a landscape page of its own. */
   ${scope} .jot-row:has(.jot-figure[data-page="landscape"]) { page: ${LANDSCAPE_PAGE}; }
+  /* A break the author asked for. Set on the ROW, like the landscape page
+     above and for the same reason: a browser honours this on a block in
+     normal flow, and the rows are the blocks. The marker itself is hidden —
+     the paper has already obeyed it, so printing the label would be printing
+     an instruction to the printer. */
+  ${scope} .jot-row:has(> .jot-body[data-primitive="pagebreak"]) { break-before: page; }
+  ${scope} .jot-pagebreak { display: none; }
 ${renderTablePrintCss(scope)}
 }
 

@@ -171,6 +171,20 @@ const numbered: PrimitiveSpec = {
   ],
 };
 
+const pagebreak: PrimitiveSpec = {
+  name: "pagebreak",
+  aliases: ["newpage"],
+  group: "structure",
+  summary:
+    "Start the next block on a new sheet. Printing already cuts the document into real A4 pages on its own, and keeps blocks whole while doing it — this is for the breaks it cannot guess: an appendix, a section someone will detach, a cover that should stand alone. On screen it draws where the page will end, so you can see it working without printing.",
+  params: [
+    { name: "label", type: "string", required: false, description: "Words on the marker, e.g. \"Appendix\". Shown on screen only — it is a note to whoever is editing, and printing has already obeyed the break by then." },
+  ],
+  bodyShape: "none",
+  breaksRuling: false,
+  examples: ["@pagebreak", '@pagebreak label="Appendix"', "@newpage"],
+};
+
 const divider: PrimitiveSpec = {
   name: "divider",
   group: "structure",
@@ -556,7 +570,7 @@ export const PRIMITIVES: PrimitiveSpec[] = [
   meta, page,
   // Structure — panel and columns are the general containers
   panel, columns,
-  heading, bullet, numbered, divider, cover,
+  heading, bullet, numbered, divider, pagebreak, cover,
   // Text
   note, quote, callout, footnote,
   // Lists
@@ -617,6 +631,7 @@ export const SUGGESTED_ICONS: Record<string, string> = {
   star_model: "network",
   tree: "git-fork",
   table: "table",
+  pagebreak: "scissors",
   journey: "route",
   matrix: "grid-2x2",
   timeline: "milestone",
