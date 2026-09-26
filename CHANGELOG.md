@@ -4,6 +4,16 @@ All notable changes to Jotstak are recorded here. Format loosely follows [Keep a
 
 ## [Unreleased]
 
+### Changed (the samples)
+- **Rewritten, all three, and they are three different documents now.** `pricing-v2.jot` and `showcase.jot` were byte-identical, and the one nothing linked to was the one being kept current. `pricing-v2.jot` is the playground starter, so it is the shortest and plainest thing that still shows why you would want this. `problem-statement.jot` is prose carrying two figures. `showcase.jot` is the wide sweep of the vocabulary.
+- **Prose is no longer hard-wrapped.** The samples were written when a single newline was a space; UX-45 made a line you ended a line, and fourteen wrap points across the three documents silently became real breaks mid-sentence. A paragraph is one line of source now and the column decides where it wraps.
+- **The plainest spelling that works.** `@risk level=high title="..."` rather than `@risk(...)`; `@divider style=dots` rather than `@divider(style = 'dots')`. The bracketed form is for when it earns its keep, and it was not earning it.
+- Fixed in passing: a `@note` had swallowed the first bullet of a four-item list, so the list started at two; orphaned indented prose sat under a `@decision` owned by nothing.
+
+### Added
+- Two guards on every shipped `.jot` file, both for bugs that were real and that the existing test could not see: a document may only draw a line break it asked for (via the `
+` escape or Markdown's two trailing spaces), and no two shipped documents may be byte-identical. Broken deliberately against the old files to watch both fail.
+
 ### Added (autocomplete that leaves a working block)
 - **Accepting a primitive inserts a block, not a word.** `@timeline` now writes its required parameters and one body line, every part you replace as a tabstop. Taken from Dart's analysis server, where the quality of completion is not the list but what you are holding afterwards. The body hint is derived from each primitive's own documented example, so a scaffold and a docs page cannot disagree.
 - **Values complete too.** Typing `style=` offers the choices with what each one means, which a snippet choice list cannot show. Required parameters sort above optional ones and say "required".
