@@ -23,7 +23,10 @@ const shell = await import(
   pathToFileURL(join(here, "..", "apps", "extension", "dist", "shell.mjs")).href,
 );
 
-const doc = readFileSync(join(here, "preflight.jot"), "utf8");
+// A fifth argument renders some OTHER document instead of the exhaustive one.
+// "Render this file and let me look at it" is the general need; preflight.jot is
+// just the default answer to it.
+const doc = readFileSync(process.argv[5] ?? join(here, "preflight.jot"), "utf8");
 const { html, diagnostics } = render(doc, { mode: process.argv[3] ?? "notebook" });
 
 let page = shell.shellHtml({
