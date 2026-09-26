@@ -128,7 +128,10 @@ function parseInlineParams(
   // reached the unknown-param check below either: someone wrote
   // `(color:yellow title="…")` and the colour silently went nowhere. Quoted
   // values are blanked first, so a colon inside a title is not a mistake.
-  const unquoted = scan.replace(/"[^"]*"|'[^']*'/g, (m) => " ".repeat(m.length));
+  // Only INSIDE brackets. Without them there is no boundary between the
+  // parameters and the title, and `@h6 Divider: line, dots, wave` is a title
+  // with a colon in it, not a mistake.
+  const unquoted = (paren ? scan : "").replace(/"[^"]*"|'[^']*'/g, (m) => " ".repeat(m.length));
   for (const m of unquoted.matchAll(/([a-zA-Z_][a-zA-Z0-9_]*)\s*:\s*(\S+)/g)) {
     diagnostics.push({
       severity: "warning",

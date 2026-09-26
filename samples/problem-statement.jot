@@ -16,7 +16,9 @@ The cost is not the writing. It is everything after.
 - **There is no diff.** *"What changed in this spec since last sprint?"* has no
   cheap answer.
 
-@divider
+
+
+@divider(style = 'dots')
 
 @heading What makes this one different
 
@@ -37,7 +39,6 @@ teams aligned. Aesthetic is a retention feature, not decoration.
   consequences: Sets the landing headline, the README opening, and what the survey is actually testing.
 
 
-@sticky(color=green)
   The notebook is the differentiator
 
 
@@ -45,13 +46,13 @@ The deciding argument was falsifiability. *"Would you like nicer documents?"* ge
 a yes from everyone and tells you nothing. *"How many tools did your last PRD
 touch?"* can come back and say the premise is wrong.
 
-## The risk, held open
+@h2 The risk, held open
 
 This still rests on a single-user hypothesis — the author's own pain. That is a
 legitimate origin, and many tools started there, but it stays named rather than
 hidden until the survey returns data.
 
-@panel(accent=alert title="The risk is that the problem is not real")
+@panel(accent=positive title="The risk is that the problem is not real")
   A single-user hypothesis is a starting point, not a finding. The survey is
   what turns it into one, or kills it.
 

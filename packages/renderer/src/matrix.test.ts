@@ -118,3 +118,41 @@ describe("a matrix on ruled paper", () => {
     expect(out(src("@matrix x=\"Effort\" y=\"Impact\"", "  Search at tr", "  Export at tl")).diagnostics).toEqual([]);
   });
 });
+
+describe("a forced break inside a chip", () => {
+  // A chip is held on one line so a long label cannot stretch its quadrant. A
+  // break the author asked for is the one thing that releases it.
+  it("draws the break and releases the nowrap", () => {
+    const html = out(src('@matrix x="E" y="I"', "  Search\\n relevance at tr")).html;
+    expect(html).toContain("Search<br>relevance");
+    expect(html).toMatch(/<span class="jot-matrix-chip" data-wrap>/);
+    expect(renderLayoutCss()).toContain('.jot-matrix-chip[data-wrap]');
+  });
+
+  it("counts the second line when sizing the quadrant", () => {
+    // A two-line chip is two chips tall; measuring it as one leaves the
+    // quadrant a row short of what is drawn in it.
+    const flat = measureMatrix({
+      items: { tl: [], tr: ["Search relevance"], bl: [], br: [] },
+      x: "E",
+      y: "I",
+      title: "",
+    });
+    const broken = measureMatrix({
+      items: { tl: [], tr: ["Search\\nrelevance"], bl: [], br: [] },
+      x: "E",
+      y: "I",
+      title: "",
+    });
+    // Narrower, because the widest line is shorter…
+    expect(broken.w).toBeLessThanOrEqual(flat.w);
+    // …and never shorter than the flat one, because it is a line taller.
+    expect(broken.h).toBeGreaterThanOrEqual(flat.h);
+    expect(broken.h % MATRIX.row).toBe(0);
+  });
+
+  it("leaves an unbroken chip on one line", () => {
+    const html = out(src('@matrix x="E" y="I"', "  Search at tr")).html;
+    expect(html).toContain('<span class="jot-matrix-chip">Search</span>');
+  });
+});

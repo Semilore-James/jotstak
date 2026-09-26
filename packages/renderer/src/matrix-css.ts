@@ -92,6 +92,15 @@ ${scope} .jot-matrix-chip {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+/* A chip is held on one line so a long label cannot stretch the quadrant. A
+   break the author asked for is the one thing that releases it, and then the
+   chip is as tall as the lines it was given. */
+${scope} .jot-matrix-chip[data-wrap] {
+  white-space: normal;
+  text-align: center;
+  line-height: calc(${u(MATRIX.chipHeight)} - 2px);
+  height: auto;
+}
 ${scope}[data-mode="doc"] .jot-matrix-chip {
   background: var(--jot-color-doc-sheet);
   border-color: var(--jot-color-doc-sheet-border);

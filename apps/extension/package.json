@@ -1,7 +1,7 @@
 {
   "name": "jotstak",
   "displayName": "Jotstak",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Prose, tables and diagrams in one plain-text file, rendered as a warm, hand-kept notebook. .jot is a superset of Markdown, so any .md file works unchanged.",
   "license": "MIT",
   "publisher": "semilore-james",

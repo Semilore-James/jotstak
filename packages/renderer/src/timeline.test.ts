@@ -234,3 +234,34 @@ describe("a timeline on ruled paper", () => {
     expect(diagnostics[0]!.message).toContain("no events");
   });
 });
+
+describe("a forced break inside a label", () => {
+  // A backslash-n is the escape for the places Enter cannot reach: a diagram
+  // label is one line of source by construction, the same as a table row.
+  const height = (html: string): number => Number(/--jot-h:(\d+)/.exec(html)![1]);
+
+  it("draws the break in a date, a label and a detail line", () => {
+    const html = out(src("@timeline", "  Q3 2026: Alpha\\n release", "    first\\n second")).html;
+    expect(html).toContain("Alpha<br>release");
+    expect(html).toContain("first<br>second");
+  });
+
+  it("counts the break when measuring, so the figure is tall enough", () => {
+    // Drawing a break the measurement did not count is exactly the drift that
+    // left a figure a row short of its own contents.
+    const one = out(src("@timeline", "  Q3: Alpha", "  Q4: Beta")).html;
+    const two = out(src("@timeline", "  Q3: Alpha\\n release", "  Q4: Beta")).html;
+    expect(height(two)).toBeGreaterThan(height(one));
+    expect(height(two) % TIMELINE.row).toBe(0);
+  });
+
+  it("measures the date at its widest line, since a date never wraps", () => {
+    const wide = out(src("@timeline", "  Q3 2026 and more: A", "  Q4: B")).html;
+    const broken = out(src("@timeline", "  Q3 2026\\n and more: A", "  Q4: B")).html;
+    expect(height(broken)).toBeGreaterThanOrEqual(height(wide));
+  });
+
+  it("leaves a label with no break alone", () => {
+    expect(out(src("@timeline", "  Q3 2026: Alpha")).html).not.toContain("<br>");
+  });
+});

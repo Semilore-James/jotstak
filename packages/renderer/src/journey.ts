@@ -16,7 +16,7 @@
 // stage with more written under it is not a longer or more important stage,
 // and sizing it that way says it is.
 
-import { ESTIMATE_SAFETY, measureText, type Face } from "./measure.js";
+import { ESTIMATE_SAFETY, measureText, segments, type Face } from "./measure.js";
 import { figureAttrs, placeFigure, ROW, wholeRows } from "./figure.js";
 import { PAGE } from "./page.js";
 import type { Placement, Size } from "./figure.js";
@@ -168,7 +168,12 @@ const width = (text: string, face: Face, size: number): number =>
 /** How many lines `text` takes in `w` pixels. Rounds up, which errs tall. */
 function lines(text: string, face: Face, size: number, w: number): number {
   if (!text || w <= 0) return 0;
-  return Math.max(1, Math.ceil(width(text, face, size) / w));
+  // A break the author asked for costs a line whether or not the text would
+  // have wrapped there anyway, so each segment is counted on its own.
+  return segments(text).reduce(
+    (total, part) => total + Math.max(1, Math.ceil(width(part, face, size) / w)),
+    0,
+  );
 }
 
 export interface TrackMetrics {
@@ -244,6 +249,10 @@ export function measureJourney(m: JourneyModel, pinned = "auto"): JourneyMetrics
   return { w, h: wholeRows(Math.max(1, rows) * ROW), column, tracks };
 }
 
+/** Inline Markdown, with a `\n` drawn as the break the author asked for. */
+const broken = (h: { inline: (t: string) => string }, text: string): string =>
+  segments(text).map(h.inline).join("<br>");
+
 export interface JourneyHelpers {
   inline: (text: string) => string;
   escapeHtml: (s: string) => string;
@@ -292,7 +301,7 @@ export function renderJourney(
 
   const title = model.title ? `<p class="jot-journey-title">${h.inline(model.title)}</p>` : "";
   const items = (s: Stage): string =>
-    s.items.map((i) => `<p class="jot-journey-item">${h.inline(i)}</p>`).join("");
+    s.items.map((i) => `<p class="jot-journey-item">${broken(h, i)}</p>`).join("");
 
   const inner = model.vertical
     ? model.tracks
@@ -305,7 +314,7 @@ export function renderJourney(
                 (s) =>
                   `<li class="jot-journey-step" data-feeling="${s.feeling}">` +
                   `<span class="jot-journey-dot"></span>` +
-                  `<p class="jot-journey-name">${h.inline(s.name)}</p>${items(s)}</li>`,
+                  `<p class="jot-journey-name">${broken(h, s.name)}</p>${items(s)}</li>`,
               )
               .join("") +
             `</ol>`,
@@ -324,7 +333,7 @@ export function renderJourney(
             const col = ` style="grid-column:${i + 1}`;
             return (
               `<div class="jot-journey-stage" data-feeling="${s.feeling}">` +
-              `<p class="jot-journey-name"${col}">${h.inline(s.name)}</p>` +
+              `<p class="jot-journey-name"${col}">${broken(h, s.name)}</p>` +
               `<span class="jot-journey-dot"${col};--jot-j-level:${LEVEL[s.feeling]}"></span>` +
               `<div class="jot-journey-items"${col}">${items(s)}</div>` +
               `</div>`

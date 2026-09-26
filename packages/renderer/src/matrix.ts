@@ -18,7 +18,7 @@
 //   reads as a list that happens to be in a box; a chip reads as a thing that
 //   has been placed somewhere on purpose.
 
-import { ESTIMATE_SAFETY, measureText } from "./measure.js";
+import { ESTIMATE_SAFETY, measureText, segments } from "./measure.js";
 import { figureAttrs, placeFigure, ROW, wholeRows } from "./figure.js";
 import { PAGE } from "./page.js";
 import type { Placement, Size } from "./figure.js";
@@ -112,8 +112,16 @@ export function buildMatrix(n: BlockNode, diagnostics: Diagnostic[]): MatrixMode
 
 /** Width of one chip at full size. */
 function chipWidth(label: string): number {
-  return measureText(label, "lora-400", MATRIX.chipSize) * ESTIMATE_SAFETY + MATRIX.chipPadX * 2;
+  // The widest line, since a chip the author broke is as wide as its longer half.
+  return (
+    Math.max(...segments(label).map((p) => measureText(p, "lora-400", MATRIX.chipSize))) *
+      ESTIMATE_SAFETY +
+    MATRIX.chipPadX * 2
+  );
 }
+
+/** How many lines a chip takes, so a broken one is counted as the two it is. */
+const chipLines = (label: string): number => segments(label).length;
 
 export function measureMatrix(m: MatrixModel, pinned = "auto"): Size {
   const all = Object.values(m.items).flat();
@@ -137,11 +145,18 @@ export function measureMatrix(m: MatrixModel, pinned = "auto"): Size {
   // put the figure a third of a pixel over its own page and report a scale.
   const w = needed > room ? Math.round(needed) : room;
 
-  const rowsFor = (labels: string[]): number =>
-    Math.max(
+  const rowsFor = (labels: string[]): number => {
+    const tall = labels.reduce((a, l) => a + chipLines(l), 0);
+    return Math.max(
       MATRIX.minCellRows,
-      Math.ceil((labels.length * (MATRIX.chipHeight + MATRIX.chipGap) - MATRIX.chipGap + MATRIX.cellPad * 2) / ROW),
+      Math.ceil(
+        (tall * MATRIX.chipHeight +
+          (labels.length - 1) * MATRIX.chipGap +
+          MATRIX.cellPad * 2) /
+          ROW,
+      ),
     );
+  };
   // Both rows of the grid take the taller of their two quadrants: equal
   // quadrants are the point (see the note at the top of this file).
   const contentRows = Math.max(
@@ -179,7 +194,16 @@ export function renderMatrix(n: BlockNode, diagnostics: Diagnostic[], h: MatrixH
 
   const cell = (q: Quadrant): string =>
     `<div class="jot-matrix-cell" data-q="${q}">` +
-    model.items[q].map((label) => `<span class="jot-matrix-chip">${h.inline(label)}</span>`).join("") +
+    model.items[q]
+      .map((label) => {
+        const parts = segments(label);
+        // A chip is held on one line so it cannot be squeezed; a break the
+        // author asked for is the one thing that releases it.
+        return `<span class="jot-matrix-chip"${parts.length > 1 ? " data-wrap" : ""}>${parts
+          .map(h.inline)
+          .join("<br>")}</span>`;
+      })
+      .join("") +
     `</div>`;
 
   const axisY = model.y

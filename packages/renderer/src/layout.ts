@@ -533,11 +533,13 @@ ${scope} .jot-divider::after {
   min-width: 84px;
   border-top: 2px solid var(--jot-accent);
 }
+/* The three styles are three treatments of ONE mark, so they are the same
+   width. They were not: widening the line to 40% left dots at 64px and the
+   wave at 96px, so switching style shrank the divider to a quarter of itself
+   and read as the style not working at all. */
 ${scope} .jot-divider[data-style="dots"]::after {
   border-top: 0;
   height: 3px;
-  width: 64px;
-  min-width: 0;
   top: calc(var(--jot-rule-offset) - 3px);
   background-image: radial-gradient(circle, var(--jot-accent) 2px, transparent 2.1px);
   background-size: 18px 4px;
@@ -546,8 +548,6 @@ ${scope} .jot-divider[data-style="dots"]::after {
 ${scope} .jot-divider[data-style="wave"]::after {
   border-top: 0;
   height: 8px;
-  width: 96px;
-  min-width: 0;
   top: calc(var(--jot-rule-offset) - 5px);
   background-image:
     radial-gradient(circle at 50% 100%, transparent 5px, var(--jot-accent) 5px, var(--jot-accent) 6.4px, transparent 6.5px),

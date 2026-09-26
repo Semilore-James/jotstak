@@ -16,7 +16,13 @@ A second line, which should be a second line.
 
 @quote A quote must never be a dark box, whatever the editor thinks.
 
----
+@h6 Divider: line, dots, wave
+
+@divider
+
+@divider style=dots
+
+@divider style=wave
 
 @panel
   (accent=alert title="Parameters on the line below")
@@ -30,16 +36,21 @@ A second line, which should be a second line.
   Search, Ana, "one \n two"
   Export, Ben, single line
 
-@timeline title="Four events"
+@timeline title="Four events, one with a forced break"
   Q3 2026: Discovery
     twelve interviews
-  Oct 2026: **Alpha**
+  Oct 2026: **Alpha**\n release
   Dec 2026: Beta
   Q1 2027: Launch
 
 @matrix(x="Effort" y="Impact" title="Two by two")
-  Search at tr
+  Search\n relevance at tr
   Export at bl
+
+@journey title="Stages, one broken"
+  stage Discover\n and read feeling=happy
+  stage Install feeling=frustrated
+  stage Use feeling=neutral
 
 @note a margin note, in handwriting
 

@@ -428,7 +428,7 @@ const matrix: PrimitiveSpec = {
   short:
     "A 2x2. Name the two axes, then place items with 'at top-right'.",
   summary:
-    "2×2 prioritization matrix. Name the two axes; place items in quadrants using `at <quadrant>`. Quadrant names are `top-left`, `top-right`, `bottom-left`, `bottom-right` — or short forms `tl`, `tr`, `bl`, `br`.",
+    "2×2 prioritization matrix. Name the two axes; place items in quadrants using `at <quadrant>`. A long item takes a `\n` where it should break. Quadrant names are `top-left`, `top-right`, `bottom-left`, `bottom-right` — or short forms `tl`, `tr`, `bl`, `br`.",
   params: [
     { name: "x", type: "string", required: true, description: "Horizontal axis label (left = low, right = high)." },
     { name: "y", type: "string", required: true, description: "Vertical axis label (bottom = low, top = high)." },
@@ -450,7 +450,7 @@ const timeline: PrimitiveSpec = {
   short:
     "Events on a line, alternating above and below it.",
   summary:
-    "Events on a line. Each one is `Date: What happened`, with any detail indented under it; the date is optional, so a plain sequence of steps works too. Events alternate above and below the line, which is not decoration — it is what lets each card be twice as wide, because its nearest neighbour on its own side is two columns away. Seven events fit a portrait page; past that use `dir=vertical`, which runs down the page and has no limit.",
+    "Events on a line. Each one is `Date: What happened`, with any detail indented under it, and a `\n` anywhere a line should break; the date is optional, so a plain sequence of steps works too. Events alternate above and below the line, which is not decoration — it is what lets each card be twice as wide, because its nearest neighbour on its own side is two columns away. Seven events fit a portrait page; past that use `dir=vertical`, which runs down the page and has no limit.",
   params: [
     { name: "title", type: "string", required: false, description: "Title above the timeline." },
     { name: "dir", type: "enum", required: false, description: "`horizontal` draws a line across the page. `vertical` runs down it — no sides, no scaling, and no limit on how many events.", enumValues: ["horizontal", "vertical"], default: "horizontal" },
