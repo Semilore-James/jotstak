@@ -251,16 +251,21 @@ const cover: PrimitiveSpec = {
   short:
     "A full width opener for a major section.",
   summary:
-    "Section cover / divider page. A full-width visual break introducing a major section. Takes a title and optional subtitle.",
+    "A band across the page that opens a major section: a title, an optional subtitle, and rules spanning the margin channel. It sits in the flow rather than taking a sheet of its own. For a real title page, follow it with `@pagebreak`, which already does exactly that and nothing else. Three weights: `minimal` marks a section, `default` introduces one, `bold` puts the type in a tinted field.",
   params: [
-    { name: "subtitle", type: "string", required: false, description: "Smaller text below the title." },
-    { name: "style", type: "enum", required: false, description: "Visual weight.", enumValues: ["default", "minimal", "bold"], default: "default" },
+    { name: "subtitle", type: "string", required: false, description: "Smaller text below the title. Can also be written as the indented line underneath, which is the plainer spelling and the one the examples use." },
+    { name: "style", type: "enum", required: false, description: "How loudly the band announces itself. `minimal` is one hairline underneath, with the title a size down. `default` is rules above and below. `bold` sets the type in a tinted field.", enumValues: ["default", "minimal", "bold"], default: "default" },
   ],
-  planned: true,
   bodyShape: "plain",
   breaksRuling: true,
   examples: [
-    '@cover Discovery phase\n  subtitle="Weeks 1–3"',
+    // Not `subtitle="…"` on the line below, which is what this said until the
+    // renderer existed to prove it wrong: an unbracketed assignment on a
+    // continuation line is not a parameter, and it rendered the literal text
+    // `subtitle="Weeks 1–3"` onto the page.
+    "@cover Discovery phase\n  Weeks 1–3",
+    "@cover(style=minimal) Findings\n  What the interviews said",
+    "@cover(style=bold) Part two\n  Building it\n\n@pagebreak",
   ],
 };
 

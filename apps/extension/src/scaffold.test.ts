@@ -47,11 +47,17 @@ group("the block a primitive scaffolds", () => {
       expect(text, `fills in the optional ${p.name}`).not.toContain(`${p.name}=`);
     }
 
-    // A body if the primitive takes one, indented so it reads as body.
+    // Somewhere to write. Usually an indented body line, but for a block whose
+    // content goes on its own line — `@heading Overview` — the title IS the
+    // content, and scaffolding an empty body under it offers a second place to
+    // write and a heading that is suddenly two things.
     if (spec.bodyShape === "none") {
       expect(text, "invents a body for a block that has none").not.toContain("\n");
     } else {
-      expect(text, "has no body line").toContain("\n  ");
+      const body = text.includes("\n  ");
+      const title = /^\w+ \$\{\d+:/.test(text);
+      expect(body || title, "gives you nowhere to write").toBe(true);
+      if (body) expect(text, "body line is not indented").toContain("\n  ");
     }
 
     // Tabstops numbered from 1 with no gaps and no repeats, or Tab skips
@@ -74,7 +80,10 @@ group("the block a primitive scaffolds", () => {
     // @cover continues its parameters onto the next line; @numbered's example
     // is the Markdown form and never opens a directive at all. Neither has a
     // body line to copy, and using what is there would scaffold nonsense.
-    expect(exampleBodyLine(getPrimitive("cover")!)).toBeUndefined();
+    // @cover's example used to be `subtitle="..."` on the line below, which is
+    // not a parameter at all. Building the renderer proved it and the example
+    // was corrected, so what it now has is a real subtitle line.
+    expect(exampleBodyLine(getPrimitive("cover")!)).toBe("Weeks 1–3");
     // @footnote's example shows the reference first and the note second, so
     // the hint has to come from under the directive, not from line one.
     expect(exampleBodyLine(getPrimitive("footnote")!)).toBe(
@@ -107,6 +116,41 @@ group("the block a primitive scaffolds", () => {
     // A `$` or a `}` in an example body line would otherwise end the tabstop
     // early and insert broken text.
     expect(tabstops("cost: $40k")).toBe("${1:cost}: ${2:\\$40k}");
+  });
+});
+
+group("a title written on the directive line", () => {
+  it("is scaffolded, because several blocks carry their title there", () => {
+    // @cover, @star_model and @table all take a title after the parameters
+    // rather than as one. Leaving it out scaffolded a cover with a subtitle
+    // and no title, which the renderer then complained about.
+    expect(snippet(getPrimitive("cover")!)).toContain("cover ${1:Discovery phase}");
+    expect(snippet(getPrimitive("star_model")!)).toContain("star_model ${1:Telemetry warehouse}");
+    expect(snippet(getPrimitive("table")!)).toContain("table ${1:Q4 status}");
+  });
+
+  it("goes after the parameters, where the parser expects it", () => {
+    expect(snippet(getPrimitive("table")!)).toMatch(/^table \$\{1:/);
+  });
+
+  it("is not mistaken for a parameter, in either spelling", () => {
+    // @table's example is `@table(style=sketch) Q4 status`, @callout's is
+    // `@callout warn`. The bracketed list and the inline assignment both have
+    // to come off before what is left can be a title.
+    expect(snippet(getPrimitive("table")!)).not.toContain("sketch");
+    expect(snippet(getPrimitive("callout")!)).toContain("callout ${1:warn}");
+  });
+
+  it("stops a generic body line being added on top of it", () => {
+    // `@heading Overview` says everything it has to say on its own line.
+    // Scaffolding an indented `text` under it offers a second empty place to
+    // write and a heading that is suddenly two things.
+    expect(snippet(getPrimitive("heading")!)).toBe("heading ${1:Overview}$0");
+  });
+
+  it("leaves a block whose example has no title alone", () => {
+    expect(snippet(getPrimitive("timeline")!).startsWith("timeline\n")).toBe(true);
+    expect(snippet(getPrimitive("quote")!).startsWith("quote\n")).toBe(true);
   });
 });
 

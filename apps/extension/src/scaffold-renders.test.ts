@@ -52,7 +52,6 @@ group("accepting a scaffold", () => {
   // the schema and the renderer are made to agree before a release.
   it("knows exactly which primitives have no renderer", () => {
     expect(PRIMITIVES.filter((p) => p.planned).map((p) => p.name)).toEqual([
-      "cover",
       "footnote",
       "doodle",
       "sticky",
