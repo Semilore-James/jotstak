@@ -83,13 +83,15 @@ export class SnippetString {
   constructor(readonly value: string) {}
 }
 
-export const CompletionItemKind = { Function: 2, Property: 9 } as const;
+export const CompletionItemKind = { Function: 2, Property: 9, Value: 11, EnumMember: 19 } as const;
 
 export class CompletionItem {
   detail?: string;
   documentation?: MarkdownString;
   insertText?: string | SnippetString;
   sortText?: string;
+  commitCharacters?: string[];
+  preselect?: boolean;
   constructor(
     readonly label: string,
     readonly kind?: number,

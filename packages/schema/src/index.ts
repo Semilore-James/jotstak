@@ -52,6 +52,24 @@ export interface PrimitiveSpec {
   short: string;
   summary: string;
   params: ParamSpec[];
+  /**
+   * Named and specified, but with no renderer yet: the block parses, keeps its
+   * content, and comes out as plain text with an info diagnostic saying so.
+   *
+   * It is here because the editor has to know. Autocomplete was offering all
+   * twenty-eight primitives identically while five of them did nothing, which
+   * is the worst version of this: you pick one, it renders as a paragraph, and
+   * nothing tells you whether you wrote it wrong or it was never built. The
+   * scaffold test pins this list in both directions, so building one fails
+   * until the flag comes off.
+   */
+  planned?: true;
+  /**
+   * How many of the example's body lines the scaffold writes. One is enough for
+   * almost everything; a star model needs its fact AND a dimension, or the
+   * renderer warns about the block the editor just wrote.
+   */
+  scaffoldLines?: number;
   /** Body lines: "none" | "plain" | "keyed" | "indented" | "mixed". */
   bodyShape: "none" | "plain" | "keyed" | "indented" | "mixed";
   /** Does this primitive cut the ruled lines to breathe (a "drawn" block)? */
@@ -238,6 +256,7 @@ const cover: PrimitiveSpec = {
     { name: "subtitle", type: "string", required: false, description: "Smaller text below the title." },
     { name: "style", type: "enum", required: false, description: "Visual weight.", enumValues: ["default", "minimal", "bold"], default: "default" },
   ],
+  planned: true,
   bodyShape: "plain",
   breaksRuling: true,
   examples: [
@@ -320,6 +339,7 @@ const footnote: PrimitiveSpec = {
   summary:
     "Footnote. Reference in body text with `[^id]`, then define the note anywhere with `@footnote id=<id>` — it uses the universal `id` param, which is effectively required here (the renderer reports a footnote without one). Renders at the bottom of the page in notebook mode.",
   params: [],
+  planned: true,
   bodyShape: "plain",
   breaksRuling: false,
   examples: [
@@ -393,6 +413,7 @@ const star_model: PrimitiveSpec = {
   params: [
     { name: "layout", type: "enum", required: false, description: "`clock` arranges the dimensions around the fact. `list` writes it out instead — a star model with fifteen dimensions is a list of fifteen dimensions, and a wheel of tiny text helps nobody.", enumValues: ["clock", "list"], default: "clock" },
   ],
+  scaffoldLines: 2,
   bodyShape: "mixed",
   breaksRuling: true,
   examples: [
@@ -476,6 +497,7 @@ const doodle: PrimitiveSpec = {
     { name: "rows", type: "number", required: false, description: "Drawing area height in grid units." },
     { name: "caption", type: "string", required: false, description: "Caption below the doodle." },
   ],
+  planned: true,
   bodyShape: "plain",
   breaksRuling: true,
   examples: [
@@ -601,6 +623,7 @@ const sticky: PrimitiveSpec = {
     { name: "color", type: "enum", required: false, description: "Sticky color.", enumValues: ["yellow", "green", "coral", "blue", "pink", "purple"], default: "yellow" },
     { name: "cluster", type: "string", required: false, description: "Cluster name — stickies sharing a cluster group together." },
   ],
+  planned: true,
   bodyShape: "plain",
   breaksRuling: true,
   examples: [
@@ -621,6 +644,7 @@ const icon: PrimitiveSpec = {
     { name: "size", type: "enum", required: false, description: "Size relative to text.", enumValues: ["sm", "md", "lg"], default: "md" },
     { name: "color", type: "string", required: false, description: "Override color (CSS color or Organic token name)." },
   ],
+  planned: true,
   bodyShape: "none",
   breaksRuling: false,
   examples: [

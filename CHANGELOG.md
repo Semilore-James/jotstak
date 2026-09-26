@@ -4,6 +4,16 @@ All notable changes to Jotstak are recorded here. Format loosely follows [Keep a
 
 ## [Unreleased]
 
+### Added (autocomplete that leaves a working block)
+- **Accepting a primitive inserts a block, not a word.** `@timeline` now writes its required parameters and one body line, every part you replace as a tabstop. Taken from Dart's analysis server, where the quality of completion is not the list but what you are holding afterwards. The body hint is derived from each primitive's own documented example, so a scaffold and a docs page cannot disagree.
+- **Values complete too.** Typing `style=` offers the choices with what each one means, which a snippet choice list cannot show. Required parameters sort above optional ones and say "required".
+- **A block with no renderer says so.** Five primitives (`@cover`, `@footnote`, `@doodle`, `@sticky`, `@icon`) parse and come out as a plain paragraph; the completion list marks them "not built yet" and sorts them last. Found by requiring every scaffold to render clean — which also caught `@star_model` scaffolding a model with no dimensions.
+
+### Fixed
+- A `
+` in a tree label reached the page as a literal backslash-n. It folds to a space now, with one message naming the look where a long label wraps on its own. Trees are the one label that cannot break yet: all five looks position their connectors off a one-row node, which is the arithmetic UX-32 is still open on.
+- PRD §5 and §14 still listed the pre-recut primitive set (`@pillars`, `@sprint`, `@evidence`, spreads, banners), cut in PRD-08 three days earlier.
+
 ### Added
 - Monorepo skeleton: `packages/{renderer,schema,icons}`, `apps/{extension,web}`, `templates/`, CI workflows.
 - `.gitattributes` enforcing LF line endings.

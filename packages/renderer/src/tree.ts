@@ -94,7 +94,37 @@ export function readSide(text: string): { side: "left" | "right" | null; text: s
   if (text.startsWith("< ")) return { side: "left", text: text.slice(2) };
   return { side: null, text };
 }
-const label = (n: TreeNode): string => readSide(n.text).text;
+/**
+ * A tree node's text, with a forced break folded back into a space.
+ *
+ * `\n` is the escape for the places Enter cannot reach, and it draws a real
+ * break in a table cell, a timeline card, a journey stage and a matrix chip.
+ * A tree node is the one label that cannot take it yet, and the reason is
+ * geometry rather than effort: every one of the five looks positions its
+ * connectors off a node being exactly one row tall — `TREE.mid` for the point a
+ * line meets a row, `pillMargin` for where it leaves a pill — so a two-line
+ * node moves the arithmetic of five sets of `::before` rules at once. That is
+ * the same arithmetic UX-32 is an open question about: where a stacked family's
+ * line leaves its parent pill. Building the break first would mean deriving the
+ * connector geometry twice.
+ *
+ * So it folds to a space, which reads, and `warnAboutBreaks` says so once. The
+ * alternative was what shipped until now: a literal backslash-n on the page.
+ */
+const label = (n: TreeNode): string => readSide(n.text).text.replace(/\\n\s*/g, " ").trim();
+
+/** Tell the author once, rather than per node, that a tree cannot break a label. */
+function warnAboutBreaks(roots: TreeNode[], n: BlockNode, diagnostics: Diagnostic[]): void {
+  const has = (t: TreeNode): boolean => /\\n/.test(readSide(t.text).text) || t.children.some(has);
+  if (!roots.some(has)) return;
+  diagnostics.push({
+    severity: "info",
+    message:
+      "A tree label cannot break yet, so the `\\n` is drawn as a space. Shorten the label, or use `dir=down nodes=text`, where a long label wraps on its own.",
+    line: n.position.line,
+    column: n.position.column,
+  });
+}
 const leaves = (n: TreeNode): number => (n.children.length === 0 ? 1 : n.children.reduce((s, c) => s + leaves(c), 0));
 const depth = (n: TreeNode): number => 1 + Math.max(0, ...n.children.map(depth));
 const count = (n: TreeNode): number => 1 + n.children.reduce((s, c) => s + count(c), 0);
@@ -302,6 +332,8 @@ export function renderTree(n: BlockNode, diagnostics: Diagnostic[], h: TreeHelpe
   const pinned = n.params.width ?? "auto";
   const look = resolveLook(dir, nodes);
   const attach = chartStack.attach;
+
+  warnAboutBreaks(roots, n, diagnostics);
 
   const sides = look === "split" && roots[0] ? splitSides(roots[0].children) : undefined;
   const size = measureTree(look, roots, nodes, attach, sides);
