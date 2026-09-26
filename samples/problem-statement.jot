@@ -1,59 +1,66 @@
+@meta
+  project: Jotstak
+  owner: Semilore
+  status: Draft
+
 # The problem
 
-Writing a single PRD means scattering it across five tools: Google Docs for prose,
-Sheets for tables, Miro for diagrams, Notion as the hub, Jira for the tasks it
-spawns. 
+Writing a single PRD means scattering it across five tools. Google Docs for the prose, Sheets for the tables, Miro for the diagrams, Notion as the hub, Jira for the tasks it spawns.
+
 The cost is not the writing. It is everything after.
+
+- **Context is lost on the seams.** The diagram that explains the paragraph lives in a different tool from the paragraph.
+- **Versions drift silently.** The board gets updated, the doc that embeds it does not, and nothing warns anyone.
+- **Reconstruction is expensive.** Someone joining in month three cannot work out where anything lives, so they ask, and the cost lands on whoever wrote it.
+- **There is no diff.** "What changed in this spec since last sprint?" has no cheap answer.
 
 @note this is the whole bet
 
-@note **Context is lost on the seams.** The diagram explaining the paragraph lives in
-  a different tool from the paragraph.
-- **Versions drift silently.** The board gets updated, the doc that embeds it does
-  not, and nothing warns anyone.
-- **Reconstruction is expensive.** Someone joining in month three cannot work out
-  where anything lives, so they ask — and the cost lands on whoever wrote it.
-- **There is no diff.** *"What changed in this spec since last sprint?"* has no
-  cheap answer.
+## Where the effort actually goes
 
+@matrix x="Effort to keep current" y="How much it matters" style=boxed
+  The decision log at top-left
+  The diagrams at top-right
+  Meeting notes at bottom-left
+  The task board at bottom-right
 
+The top-right quadrant is the problem. The diagrams matter most and cost most to keep current, which is exactly why they are the first thing to go stale.
 
-@divider(style = 'dots')
+@divider style=dots
 
-@heading What makes this one different
+## What makes this one different
 
-Solving fragmentation alone gets you another all-in-one tool, and there are many.
-What makes Jotstak worth choosing is what comes out the other end.
+Solving fragmentation alone gets you another all-in-one tool, and there are plenty. What makes this worth choosing is what comes out the other end.
 
-@quote None of them treat the document as an artifact worth caring about.
+@quote
+  None of them treat the document as an artifact worth caring about.
 
-@note notebook is the differentiator, not the pitch
+@note the notebook is the differentiator, not the pitch
 
-The bet: documents people enjoy re-reading get re-read, and re-read documents keep
-teams aligned. Aesthetic is a retention feature, not decoration.
-
+The bet is that documents people enjoy re-reading get re-read, and re-read documents keep teams aligned. Aesthetic is a retention feature, not decoration.
 
 @decision title="Fragmentation leads, the notebook differentiates" status=accepted date=2026-09-18
-  context: Two framings were live and contradicted each other — tool fragmentation, and documents treated as freight nobody reopens.
-  choice: Lead with fragmentation as the pain; keep the notebook rendering as the reason to pick this over another all-in-one.
+  context: Two framings were live and contradicted each other. Tool fragmentation, and documents treated as freight nobody reopens.
+  choice: Lead with fragmentation as the pain. Keep the notebook rendering as the reason to pick this over another all-in-one.
   consequences: Sets the landing headline, the README opening, and what the survey is actually testing.
 
+The deciding argument was falsifiability. "Would you like nicer documents?" gets a yes from everyone and tells you nothing. "How many tools did your last PRD touch?" can come back and say the premise is wrong.
 
-  The notebook is the differentiator
+## How we find out
 
+@timeline title="Validating the premise"
+  Week 1: Survey opens
+    30 PMs, one question that can fail
+  Week 3: Interviews
+    Five people who said five tools or more
+  Week 5: Decide
+    Premise holds, or the pitch changes
 
-The deciding argument was falsifiability. *"Would you like nicer documents?"* gets
-a yes from everyone and tells you nothing. *"How many tools did your last PRD
-touch?"* can come back and say the premise is wrong.
+## The risk, held open
 
-@h2 The risk, held open
+This still rests on a single-user hypothesis, which is the author's own pain. That is a legitimate origin and many tools started there, but it stays named rather than hidden until the survey returns data.
 
-This still rests on a single-user hypothesis — the author's own pain. That is a
-legitimate origin, and many tools started there, but it stays named rather than
-hidden until the survey returns data.
-
-@panel(accent=positive title="The risk is that the problem is not real")
-  A single-user hypothesis is a starting point, not a finding. The survey is
-  what turns it into one, or kills it.
+@panel accent=alert title="The risk is that the problem is not real"
+  A single-user hypothesis is a starting point, not a finding. The survey is what turns it into one, or kills it.
 
 @note a null result gets recorded, not buried

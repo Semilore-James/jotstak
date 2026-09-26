@@ -1,42 +1,143 @@
 @meta
-  project: Pricing v2
-  owner: Marta
-  status: in review
-  updated: 2026-09-19
+  project: Jotstak
+  owner: Semilore
+  status: Showcase
 
-# Moving to usage-based pricing
+# Everything, on one page
 
-@risk(level=high title="Churn among small teams")
-  Small teams pay less under usage pricing, but they are also the loudest
-  segment and the first to post about a change.
-  mitigation: Grandfather existing plans for 12 months.
+Every block below is written, not drawn. The source is above what it renders, so you can see how short it is.
 
-@note this is the one that worries me
+@note the whole vocabulary, in order
 
-@metric(name="Weekly active teams" value="1,240" target="2,000" trend=up status=on-track)
-  Growing 8% week-over-week since the playground shipped.
+## Text
 
-@quote(by="User P7" source="Discovery interview 3" tag=pricing)
+Ordinary paragraphs sit on the ruled lines. **Bold**, *italic*, `code` and ==highlight== all work, and a line you ended is a line.
+
+@quote by="User P7" source="Discovery interview 3"
   We stopped adding people to the workspace because every new seat cost money.
-  That is exactly backwards from what you want us doing.
 
-@decision(
-  title="Usage-based, billed monthly, with a floor"
-  status=accepted
-  date=2026-09-19
-)
-  context: Seat pricing punishes the teams who adopt fastest
-  choice: Usage-based with a floor so revenue stays predictable
-  consequences: Revenue is lumpier; forecasting needs rework
+@info
+  A callout comes in four flavours. This one is info.
+
+@tip
+  Export to HTML before the stakeholder meeting.
 
 @warn
   Finance needs 30 days' notice before any billing change ships.
 
-@assumption(title="Teams will accept a floor" confidence=medium)
-  Teams tolerate a minimum charge if it is visibly lower than their current bill.
-  validation: Offer it to 5 accounts at renewal; 3 of 5 accept without escalation.
+@question
+  Does the floor apply per workspace or per organisation?
 
-@persona(name="Marta, the systems PM")
+@divider
+
+## Tables
+
+@table style=sketch Q4 status
+  Area, Owner, Confidence
+  Search, Ana, 0.8
+  Export, Ben, 0.4
+  Templates, Ana, 0.6
+
+## Trees
+
+The same indented source, drawn four ways.
+
+@tree dir=right
+  Table
+    Cell
+      Content type
+      Interaction
+    Row
+      Actions
+    Column
+      Width
+
+@tree dir=down nodes=boxed
+  Discovery
+    Interviews
+      Recruiting
+      Synthesis
+    Survey
+      Design
+
+@tree dir=split
+  Retention
+    > Onboarding
+      > First value
+    < Habit loop
+
+@divider style=dots
+
+## Diagrams
+
+@timeline title="Project milestones"
+  Q3 2026: Discovery
+    Interviews, synthesis, personas
+  Oct 2026: Alpha
+    Core primitives, extension preview
+  Dec 2026: Beta
+    Full primitive set, docs
+  Q1 2027: Launch
+    Marketplace, site, community
+
+@matrix x="Effort" y="Impact" style=boxed
+  Search at top-right
+  Export at top-left
+  Dark mode at bottom-right
+  Animations at bottom-left
+
+@journey title="Onboarding"
+  stage Discover feeling=happy
+    Finds the landing page
+    Tries the playground
+  stage Install feeling=neutral
+    Copies the command
+    Waits for the download
+  stage First doc feeling=happy
+    Opens welcome.jot
+    Edits it and sees it render
+
+@star_model Telemetry warehouse
+  fact: TaskExecutionEvents
+  dim Agents at 12
+  dim Models at 3
+  dim LatencyBuckets at 6
+  dim CostCenters at 9
+
+@divider style=wave
+
+## PM artifacts
+
+@decision title="Usage-based, billed monthly, with a floor" status=accepted date=2026-09-19
+  context: Seat pricing punishes the teams who adopt fastest
+  choice: Usage-based with a floor, so revenue stays predictable
+  consequences: Revenue is lumpier and forecasting needs rework
+
+@metric name="Weekly active teams" value="1,240" target="2,000" trend=up status=on-track
+  Growing 8% week-over-week since the playground shipped.
+
+@risk level=high title="Churn among small teams"
+  Small teams pay less under usage pricing, and they are also the loudest segment.
+  mitigation: Grandfather existing plans for 12 months.
+
+@assumption title="Teams will accept a floor" confidence=medium
+  Teams tolerate a minimum charge when it is visibly lower than the bill they pay today.
+  validation: Offer it to 5 accounts at renewal.
+
+@persona name="Marta, the systems PM"
   role: Platform PM at a mid-size fintech
   goal: Sketch the pricing model inside the spec, not in a separate tool
   frustration: The diagram lives in Miro and the numbers live in Sheets
+
+## Containers
+
+@columns ratio="1:2"
+  left:
+    The diagram
+  right:
+    The paragraph that explains it, which usually needs more room than the picture does.
+
+@panel title="Anything can go inside"
+  A panel holds prose, fields, or other blocks.
+
+  @metric name="WAU" value="1,240"
