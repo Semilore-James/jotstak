@@ -15,7 +15,8 @@
 // prose rules also set has to carry a second class.
 
 import { describe, expect, it } from "vitest";
-import { renderLayoutCss } from "./index.js";
+import { render, renderLayoutCss } from "./index.js";
+import { PRIMITIVES } from "@jotstak/schema";
 
 /** Properties the generic prose rules claim, at (0,2,1). */
 const CONTESTED = ["font-size", "line-height", "margin"];
@@ -44,31 +45,89 @@ function classCount(selector: string): number {
   return classes.filter((c) => c !== ".jotstak").length;
 }
 
+/**
+ * Is this class the SUBJECT of the selector, or merely an ancestor in it?
+ *
+ * `.jotstak .jot-quote cite { font-size }` names .jot-quote and sets a
+ * contested property, and is not a problem at all: what it styles is a
+ * <cite>, which no prose rule reaches. Only the last compound decides.
+ */
+function isSubject(selector: string, cls: string): boolean {
+  const last = selector.trim().split(/\s+|>/).filter(Boolean).pop() ?? "";
+  return last.includes(`.${cls}`);
+}
+
+/**
+ * Classes on a prose-shaped element that the prose rules cannot actually
+ * reach, because the element is not inside `.jot-body` at all.
+ *
+ * An EXCLUSION list, deliberately, where the old inclusion list failed. A
+ * class nobody remembers to add HERE gets checked, and the worst that happens
+ * is a failure somebody has to think about. Under the old list, a class nobody
+ * remembered to add simply went unguarded — which is how four of them shipped.
+ */
+const OUTSIDE_THE_TEXT_COLUMN = [
+  // A margin note lives in .jot-aside, the other half of the row grid.
+  "jot-note",
+];
+
+/**
+ * Render one document that uses every primitive, and report the jot- classes
+ * that land on a prose-shaped element.
+ *
+ * A regex over the HTML rather than a DOM: the renderer emits the tags, and
+ * what matters is which class sits on a <p>, <li> or <blockquote>, which the
+ * source text says plainly.
+ */
+function proseShapedClasses(): string[] {
+  const source = PRIMITIVES.filter((p) => !p.planned)
+    .flatMap((p) => p.examples)
+    .join("\n\n");
+  const { html } = render(source, { mode: "notebook" });
+
+  const found = new Set<string>();
+  for (const m of html.matchAll(/<(p|li|blockquote)\s+class="([^"]*)"/g)) {
+    for (const cls of m[2]!.split(/\s+/)) {
+      if (cls.startsWith("jot-")) found.add(cls);
+    }
+  }
+  return [...found].sort();
+}
+
 describe("figure type out-ranks prose type", () => {
   const css = renderLayoutCss();
 
-  // Every class a figure gives to an element that is a <p>, <li> or <blockquote>
+  // Every class a block gives to an element that is a <p>, <li> or <blockquote>
   // in the markup — the ones the prose rules can reach.
-  const PROSE_SHAPED = [
-    "jot-matrix-title",
-    "jot-matrix-axis",
-    "jot-table-caption",
-    "jot-timeline-title",
-    "jot-timeline-date",
-    "jot-timeline-label",
-    "jot-timeline-detail",
-  ];
+  //
+  // DERIVED, not listed. This was a hand-kept array, and @cover then shipped
+  // `.jotstak .jot-cover-title` at (0,2,0) with its title rendering at 16px
+  // while the stylesheet said 36 — because a new block's classes were not in
+  // the array and nothing was going to put them there. A guard that has to be
+  // remembered is a guard that will miss, which is the same lesson samples.test.ts
+  // learned when it was pointed at one of two directories.
+  //
+  // So the list comes from a document that exercises every primitive: render
+  // it, find every <p>, <li> and <blockquote> carrying a jot- class, and those
+  // are exactly the elements the prose rules can reach.
+  const PROSE_SHAPED = proseShapedClasses().filter(
+    (c) => !OUTSIDE_THE_TEXT_COLUMN.includes(c),
+  );
 
   it.each(PROSE_SHAPED)("%s is never set at prose specificity", (cls) => {
     const owned = rules(css).filter(
       (r) =>
-        r.selectors.some((s) => s.includes(`.${cls}`)) &&
+        r.selectors.some((s) => isSubject(s, cls)) &&
         CONTESTED.some((p) => new RegExp(`(^|;|\\s)${p}\\s*:`).test(r.body)),
     );
-    expect(owned.length).toBeGreaterThan(0);
+    // No assertion that a class HAS contested rules. That was worth having
+    // when the list was typed out by hand — it caught a misspelt class name —
+    // and a derived list cannot misspell anything. `.jot-quote` reaches here
+    // because it is a prose-shaped element, and sets only colour and a border,
+    // which nothing is competing for.
     for (const rule of owned) {
       for (const selector of rule.selectors) {
-        if (!selector.includes(`.${cls}`)) continue;
+        if (!isSubject(selector, cls)) continue;
         // Two classes after the scope beats `.jotstak .jot-body p`.
         expect(
           classCount(selector),

@@ -9,6 +9,9 @@ Every block below is written, not drawn. The source is above what it renders, so
 
 @note the whole vocabulary, in order
 
+@cover Openers
+  Three weights, all of them a band in the flow
+
 ## Text
 
 Ordinary paragraphs sit on the ruled lines. **Bold**, *italic*, `code` and ==highlight== all work, and a line you ended is a line.
@@ -106,7 +109,8 @@ The same indented source, drawn four ways.
 
 @divider style=wave
 
-## PM artifacts
+@cover(style=minimal) PM artifacts
+  The blocks that make this a PM tool rather than a document tool
 
 @decision title="Usage-based, billed monthly, with a floor" status=accepted date=2026-09-19
   context: Seat pricing punishes the teams who adopt fastest

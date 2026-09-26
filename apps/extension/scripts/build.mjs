@@ -60,10 +60,33 @@ const options = {
   logLevel: "info",
 };
 
+// ── The webview shell, on its own ────────────────────────────────────────
+// scripts/preflight.mjs imports this to render a document through the REAL
+// page the panel draws, outside an extension host. It used to be a hand-built
+// artefact that nothing rebuilt, which meant preflight could pair a fresh
+// renderer with a stylesheet from days earlier and report heights that were
+// wrong for a reason nowhere in the source — the exact failure preflight was
+// written to catch, coming out of preflight itself.
+//
+// ESM, and not minified, because the only thing that reads it is a script.
+const shell = {
+  entryPoints: [join(root, "src", "webview-shell.ts")],
+  outfile: join(root, "dist", "shell.mjs"),
+  bundle: true,
+  platform: "node",
+  format: "esm",
+  target: "node20",
+  logLevel: "info",
+};
+
 if (watch) {
-  const ctx = await (await import("esbuild")).context(options);
-  await ctx.watch();
+  const esbuild = await import("esbuild");
+  for (const config of [options, shell]) {
+    const ctx = await esbuild.context(config);
+    await ctx.watch();
+  }
   console.log("watching…");
 } else {
   await build(options);
+  await build(shell);
 }

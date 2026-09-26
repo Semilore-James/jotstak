@@ -4,6 +4,15 @@ All notable changes to Jotstak are recorded here. Format loosely follows [Keep a
 
 ## [Unreleased]
 
+### Added
+- **`@cover` renders.** A band across the page that opens a major section: a title, an optional subtitle, and rules spanning the margin channel. It sits in the flow rather than taking a sheet, because `@pagebreak` already starts a page and does nothing else, so a cover plus a break IS a title page. Three weights: `minimal`, `default`, `bold`. 24 of 28 primitives now draw something.
+- The subtitle can be a parameter or the indented line underneath, and both are the same subtitle. The documented example used to be a third thing, `subtitle="..."` unbracketed on the line below, which is not a parameter at all and rendered as literal text on the page.
+
+### Fixed (four blocks that were quietly rendering at body size)
+- **Card titles, card kickers, callout labels and column headings** were set at `(0,2,0)` and lost to `.jot-body p` at `(0,2,1)`. Measured in a browser: a `@decision` title drew at 16px where the stylesheet said 18, and every kicker and callout label at 16px where it said 10. Every PM artifact in the product was affected.
+- The specificity guard that exists for exactly this bug held a **hand-written list of seven class names**, so nothing new was ever covered by it. It now derives the list by rendering every primitive's examples and finding each `jot-` class that lands on a `<p>`, `<li>` or `<blockquote>` — 27 classes, which is how the four above surfaced.
+- `scripts/preflight.mjs` imported a bundle that nothing built, so it was pairing a fresh renderer with a three-day-old stylesheet and reporting heights that were wrong for a reason nowhere in the source. It is built by the build now.
+
 ### Changed (the samples)
 - **Rewritten, all three, and they are three different documents now.** `pricing-v2.jot` and `showcase.jot` were byte-identical, and the one nothing linked to was the one being kept current. `pricing-v2.jot` is the playground starter, so it is the shortest and plainest thing that still shows why you would want this. `problem-statement.jot` is prose carrying two figures. `showcase.jot` is the wide sweep of the vocabulary.
 - **Prose is no longer hard-wrapped.** The samples were written when a single newline was a space; UX-45 made a line you ended a line, and fourteen wrap points across the three documents silently became real breaks mid-sentence. A paragraph is one line of source now and the column decides where it wraps.

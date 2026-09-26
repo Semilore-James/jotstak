@@ -22,6 +22,7 @@ import { renderTimelineCss } from "./timeline-css.js";
 import { renderJourneyCss } from "./journey-css.js";
 import { renderStarCss } from "./star-css.js";
 import { renderTableCss, renderTablePrintCss } from "./table-css.js";
+import { renderCoverCss, renderCoverPrintCss } from "./cover-css.js";
 import { FONT_METRICS } from "./font-metrics.js";
 
 const ROW = spacing.baselineGrid; // 28
@@ -201,7 +202,7 @@ ${scope}[data-mode="doc"] .jot-card {
 ${scope}[data-mode="doc"] .jot-card[data-alert="true"] {
   border-top-color: var(--jot-color-accent-terracotta);
 }
-${scope}[data-mode="doc"] .jot-card-kicker {
+${scope}[data-mode="doc"] .jot-card .jot-card-kicker {
   color: var(--jot-color-doc-ink-muted);
 }
 /* Written with the attribute selector so it outranks \`.jot-badge[data-alert]\`,
@@ -571,7 +572,7 @@ ${scope} .jot-card {
   padding: 13px 18px;
   margin: 0 0 ${ROW}px;
 }
-${scope} .jot-card-title {
+${scope} .jot-card .jot-card-title {
   font-family: var(--jot-font-heading);
   font-size: ${typography.headline.sm.size};
   font-weight: 600;
@@ -579,7 +580,7 @@ ${scope} .jot-card-title {
   margin: 0;
   color: var(--jot-ink);
 }
-${scope} .jot-card-kicker {
+${scope} .jot-card .jot-card-kicker {
   font-family: var(--jot-font-label);
   font-size: ${typography.label.sm.size};
   font-weight: 600;
@@ -665,7 +666,7 @@ ${scope} .jot-columns { display: flex; flex-wrap: wrap; gap: 0 ${ROW}px; }
    they still wrap on a phone, where stacking is the right answer. */
 ${scope} .jot-col { flex: 1 1 150px; min-width: 0; }
 ${scope} .jot-col > :last-child { margin-bottom: 0; }
-${scope} .jot-col-heading {
+${scope} .jot-columns .jot-col-heading {
   font-family: var(--jot-font-label);
   font-size: ${typography.label.md.size};
   font-weight: 600;
@@ -688,6 +689,7 @@ ${scope} .jot-card[data-accent="quiet"] {
   border-style: dashed;
 }
 
+${renderCoverCss(scope)}
 ${renderTreeCss(scope)}
 ${renderMatrixCss(scope)}
 ${renderTimelineCss(scope)}
@@ -720,7 +722,7 @@ ${scope} .jot-callout {
   border-left-width: 3px;
   background: var(--jot-surface-elevated);
 }
-${scope} .jot-callout-label {
+${scope} .jot-callout .jot-callout-label {
   font-family: var(--jot-font-label);
   font-size: ${typography.label.sm.size};
   font-weight: 600;
@@ -821,6 +823,7 @@ ${scope} .jot-error {
      an instruction to the printer. */
   ${scope} .jot-row:has(> .jot-body[data-primitive="pagebreak"]) { break-before: page; }
   ${scope} .jot-pagebreak { display: none; }
+${renderCoverPrintCss(scope)}
 ${renderTablePrintCss(scope)}
 }
 

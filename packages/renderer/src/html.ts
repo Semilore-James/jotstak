@@ -13,6 +13,7 @@ import { renderTable as renderTableFigure } from "./table.js";
 import { renderTimeline as renderTimelineFigure } from "./timeline.js";
 import { renderJourney as renderJourneyFigure } from "./journey.js";
 import { renderStar as renderStarFigure } from "./star.js";
+import { renderCover } from "./cover.js";
 // @ts-expect-error — markdown-it-mark ships no type declarations.
 import markPlugin from "markdown-it-mark";
 import { getPrimitive } from "@jotstak/schema";
@@ -435,6 +436,7 @@ function renderBlock(n: BlockNode, diagnostics: Diagnostic[]): string {
   if (n.name === "callout") return renderCallout(n, diagnostics);
   if (n.name === "meta") return renderMeta(n);
   if (n.name === "pagebreak") return renderPagebreak(n);
+  if (n.name === "cover") return renderCover(n, diagnostics, { inline, escapeHtml, attr });
   // @page configures the document rather than rendering; handled by the shell.
   if (n.name === "page") return "";
   return renderUnsupported(n, diagnostics);

@@ -170,6 +170,33 @@ export function describe(spec: PrimitiveSpec): vscode.MarkdownString {
  *   `@numbered`  the example is the Markdown form, `1. First`, which never
  *                opens a directive at all. Nothing to copy, so nothing is.
  */
+/**
+ * The bare text the example writes ON the directive line, if it writes any.
+ *
+ * Several blocks take their title there rather than as a parameter —
+ * `@cover Discovery phase`, `@star_model Telemetry warehouse`,
+ * `@table(style=sketch) Q4 status`. A scaffold that gave you the parameters
+ * and the body and left that out produced `@cover` with a subtitle and no
+ * title, which the renderer then complained about: the editor writing a block
+ * the renderer immediately objects to is the exact failure the render test
+ * exists to catch, arriving from a different direction.
+ */
+export function exampleTitle(spec: PrimitiveSpec): string | undefined {
+  const names = [spec.name, ...(spec.aliases ?? [])];
+  for (const example of spec.examples) {
+    for (const line of example.split("\n")) {
+      const open = new RegExp(`^@(${names.join("|")})\\b(.*)$`).exec(line.trim());
+      if (!open) continue;
+      const rest = (open[2] ?? "")
+        .replace(/\([^)]*\)/g, "") // a bracketed parameter list
+        .replace(/[a-zA-Z_][a-zA-Z0-9_]*=(?:"[^"]*"|'[^']*'|\S+)/g, "") // inline parameters
+        .trim();
+      if (rest) return rest;
+    }
+  }
+  return undefined;
+}
+
 export function exampleBodyLines(spec: PrimitiveSpec): string[] {
   const names = [spec.name, ...(spec.aliases ?? [])];
   const opens = (line: string): boolean =>
@@ -280,9 +307,18 @@ export function scaffold(spec: PrimitiveSpec): vscode.SnippetString {
     }
   }
 
+  // The title goes after the parameters, which is where the parser expects it
+  // and where the examples put it.
+  const title = exampleTitle(spec);
+  if (title) text += ` \${${stop++}:${escapeSnippet(title)}}`;
+
   if (spec.bodyShape !== "none") {
     const hints = exampleBodyLines(spec);
-    if (hints.length === 0) hints.push(FALLBACK[spec.bodyShape]);
+    // Fall back to a generic body line only when nothing else carries the
+    // content. `@heading Overview` and `@note revisit this at scale` say
+    // everything they have to say on their own line, and adding an indented
+    // `text` under them scaffolds a second empty place to write.
+    if (hints.length === 0 && !title) hints.push(FALLBACK[spec.bodyShape]);
     for (const hint of hints) {
       const body = tabstops(hint, stop, separators(spec));
       stop += (body.match(/\$\{\d+[:|]/g) ?? []).length;
