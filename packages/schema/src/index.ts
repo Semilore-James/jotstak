@@ -385,7 +385,7 @@ const tree: PrimitiveSpec = {
   short:
     "A hierarchy, shaped by how far you indent each line.",
   summary:
-    "A hierarchy defined by indentation. `dir` is the way it grows: `down` (the default) reads as an outline, `right` puts each level in its own column, and `split` balances branches either side of a centre — prefix a branch with > or < to pin its side. `nodes=boxed` draws every node as a pill.",
+    "A hierarchy defined by indentation. `dir` is the way it grows: `down` (the default) reads as an outline, `right` puts each level in its own column, and `split` balances branches either side of a centre — prefix a branch with > or < to pin its side. `nodes=boxed` draws every node as a pill. Put a `\\n` anywhere a label should break; the node gets taller by a row and a line still meets it at the middle of its first one.",
   params: [
     { name: "dir", type: "enum", required: false, description: "The way the tree grows. `down` grows down the page — an outline, or with nodes=boxed a top-down chart. `right` gives each level its own column, aligned so a level reads straight down. `split` places branches either side of a centre, balanced by size.", enumValues: ["down", "right", "split"], default: "down" },
     { name: "style", type: "enum", required: false, description: "Line style between nodes.", enumValues: ["solid", "dashed", "rounded"], default: "solid" },

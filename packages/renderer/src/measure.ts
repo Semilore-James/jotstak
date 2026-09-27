@@ -59,3 +59,21 @@ export function segments(text: string): string[] {
   // newline, which cannot reach here: a cell and a label are one line each.
   return text.split(/\\n/).map((s) => s.trim());
 }
+
+/**
+ * Inline Markdown, with the escape drawn as the break the author asked for.
+ *
+ * Lives here, beside segments(), because drawing the break and measuring it
+ * have to agree and there are now four blocks doing both: a table cell, a
+ * timeline card, a journey stage and a tree node. A renderer that draws a
+ * break the measurement did not count leaves a figure a row short of its own
+ * contents, which is the drift this file exists to prevent.
+ */
+export function broken(h: { inline: (t: string) => string }, text: string): string {
+  return segments(text).map(h.inline).join("<br>");
+}
+
+/** How wide `text` is once broken: its widest line, not the sum of them. */
+export function brokenWidth(text: string, face: Face, sizePx: number): number {
+  return Math.max(...segments(text).map((s) => measureText(s, face, sizePx)));
+}

@@ -17,7 +17,7 @@
 // `dir=vertical`, which has no such limit — it runs down the page, one event
 // per few rows, and wraps like prose.
 
-import { ESTIMATE_SAFETY, measureText, segments, type Face } from "./measure.js";
+import { broken, ESTIMATE_SAFETY, measureText, segments, type Face } from "./measure.js";
 import { figureAttrs, placeFigure, ROW, wholeRows } from "./figure.js";
 import { PAGE } from "./page.js";
 import type { Placement, Size } from "./figure.js";
@@ -249,10 +249,6 @@ export function measureTimeline(m: TimelineModel, pinned = "auto"): TimelineMetr
     below,
   };
 }
-
-/** Inline Markdown, with a `\n` drawn as the break the author asked for. */
-const broken = (h: { inline: (t: string) => string }, text: string): string =>
-  segments(text).map(h.inline).join("<br>");
 
 export interface TimelineHelpers {
   inline: (text: string) => string;

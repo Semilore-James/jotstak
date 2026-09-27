@@ -16,7 +16,7 @@
 // stage with more written under it is not a longer or more important stage,
 // and sizing it that way says it is.
 
-import { ESTIMATE_SAFETY, measureText, segments, type Face } from "./measure.js";
+import { broken, ESTIMATE_SAFETY, measureText, segments, type Face } from "./measure.js";
 import { figureAttrs, placeFigure, ROW, wholeRows } from "./figure.js";
 import { PAGE } from "./page.js";
 import type { Placement, Size } from "./figure.js";
@@ -248,10 +248,6 @@ export function measureJourney(m: JourneyModel, pinned = "auto"): JourneyMetrics
 
   return { w, h: wholeRows(Math.max(1, rows) * ROW), column, tracks };
 }
-
-/** Inline Markdown, with a `\n` drawn as the break the author asked for. */
-const broken = (h: { inline: (t: string) => string }, text: string): string =>
-  segments(text).map(h.inline).join("<br>");
 
 export interface JourneyHelpers {
   inline: (text: string) => string;

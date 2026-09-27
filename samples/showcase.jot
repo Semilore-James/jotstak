@@ -69,6 +69,13 @@ The same indented source, drawn four ways.
       > First value
     < Habit loop
 
+A label breaks where you put a backslash-n, in any of the looks.
+
+@tree dir=right nodes=boxed
+  Platform
+    Search\n and relevance
+    Export
+
 @divider style=dots
 
 ## Diagrams

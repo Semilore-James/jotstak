@@ -382,6 +382,38 @@ ${scope} .jot-tree[data-look="chart"] .jot-tree-kids[data-flow="stack"]::before 
   border-left: ${line};
 }
 
+/* A label that was asked to break takes the rows the break costs.
+   
+   Every look holds a label at exactly one row, and most of them hold it on one
+   LINE as well, because a tree is a diagram: a label left free to wrap would
+   re-shape a figure the renderer has already measured and placed. The escape
+   is the one thing that releases it, and only for the node that asked.
+   
+   Height is set from data-rows rather than left auto, because auto is how a
+   label silently takes a row the measurement did not count. */
+${scope} [data-rows] > .jot-tree-label,
+${scope} [data-rows] > .jot-tree-label > .jot-tree-text {
+  white-space: normal;
+}
+${scope} .jot-tree[data-look="columns"] [data-rows] > .jot-tree-label,
+${scope} .jot-tree[data-look="chart"] [data-rows] > .jot-tree-label,
+${scope} .jot-tree[data-look="split"][data-nodes="boxed"] [data-rows] > .jot-tree-label {
+  height: calc(var(--rows) * ${u(R)});
+}
+${scope} [data-rows="2"] { --rows: 2; }
+${scope} [data-rows="3"] { --rows: 3; }
+${scope} [data-rows="4"] { --rows: 4; }
+
+/* A pill grows to hold its lines and stays centred in the rows it was given,
+   so the arrow still meets it in the middle. */
+${scope} .jot-tree[data-nodes="boxed"] [data-rows] > .jot-tree-label > .jot-tree-text {
+  height: calc(var(--rows) * ${u(R)} - ${u(2 * pillMargin)});
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  line-height: calc(${u(TREE.pillHeight)} - 2px);
+}
+
 /* ── dir=split: a bilateral mind map ────────────────────────────────── */
 /* Three columns — left branches, the hub, right branches — not one column per
    branch, which gave four columns for four branches and an off-centre hub. The

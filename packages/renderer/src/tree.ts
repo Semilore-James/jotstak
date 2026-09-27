@@ -17,7 +17,7 @@
 
 import type { BlockNode, TreeNode } from "./ast.js";
 import type { Diagnostic } from "./index.js";
-import { ESTIMATE_SAFETY, measureText, type Face } from "./measure.js";
+import { broken, brokenWidth, ESTIMATE_SAFETY, segments, type Face } from "./measure.js";
 import { figureAttrs, placeFigure } from "./figure.js";
 import type { Placement, Size } from "./figure.js";
 
@@ -93,40 +93,40 @@ export function readSide(text: string): { side: "left" | "right" | null; text: s
   if (text.startsWith("< ")) return { side: "left", text: text.slice(2) };
   return { side: null, text };
 }
-/**
- * A tree node's text, with a forced break folded back into a space.
- *
- * `\n` is the escape for the places Enter cannot reach, and it draws a real
- * break in a table cell, a timeline card, a journey stage and a matrix chip.
- * A tree node is the one label that cannot take it yet, and the reason is
- * geometry rather than effort: every one of the five looks positions its
- * connectors off a node being exactly one row tall — `TREE.mid` for the point a
- * line meets a row, `pillMargin` for where it leaves a pill — so a two-line
- * node moves the arithmetic of five sets of `::before` rules at once. That is
- * the same arithmetic UX-32 is an open question about: where a stacked family's
- * line leaves its parent pill. Building the break first would mean deriving the
- * connector geometry twice.
- *
- * So it folds to a space, which reads, and `warnAboutBreaks` says so once. The
- * alternative was what shipped until now: a literal backslash-n on the page.
- */
-const label = (n: TreeNode): string => readSide(n.text).text.replace(/\\n\s*/g, " ").trim();
+/** A tree node's text, with the side marker taken off. */
+const label = (n: TreeNode): string => readSide(n.text).text;
 
-/** Tell the author once, rather than per node, that a tree cannot break a label. */
-function warnAboutBreaks(roots: TreeNode[], n: BlockNode, diagnostics: Diagnostic[]): void {
-  const has = (t: TreeNode): boolean => /\\n/.test(readSide(t.text).text) || t.children.some(has);
-  if (!roots.some(has)) return;
-  diagnostics.push({
-    severity: "info",
-    message:
-      "A tree label cannot break yet, so the `\\n` is drawn as a space. Shorten the label, or use `dir=down nodes=text`, where a long label wraps on its own.",
-    line: n.position.line,
-    column: n.position.column,
-  });
-}
-const leaves = (n: TreeNode): number => (n.children.length === 0 ? 1 : n.children.reduce((s, c) => s + leaves(c), 0));
+/**
+ * How many rows one node's own label takes.
+ *
+ * A node used to be exactly one row tall everywhere, and every connector in
+ * every look was positioned off that. Making a label breakable meant deciding
+ * where a line should MEET a node that is two rows tall, and the answer that
+ * costs nothing is the middle of its FIRST row: siblings of different heights
+ * then all connect at the same offset from their own top, so a column of
+ * connectors stays level, and not one of the existing `top` values changes.
+ *
+ * The alternative — the middle of the whole node — puts a two-line node's
+ * connector a full row below a one-line sibling's, which reads as two
+ * different kinds of thing rather than two entries in one list.
+ */
+const labelRows = (n: TreeNode): number => segments(label(n)).length;
+
+/**
+ * Rows a subtree occupies in the COLUMNS look, where height comes from the
+ * leaves: a parent is only as tall as the children beside it.
+ *
+ * With a breakable label a parent can be taller than its whole family — a
+ * two-line node with one one-line child — so it takes whichever is greater.
+ * Without that, the parent overflows its own column and the level below it
+ * drifts up the page.
+ */
+const leaves = (n: TreeNode): number =>
+  n.children.length === 0
+    ? labelRows(n)
+    : Math.max(labelRows(n), n.children.reduce((s, c) => s + leaves(c), 0));
 const depth = (n: TreeNode): number => 1 + Math.max(0, ...n.children.map(depth));
-const count = (n: TreeNode): number => 1 + n.children.reduce((s, c) => s + count(c), 0);
+const count = (n: TreeNode): number => labelRows(n) + n.children.reduce((s, c) => s + count(c), 0);
 const isStack = (n: TreeNode): boolean => n.children.length > 0 && n.children.every((c) => c.children.length === 0);
 
 export function resolveLook(dir: string, nodes: string): Look {
@@ -137,9 +137,11 @@ export function resolveLook(dir: string, nodes: string): Look {
 
 // ── measuring (ARC-15) ───────────────────────────────────────────────────
 
-const textWidth = (s: string, face: Face, size: number): number => measureText(s, face, size);
+/** A label's width is its widest LINE. Measuring the whole string would size
+ * a column for text that is no longer on one line. */
+const textWidth = (s: string, face: Face, size: number): number => brokenWidth(s, face, size);
 const pillWidth = (s: string, face: Face): number =>
-  textWidth(s, face, TREE.pillSize) + 2 * TREE.pillPadX + 2 * TREE.pillBorder;
+  brokenWidth(s, face, TREE.pillSize) + 2 * TREE.pillPadX + 2 * TREE.pillBorder;
 
 type Role = "root" | "branch" | "leaf";
 const roleOf = (n: TreeNode, isRoot: boolean): Role => (isRoot ? "root" : n.children.length ? "branch" : "leaf");
@@ -176,9 +178,10 @@ function chartWidth(n: TreeNode, isRoot: boolean): number {
 }
 /** Chart: rows a node's family occupies. A stack spends one on the jog (UX-32). */
 function chartRows(n: TreeNode): number {
-  if (!n.children.length) return 1;
-  if (isStack(n)) return 2 + n.children.length;
-  return 2 + Math.max(...n.children.map(chartRows));
+  if (!n.children.length) return labelRows(n);
+  const own = labelRows(n) + 1;
+  if (isStack(n)) return own + n.children.reduce((s, c) => s + labelRows(c), 0);
+  return own + Math.max(...n.children.map(chartRows));
 }
 
 /** Split (outline sides): the width one side needs. */
@@ -234,7 +237,16 @@ export function measureTree(look: Look, roots: TreeNode[], nodes: string, sides?
       const rows = (group: TreeNode[]): number =>
         group.reduce((s, n) => s + (boxed ? leaves(n) : count(n)), 0);
       const extra = roots.slice(1).reduce((s, r) => s + count(r), 0);
-      return { w: safe(w), h: (Math.max(1, rows(left), rows(right)) + extra) * R };
+      // The HUB's own height counts too. It never had to before: a hub was one
+      // row like everything else, so the taller side always won. A hub whose
+      // label breaks is two rows with one row of branches either side, and the
+      // figure reported one row while the pill ran 26px out of the bottom of
+      // its own box — declared and drawn agreeing at 28 the whole time,
+      // because both came from the same wrong number.
+      return {
+        w: safe(w),
+        h: (Math.max(1, labelRows(hub), rows(left), rows(right)) + extra) * R,
+      };
     }
   }
 }
@@ -308,6 +320,19 @@ export function placeTree(look: Look, size: Size, pinned: string, n: BlockNode, 
  * "centre" drops it from the pill's centre and jogs across to the rail. Both
  * exist only until one is picked from the side-by-side mock.
  */
+/**
+ * `data-rows="2"` on a node whose label breaks.
+ *
+ * The stylesheet needs to know, because every look holds a label at exactly
+ * one row and most of them hold it on one line as well — a tree is a diagram,
+ * and a label left free to wrap would re-shape the figure the renderer has
+ * already measured. An asked-for break is the one thing that releases it.
+ */
+const rowsAttr = (n: TreeNode): string => {
+  const rows = labelRows(n);
+  return rows > 1 ? ` data-rows="${rows}"` : "";
+};
+
 function nodeHtml(n: TreeNode, isRoot: boolean, look: Look, h: TreeHelpers): string {
   const flow = look === "chart" && n.children.length ? (isStack(n) ? "stack" : "spread") : "";
   const flowAttr = flow ? ` data-flow="${flow}"` : "";
@@ -315,8 +340,8 @@ function nodeHtml(n: TreeNode, isRoot: boolean, look: Look, h: TreeHelpers): str
     ? `<ul class="jot-tree-kids"${flowAttr}>${n.children.map((c) => nodeHtml(c, false, look, h)).join("")}</ul>`
     : "";
   return (
-    `<li class="jot-tree-node" data-role="${roleOf(n, isRoot)}"${flowAttr}>` +
-    `<span class="jot-tree-label"><span class="jot-tree-text">${h.inline(label(n))}</span></span>${kids}</li>`
+    `<li class="jot-tree-node" data-role="${roleOf(n, isRoot)}"${flowAttr}${rowsAttr(n)}>` +
+    `<span class="jot-tree-label"><span class="jot-tree-text">${broken(h, label(n))}</span></span>${kids}</li>`
   );
 }
 
@@ -327,8 +352,6 @@ export function renderTree(n: BlockNode, diagnostics: Diagnostic[], h: TreeHelpe
   const style = n.params.style ?? "solid";
   const pinned = n.params.width ?? "auto";
   const look = resolveLook(dir, nodes);
-
-  warnAboutBreaks(roots, n, diagnostics);
 
   const sides = look === "split" && roots[0] ? splitSides(roots[0].children) : undefined;
   const size = measureTree(look, roots, nodes, sides);
@@ -352,7 +375,7 @@ export function renderTree(n: BlockNode, diagnostics: Diagnostic[], h: TreeHelpe
     body =
       `<div class="jot-tree-split">` +
       side(sides.left, "left") +
-      `<div class="jot-tree-hub" data-role="root"><span class="jot-tree-label"><span class="jot-tree-text">${h.inline(label(hub))}</span></span></div>` +
+      `<div class="jot-tree-hub" data-role="root"${rowsAttr(hub)}><span class="jot-tree-label"><span class="jot-tree-text">${broken(h, label(hub))}</span></span></div>` +
       side(sides.right, "right") +
       `</div>` +
       // A mind map has one hub. Extra roots are drawn beneath it as outlines

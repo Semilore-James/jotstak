@@ -4,6 +4,13 @@ All notable changes to Jotstak are recorded here. Format loosely follows [Keep a
 
 ## [Unreleased]
 
+### Added
+- **A tree label takes a forced break.** The last label in the language that could not, and the reason was never effort: every look positioned its connectors off a node being exactly one row tall, which was the same arithmetic UX-32 was open on. With that settled, the whole thing came down to one decision — a line meets a node at the middle of its **first** row. Siblings of different heights then connect at the same offset from their own top, a column of connectors stays level, and not one existing offset had to change. A pill is the exception and handles itself: it grows to hold its lines and centres in the rows it was given, so the arrow still meets it in the middle.
+- Works in all six forms, at any number of lines, in a leaf, in a parent with children, and in a split hub. `broken()` and `brokenWidth()` moved into `measure.ts` beside `segments()`, since four blocks now both draw a break and measure it.
+
+### Fixed
+- **A split tree never counted its hub's own height.** It never had to: a hub was one row like everything else, so the taller side always won. A hub whose label breaks is two rows with one row of branches either side, and the figure reported one row while the pill ran 26px out of the bottom of its own box — with declared and drawn agreeing at 28 the whole time, because both came from the same wrong number. Found by measuring the lowest descendant against the figure's own bottom, which is independent of the number the renderer produced.
+
 ### Decided (UX-32, the last thing marked "needed now")
 - **A stacked family's parent pill stays centred over it.** Its line drops from the centre, turns, and runs down the rail its children hang off. Both styles had been built behind a switch since 22 September; they were mocked side by side on four shapes and chosen by eye. The left rail was a row shorter and had no corner anywhere, but with the parent over the left edge of its family a stack reads as a heading above a list rather than as a parent with children — and it was up to 29px wider, on the axis that decides whether a tree stays in the text column or is scaled onto a landscape page.
 - The losing branch was **deleted**, not left switched off: `chartStack`, the `attach` parameter through four functions, the `data-attach` attribute, `TREE.railInset` and the rail stylesheet. A mutable module-level global that nothing sets is a knob waiting to be turned by accident.
