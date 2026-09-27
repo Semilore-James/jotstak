@@ -4,6 +4,14 @@ All notable changes to Jotstak are recorded here. Format loosely follows [Keep a
 
 ## [Unreleased]
 
+## [0.3.0]
+
+### Added (Tab moves a family)
+- **Tab and Shift-Tab move a line and everything it owns.** Indentation is the structure of this language, so the key that changes indentation is the key that changes the shape of the document. Indenting a parent and leaving its children behind is the editing equivalent of moving a function's signature without its body: nothing errors, the file still renders, and it means something else. Every outliner people already use — Workflowy, Logseq, Notion — takes the children, and there is no version of this where the author wanted the parent to leave without them.
+- **A line may only indent one level deeper than the line above it.** Further is a gap in the hierarchy — a child of nothing — which the parser accepts while the document stops meaning what it looks like it means. Refused, the way an outliner refuses it.
+- **Nothing happens inside a fenced code block.** There, indentation is the program. Tab falls through to inserting a tab, as it does mid-line, because `@table sep=tab` makes a literal tab a real thing somebody types.
+- `@cover` and `@sticky` render (see Unreleased above), taking the language to 26 of 28 primitives drawing something.
+
 ### Added
 - **`@sticky` renders, and a run of them is a wall.** Consecutive stickies are ONE figure in one row, laid out as a grid, because cluster synthesis is the only thing the block is for and separate rows down the page would just be a list with coloured backgrounds. Give consecutive notes the same `cluster` and they are grouped under its name. The only place in the language where a block shares a row with its neighbour.
 - Six muted Post-it colours, chosen to sit on warm cream rather than glare off it. A note is a 140px square; text that will not fit drops one size, and only then does the note grow in whole rows, with a diagnostic saying it did. The tilt comes from the note's own text, so it is stable — a random angle would change on every keystroke and the note would twitch while you typed in the block above it.

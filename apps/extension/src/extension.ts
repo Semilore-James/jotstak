@@ -10,7 +10,7 @@ import * as vscode from "vscode";
 import { render } from "@jotstak/renderer";
 import { JotPreview } from "./preview.js";
 import { createDiagnostics } from "./diagnostics.js";
-import { registerIndentation } from "./indentation.js";
+import { registerIndentation, registerReparent } from "./indentation.js";
 import { registerExtentRuler } from "./extent-ruler.js";
 import { isJot, offerAssociation } from "./jot-files.js";
 import { registerLanguageFeatures } from "./language-features.js";
@@ -31,6 +31,7 @@ export function activate(context: vscode.ExtensionContext): void {
   // rather than erroring. These two take the edge off it: the rules stop you
   // making the mistake, the ruler shows you what you already have.
   registerIndentation(context);
+  registerReparent(context);
   registerExtentRuler(context);
   // Hover and autocomplete, formatted straight out of the schema — which had
   // every word of this and was only ever sending it to the docs site.
