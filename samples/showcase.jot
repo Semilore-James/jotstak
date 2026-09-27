@@ -133,6 +133,20 @@ The same indented source, drawn four ways.
   goal: Sketch the pricing model inside the spec, not in a separate tool
   frustration: The diagram lives in Miro and the numbers live in Sheets
 
+## Expressive
+
+@sticky color=green cluster="wins"
+  Playground drove 3x installs on launch day
+
+@sticky color=green cluster="wins"
+  Two PMs asked for a Word export unprompted
+
+@sticky color=coral cluster="concerns"
+  Nobody read the docs before filing a bug
+
+@sticky color=coral cluster="concerns"
+  Install took eleven minutes
+
 ## Containers
 
 @columns ratio="1:2"

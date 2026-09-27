@@ -5,6 +5,14 @@ All notable changes to Jotstak are recorded here. Format loosely follows [Keep a
 ## [Unreleased]
 
 ### Added
+- **`@sticky` renders, and a run of them is a wall.** Consecutive stickies are ONE figure in one row, laid out as a grid, because cluster synthesis is the only thing the block is for and separate rows down the page would just be a list with coloured backgrounds. Give consecutive notes the same `cluster` and they are grouped under its name. The only place in the language where a block shares a row with its neighbour.
+- Six muted Post-it colours, chosen to sit on warm cream rather than glare off it. A note is a 140px square; text that will not fit drops one size, and only then does the note grow in whole rows, with a diagnostic saying it did. The tilt comes from the note's own text, so it is stable — a random angle would change on every keystroke and the note would twitch while you typed in the block above it.
+- **26 of 28 primitives now render.** Only `@doodle` and `@footnote` remain, both deferred past v1, plus `@icon`, which waits on the icon set.
+
+### Fixed
+- The sticky wall counted one line of notes per group, so two clusters of three ran out of the bottom of the wall and over the paragraph below — while the check reported declared 6, drawn 6, match true. A fixed height agrees with itself. For a block whose height CSS sets, the content has to be measured against the box; the declared-versus-drawn check every other figure uses is circular here. Found by a screenshot, after the numbers came back clean.
+
+### Added
 - **`@cover` renders.** A band across the page that opens a major section: a title, an optional subtitle, and rules spanning the margin channel. It sits in the flow rather than taking a sheet, because `@pagebreak` already starts a page and does nothing else, so a cover plus a break IS a title page. Three weights: `minimal`, `default`, `bold`. 24 of 28 primitives now draw something.
 - The subtitle can be a parameter or the indented line underneath, and both are the same subtitle. The documented example used to be a third thing, `subtitle="..."` unbracketed on the line below, which is not a parameter at all and rendered as literal text on the page.
 

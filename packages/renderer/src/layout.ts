@@ -23,6 +23,7 @@ import { renderJourneyCss } from "./journey-css.js";
 import { renderStarCss } from "./star-css.js";
 import { renderTableCss, renderTablePrintCss } from "./table-css.js";
 import { renderCoverCss, renderCoverPrintCss } from "./cover-css.js";
+import { renderStickyCss, renderStickyPrintCss } from "./sticky-css.js";
 import { FONT_METRICS } from "./font-metrics.js";
 
 const ROW = spacing.baselineGrid; // 28
@@ -690,6 +691,7 @@ ${scope} .jot-card[data-accent="quiet"] {
 }
 
 ${renderCoverCss(scope)}
+${renderStickyCss(scope)}
 ${renderTreeCss(scope)}
 ${renderMatrixCss(scope)}
 ${renderTimelineCss(scope)}
@@ -824,6 +826,7 @@ ${scope} .jot-error {
   ${scope} .jot-row:has(> .jot-body[data-primitive="pagebreak"]) { break-before: page; }
   ${scope} .jot-pagebreak { display: none; }
 ${renderCoverPrintCss(scope)}
+${renderStickyPrintCss(scope)}
 ${renderTablePrintCss(scope)}
 }
 

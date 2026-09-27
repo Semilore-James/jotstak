@@ -623,12 +623,11 @@ const sticky: PrimitiveSpec = {
   short:
     "A sticky note. Several in a row cluster together.",
   summary:
-    "Sticky note for cluster synthesis. Multiple stickies in sequence render as a cluster on the page. Color sets the sticky background.",
+    "A sticky note, and a wall of them. Stickies written one after another are ONE figure laid out as a grid, because that is what cluster synthesis looks like — written as separate blocks down the page they would just be a list with coloured backgrounds. Give consecutive stickies the same `cluster` and they are grouped under its name. A note is a square; text that will not fit drops a size, and only grows the note when even that is not enough.",
   params: [
-    { name: "color", type: "enum", required: false, description: "Sticky color.", enumValues: ["yellow", "green", "coral", "blue", "pink", "purple"], default: "yellow" },
-    { name: "cluster", type: "string", required: false, description: "Cluster name — stickies sharing a cluster group together." },
+    { name: "color", type: "enum", required: false, description: "The note's colour. Six muted Post-it tints, chosen to sit on warm cream rather than glare off it.", enumValues: ["yellow", "green", "coral", "blue", "pink", "purple"], default: "yellow" },
+    { name: "cluster", type: "string", required: false, description: "A name for this group. Consecutive stickies sharing one are drawn together under it, which is the only thing the name is for." },
   ],
-  planned: true,
   bodyShape: "plain",
   breaksRuling: true,
   examples: [

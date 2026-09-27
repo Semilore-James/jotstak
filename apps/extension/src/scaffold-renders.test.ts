@@ -54,7 +54,6 @@ group("accepting a scaffold", () => {
     expect(PRIMITIVES.filter((p) => p.planned).map((p) => p.name)).toEqual([
       "footnote",
       "doodle",
-      "sticky",
       "icon",
     ]);
   });
@@ -78,11 +77,11 @@ group("accepting a scaffold", () => {
     // The worst version of this is silence: you pick @sticky, get a paragraph,
     // and cannot tell whether you wrote it wrong or it was never built.
     const items = primitiveCompletions(new Set());
-    const sticky = items.find((i) => i.label === "sticky")!;
-    expect(sticky.detail).toContain("not built yet");
+    const doodle = items.find((i) => i.label === "doodle")!;
+    expect(doodle.detail).toContain("not built yet");
     // And it sorts below every block that works.
     const table = items.find((i) => i.label === "table")!;
-    expect(table.sortText! < sticky.sortText!).toBe(true);
+    expect(table.sortText! < doodle.sortText!).toBe(true);
   });
 
   it("leaves no snippet syntax behind", () => {

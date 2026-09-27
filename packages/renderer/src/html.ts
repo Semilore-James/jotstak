@@ -14,6 +14,7 @@ import { renderTimeline as renderTimelineFigure } from "./timeline.js";
 import { renderJourney as renderJourneyFigure } from "./journey.js";
 import { renderStar as renderStarFigure } from "./star.js";
 import { renderCover } from "./cover.js";
+import { renderStickies } from "./sticky.js";
 // @ts-expect-error — markdown-it-mark ships no type declarations.
 import markPlugin from "markdown-it-mark";
 import { getPrimitive } from "@jotstak/schema";
@@ -473,6 +474,9 @@ interface Row {
   notes: MarginNoteNode[];
 }
 
+/** A @sticky block, the one thing that shares a row with its neighbours. */
+const isSticky = (n: Node): n is BlockNode => n.type === "block" && n.name === "sticky";
+
 function toRows(children: Node[]): Row[] {
   const rows: Row[] = [];
   for (const child of children) {
@@ -482,6 +486,18 @@ function toRows(children: Node[]): Row[] {
       else rows.push({ content: [], notes: [child] });
       continue;
     }
+
+    // A run of stickies is ONE row, because a wall is one figure. Written one
+    // after another they are a cluster; rendered as separate rows down the
+    // page they would be a list with coloured backgrounds, which is not what
+    // cluster synthesis looks like. Nothing else in the language does this,
+    // and nothing else should: every other block owns its own row.
+    const last = rows[rows.length - 1];
+    if (isSticky(child) && last && last.notes.length === 0 && last.content.every(isSticky)) {
+      last.content.push(child);
+      continue;
+    }
+
     rows.push({ content: [child], notes: [] });
   }
   return rows;
@@ -506,7 +522,11 @@ export function renderDocument(
 
   const cells = toRows(ast.children)
     .map((row) => {
-      const body = row.content.map((n) => renderNode(n, diagnostics)).join("");
+      const stickies = row.content.filter(isSticky);
+      const body =
+        stickies.length > 0 && stickies.length === row.content.length
+          ? renderStickies(stickies, diagnostics, { inline, escapeHtml, attr })
+          : row.content.map((n) => renderNode(n, diagnostics)).join("");
       const aside = row.notes.map(renderNote).join("");
       // The row's kind lets CSS space blocks contextually. A uniform gap after
       // every block double-spaces a run of quotes and gives a horizontal rule
