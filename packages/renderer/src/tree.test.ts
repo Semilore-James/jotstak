@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { render } from "./index.js";
 import { renderLayoutCss } from "./layout.js";
 import { PAGE } from "./page.js";
-import { MIN_SCALE_BEFORE_LANDSCAPE, TREE, chartStack, resolveLook } from "./tree.js";
+import { MIN_SCALE_BEFORE_LANDSCAPE, TREE, resolveLook } from "./tree.js";
 import { colors } from "./tokens.js";
 
 const figure = (src: string) => {
@@ -74,17 +74,24 @@ describe("@tree — sizes are predicted, not discovered (ARC-15)", () => {
     const R = TREE.row;
     expect(figure(tree("right", "text", lines("A", "  B", "  C", "    D"))).h).toBe(2 * R); // leaves
     expect(figure(tree("right", "boxed", lines("A", "  B", "  C"))).h).toBe(2 * R);
-    // chart: root row + connector row + the stack (parent + 2 leaves)
-    expect(figure(tree("down", "boxed", lines("A", "  B", "    x", "    y"))).h).toBe(5 * R);
+    // chart: root row + connector row + the stack (parent + jog + 2 leaves)
+    expect(figure(tree("down", "boxed", lines("A", "  B", "    x", "    y"))).h).toBe(6 * R);
     expect(figure(tree("split", "text", lines("Hub", "  > a", "    a1", "  < b"))).h).toBe(2 * R);
   });
 
-  it("costs the centre attach style exactly one more row per stack", () => {
-    const src = tree("down", "boxed", lines("A", "  x", "  y"));
-    chartStack.attach = "centre";
-    const centre = figure(src).h;
-    chartStack.attach = "rail";
-    expect(centre - figure(src).h).toBe(TREE.row);
+  it("spends one row on the jog out of a stacked parent (UX-32)", () => {
+    // Settled 2026-09-27 after both styles were built and looked at side by
+    // side: the parent pill stays CENTRED over its family, and its line drops
+    // from the centre and turns to meet the rail. That corner costs a row.
+    //
+    // The row is the price of the parent sitting over its family. A rail
+    // dropping from near the pill's left end saved it, and made a stack read
+    // as a heading above a list rather than a parent with children.
+    const stack = figure(tree("down", "boxed", lines("A", "  x", "  y"))).h;
+    const flat = figure(tree("down", "boxed", lines("A", "  x"))).h;
+    // Parent + jog + two leaves, against parent + jog + one leaf.
+    expect(stack).toBe(4 * TREE.row);
+    expect(stack - flat).toBe(TREE.row);
   });
 
   it("does not count a parent's outgoing line as width", () => {

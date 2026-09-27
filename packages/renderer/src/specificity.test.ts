@@ -192,3 +192,50 @@ describe("bold is heavier than the weight it lands on", () => {
     }
   });
 });
+
+// ── A selector that can never match anything ─────────────────────────────
+//
+// UX-32 was settled by deleting the losing branch, and the deletion took a
+// descendant combinator with it: `.jot-tree[data-look="chart"] .jot-tree-kids`
+// became `.jot-tree[data-look="chart"].jot-tree-kids`, which asks for one
+// element carrying both classes. Nothing has both, so the rule was simply
+// never applied, and every stacked tree lost its connectors.
+//
+// It survived the numeric check completely. A figure's height comes from
+// --jot-h, which the renderer sets, so declared still equalled drawn on all
+// six trees while the lines between their nodes had vanished. A screenshot
+// found it.
+//
+// So: no selector may require one element to carry two different jot- block
+// classes. That is always a mistake, and it is the kind that is invisible
+// until somebody looks at the page.
+
+describe("no selector asks one element to be two blocks", () => {
+  it("has no compound jot- class anywhere", () => {
+    const css = renderLayoutCss()
+      .replace(/\/\*[\s\S]*?\*\//g, "")
+      // :has(...) legitimately names another block inside its argument.
+      .replace(/:has\([^)]*\)/g, "");
+
+    const impossible: string[] = [];
+    for (const rule of css.matchAll(/([^{}]+)\{/g)) {
+      for (const selector of rule[1]!.split(",")) {
+        for (const compound of selector.trim().split(/\s+|>/)) {
+          if ((compound.match(/\.jot-[A-Za-z0-9-]+/g) ?? []).length > 1) {
+            impossible.push(compound.trim());
+          }
+        }
+      }
+    }
+    expect(impossible, `these can never match: ${impossible.join(", ")}`).toEqual([]);
+  });
+
+  it("still draws the rail and the jog out of a stacked parent", () => {
+    // The two rules that went missing, named so the failure says which.
+    const css = renderLayoutCss();
+    const stack = '.jot-tree[data-look="chart"] .jot-tree-kids[data-flow="stack"]';
+    expect(css, "the rail down the side of a stack").toContain(`${stack}::before`);
+    expect(css, "the jog from the parent's centre").toContain(`${stack}::after`);
+    expect(css, "the row the jog is drawn in").toContain(`${stack} { padding-top:`);
+  });
+});

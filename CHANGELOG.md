@@ -4,6 +4,13 @@ All notable changes to Jotstak are recorded here. Format loosely follows [Keep a
 
 ## [Unreleased]
 
+### Decided (UX-32, the last thing marked "needed now")
+- **A stacked family's parent pill stays centred over it.** Its line drops from the centre, turns, and runs down the rail its children hang off. Both styles had been built behind a switch since 22 September; they were mocked side by side on four shapes and chosen by eye. The left rail was a row shorter and had no corner anywhere, but with the parent over the left edge of its family a stack reads as a heading above a list rather than as a parent with children — and it was up to 29px wider, on the axis that decides whether a tree stays in the text column or is scaled onto a landscape page.
+- The losing branch was **deleted**, not left switched off: `chartStack`, the `attach` parameter through four functions, the `data-attach` attribute, `TREE.railInset` and the rail stylesheet. A mutable module-level global that nothing sets is a knob waiting to be turned by accident.
+
+### Fixed
+- Deleting that branch took a descendant combinator with it — `.jot-tree[data-look="chart"] .jot-tree-kids` became `.jot-tree[data-look="chart"].jot-tree-kids`, which asks for one element carrying both classes, so **every stacked tree silently lost its connectors**. All six test figures still reported declared height equal to drawn height throughout, because a figure's height comes from `--jot-h` and cannot see a broken selector. A screenshot found it. Now guarded: no selector may ask one element to be two blocks.
+
 ## [0.3.0]
 
 ### Added (Tab moves a family)

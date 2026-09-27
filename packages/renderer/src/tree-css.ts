@@ -348,30 +348,21 @@ ${scope} .jot-tree[data-look="chart"] .jot-tree-kids[data-flow="stack"] > .jot-t
 ${scope} .jot-tree[data-look="chart"] .jot-tree-kids[data-flow="stack"] > .jot-tree-node > .jot-tree-label > .jot-tree-text::before {${arrowRight}
 }
 
-/* UX-32, "rail": the parent pill sits at the left of its family and the rail
-   drops straight from near its left end — exact and compact, entered at the
-   rail rather than the pill's centre. */
-${scope} .jot-tree[data-look="chart"][data-attach="rail"] .jot-tree-node[data-flow="stack"] {
-  align-items: flex-start;
-  --attach: ${u(TREE.spread + TREE.railInset)};
-}
-${scope} .jot-tree[data-look="chart"][data-attach="rail"] .jot-tree-node[data-flow="stack"] > .jot-tree-label > .jot-tree-text {
-  --pill-attach: calc(${u(TREE.railInset)} - ${TREE.pillBorder}px);
-}
-${scope} .jot-tree[data-look="chart"][data-attach="rail"] .jot-tree-kids[data-flow="stack"] { margin-left: ${u(TREE.railInset)}; }
-${scope} .jot-tree[data-look="chart"][data-attach="rail"] .jot-tree-kids[data-flow="stack"]::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: ${u(-pillMargin)};
-  bottom: ${u(M)};
-  border-left: ${line};
-}
-
-/* UX-32, "centre": the parent pill stays centred; its line drops from the
-   centre and jogs across to the rail, which costs one row. */
-${scope} .jot-tree[data-look="chart"][data-attach="centre"] .jot-tree-kids[data-flow="stack"] { padding-top: ${u(R)}; }
-${scope} .jot-tree[data-look="chart"][data-attach="centre"] .jot-tree-kids[data-flow="stack"]::after {
+/* UX-32, settled 2026-09-27: the parent pill stays CENTRED over its family.
+   Its line drops from the centre, turns, and runs down the rail the children
+   hang off, which costs one row per stack.
+   
+   The alternative was a rail dropping straight from near the pill's left end:
+   a row shorter, no corner anywhere, and about 14px wider per stack level.
+   Both were built and looked at side by side. Centre won on two counts — it
+   is what the reference did, and width is the axis that decides whether a
+   tree stays in the text column or is scaled onto a landscape page (UX-31),
+   so its saving is on the scarcer one. The left rail's real cost was legibility:
+   with the parent over the left edge of its family, a stack reads as a heading
+   above a list rather than as a parent with children, which is the one thing
+   the diagram exists to show. */
+${scope} .jot-tree[data-look="chart"] .jot-tree-kids[data-flow="stack"] { padding-top: ${u(R)}; }
+${scope} .jot-tree[data-look="chart"] .jot-tree-kids[data-flow="stack"]::after {
   content: "";
   position: absolute;
   top: ${u(-pillMargin)};
@@ -381,8 +372,8 @@ ${scope} .jot-tree[data-look="chart"][data-attach="centre"] .jot-tree-kids[data-
   border-right: ${line};
   border-bottom: ${line};
 }
-${scope} .jot-tree[data-look="chart"][data-attach="centre"][data-style="rounded"] .jot-tree-kids[data-flow="stack"]::after { border-bottom-right-radius: ${u(R / 4)}; }
-${scope} .jot-tree[data-look="chart"][data-attach="centre"] .jot-tree-kids[data-flow="stack"]::before {
+${scope} .jot-tree[data-look="chart"][data-style="rounded"] .jot-tree-kids[data-flow="stack"]::after { border-bottom-right-radius: ${u(R / 4)}; }
+${scope} .jot-tree[data-look="chart"] .jot-tree-kids[data-flow="stack"]::before {
   content: "";
   position: absolute;
   left: 0;

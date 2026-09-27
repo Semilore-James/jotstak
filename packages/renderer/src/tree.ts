@@ -54,8 +54,7 @@ export const TREE = {
   arrowHalf: 4,
   /** Chart: half the gap between siblings that spread side by side. */
   spread: 7,
-  /** Chart, stacked leaves: the rail's inset from the parent pill, and the rail-to-pill line. */
-  railInset: 14,
+  /** Chart, stacked leaves: the line from the rail across to each pill. */
   railToItem: 22,
   /** Split: space between the hub and each side. */
   splitGap: 28,
@@ -166,21 +165,20 @@ function columnWidths(roots: TreeNode[], boxed: boolean): number[] {
 }
 
 /** Chart: the width one node's family needs, not counting the spread padding its parent adds. */
-function chartWidth(n: TreeNode, isRoot: boolean, attach: "rail" | "centre"): number {
+function chartWidth(n: TreeNode, isRoot: boolean): number {
   const pw = pillWidth(label(n), pillFace(roleOf(n, isRoot)));
   if (!n.children.length) return pw;
   if (isStack(n)) {
     const widest = Math.max(...n.children.map((c) => pillWidth(label(c), "lora-400")));
-    const hang = TREE.railToItem + widest;
-    return attach === "rail" ? Math.max(pw, TREE.railInset + hang) : Math.max(pw, hang);
+    return Math.max(pw, TREE.railToItem + widest);
   }
-  return Math.max(pw, n.children.reduce((s, c) => s + chartWidth(c, false, attach) + 2 * TREE.spread, 0));
+  return Math.max(pw, n.children.reduce((s, c) => s + chartWidth(c, false) + 2 * TREE.spread, 0));
 }
-/** Chart: rows a node's family occupies. */
-function chartRows(n: TreeNode, attach: "rail" | "centre"): number {
+/** Chart: rows a node's family occupies. A stack spends one on the jog (UX-32). */
+function chartRows(n: TreeNode): number {
   if (!n.children.length) return 1;
-  if (isStack(n)) return 1 + (attach === "centre" ? 1 : 0) + n.children.length;
-  return 2 + Math.max(...n.children.map((c) => chartRows(c, attach)));
+  if (isStack(n)) return 2 + n.children.length;
+  return 2 + Math.max(...n.children.map(chartRows));
 }
 
 /** Split (outline sides): the width one side needs. */
@@ -202,7 +200,7 @@ function boxedSideWidth(n: TreeNode): number {
 
 
 
-export function measureTree(look: Look, roots: TreeNode[], nodes: string, attach: "rail" | "centre", sides?: { left: TreeNode[]; right: TreeNode[] }): Size {
+export function measureTree(look: Look, roots: TreeNode[], nodes: string, sides?: { left: TreeNode[]; right: TreeNode[] }): Size {
   const R = TREE.row;
   const safe = (w: number): number => Math.ceil(w * ESTIMATE_SAFETY);
   switch (look) {
@@ -216,8 +214,8 @@ export function measureTree(look: Look, roots: TreeNode[], nodes: string, attach
       return { w: safe(w), h: roots.reduce((s, r) => s + leaves(r), 0) * R };
     }
     case "chart": {
-      const w = roots.reduce((s, r) => s + chartWidth(r, true, attach) + 2 * TREE.spread, 0);
-      return { w: safe(w), h: Math.max(...roots.map((r) => chartRows(r, attach))) * R };
+      const w = roots.reduce((s, r) => s + chartWidth(r, true) + 2 * TREE.spread, 0);
+      return { w: safe(w), h: Math.max(...roots.map(chartRows)) * R };
     }
     case "split": {
       const hub = roots[0]!;
@@ -310,8 +308,6 @@ export function placeTree(look: Look, size: Size, pinned: string, n: BlockNode, 
  * "centre" drops it from the pill's centre and jogs across to the rail. Both
  * exist only until one is picked from the side-by-side mock.
  */
-export const chartStack: { attach: "rail" | "centre" } = { attach: "rail" };
-
 function nodeHtml(n: TreeNode, isRoot: boolean, look: Look, h: TreeHelpers): string {
   const flow = look === "chart" && n.children.length ? (isStack(n) ? "stack" : "spread") : "";
   const flowAttr = flow ? ` data-flow="${flow}"` : "";
@@ -331,12 +327,11 @@ export function renderTree(n: BlockNode, diagnostics: Diagnostic[], h: TreeHelpe
   const style = n.params.style ?? "solid";
   const pinned = n.params.width ?? "auto";
   const look = resolveLook(dir, nodes);
-  const attach = chartStack.attach;
 
   warnAboutBreaks(roots, n, diagnostics);
 
   const sides = look === "split" && roots[0] ? splitSides(roots[0].children) : undefined;
-  const size = measureTree(look, roots, nodes, attach, sides);
+  const size = measureTree(look, roots, nodes, sides);
   const place = placeTree(look, size, pinned, n, diagnostics);
 
   const levels = Math.max(1, ...roots.map(depth));
@@ -376,7 +371,6 @@ export function renderTree(n: BlockNode, diagnostics: Diagnostic[], h: TreeHelpe
   const tree =
     ` data-look="${look}" data-dir="${h.escapeHtml(dir)}" data-nodes="${h.escapeHtml(nodes)}" data-style="${h.escapeHtml(style)}"` +
     (look === "columns" ? ` data-depth="${Math.min(levels, MAX_COLUMNS)}"` : "") +
-    (look === "chart" ? ` data-attach="${attach}"` : "") +
     h.attr("id", n.params.id);
 
   return (

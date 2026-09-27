@@ -53,8 +53,8 @@ describe("a forced break in a tree label", () => {
     // The escape is two characters wide in any font. Measuring it would widen
     // the node by a hair and push a tree that fits towards a landscape page —
     // the drift that costs a figure a row, arriving through a label.
-    const broken = measureTree("chart", [node("Platform", [node("Search\\n relevance")])], "boxed", "rail");
-    const folded = measureTree("chart", [node("Platform", [node("Search relevance")])], "boxed", "rail");
+    const broken = measureTree("chart", [node("Platform", [node("Search\\n relevance")])], "boxed");
+    const folded = measureTree("chart", [node("Platform", [node("Search relevance")])], "boxed");
     expect(broken).toEqual(folded);
   });
 
@@ -64,11 +64,14 @@ describe("a forced break in a tree label", () => {
     const roots = [node("Platform", [node("Search"), node("Export", [node("CSV")])])];
     for (const look of ["outline", "columns", "chart", "split"] as const) {
       const sides = { left: [node("Search")], right: [node("Export")] };
-      expect(measureTree(look, roots, "boxed", "rail", sides)).toEqual(
-        measureTree(look, roots, "boxed", "rail", sides),
+      expect(measureTree(look, roots, "boxed", sides)).toEqual(
+        measureTree(look, roots, "boxed", sides),
       );
     }
     // And the numbers themselves, so a refactor cannot quietly change them.
-    expect(measureTree("chart", roots, "boxed", "rail").h).toBe(4 * 28);
+    // Platform spreads to Search and Export; Export is a stack, so it spends a
+    // row on the jog out of it (UX-32). Two rows for the spread, three for the
+    // stack below it.
+    expect(measureTree("chart", roots, "boxed").h).toBe(5 * 28);
   });
 });
