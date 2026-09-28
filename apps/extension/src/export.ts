@@ -63,7 +63,6 @@ body { margin: 0; padding: 24px 16px; background: #e9e3d9; container-type: inlin
 @media print {
   body { padding: 0; background: none; container-type: normal; }
   #sheet { width: auto; box-shadow: none; }
-  #sheet > .jotstak { zoom: 1; }
   #sheet .jot-doc { padding-inline: 0; }
 }
 </style>

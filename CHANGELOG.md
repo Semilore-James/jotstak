@@ -4,6 +4,17 @@ All notable changes to Jotstak are recorded here. Format loosely follows [Keep a
 
 ## [Unreleased]
 
+## [0.4.0]
+
+### Added (getting the document out)
+- **Save as PDF on the playground.** The browser's own print dialog, not a PDF library. The document already knows it is A4 — the paper size, the margins, a block kept whole, a heading never ending a page, `@pagebreak`, a wide figure on a landscape sheet — all of it has been in the print CSS since M0. A library would rasterise that back into a picture and lose the text layer to reproduce, worse, what the browser does natively at 1:1. What was missing was the way in.
+- **An export menu in the extension**: an HTML file, a PDF, or the clipboard. All three build from the same `exportHtml()`, so a PDF and a pasted table cannot come out looking like two different tools rendered them. `Jotstak: Export as HTML` stays its own command so a keybinding can skip the menu.
+- The PDF export writes its page beside the `.jot` file and names it for the document, because a print dialog puts the page's filename into the PDF's name.
+- Still no Markdown export. Removed rather than stubbed (ENG-21), and a test now asserts the word appears in neither the menu nor the commands.
+
+### Fixed
+- Moving the zoom onto `.jotstak` for the reflow left the playground cancelling it on the wrapper around it, which would have broken printing with nothing on screen changing. Print resets the fit once, in the renderer, and no host may reset it itself.
+
 ### Fixed (a document you can read on a phone)
 - **A document reflows below 680px of room instead of shrinking out of legibility.** Measured on a 375px phone: nothing broke, nothing overflowed, there was no horizontal scroll — the sheet was fitted at 0.40 and body text landed on screen at **6.4px**. Below the threshold the A4 proportion is given up and the document takes the width it has, at its real 16px with its real 28px ruling. Everything else is untouched, because none of it was ever a function of the page's width.
 - **The worst case was not the phone.** At 1024px the playground splits into two columns exactly when it decides there is room, halving what the sheet gets: the document came out at 10.6px, worse than a tablet. Every width now renders at or near 16px.

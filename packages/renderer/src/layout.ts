@@ -830,6 +830,12 @@ ${scope} .jot-error {
      paper, the ruling and the card fills ARE the document. */
   ${scope} { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   /* The page is the frame now; its margins come from @page. */
+  /* The sheet IS the paper now, so it prints at 1:1 and neither the fit nor
+     the reflow applies. Declared here rather than reset by each host: they
+     used to carry their own zoom reset, and when the zoom moved onto .jotstak
+     the playground went on cancelling it on the wrapper around it, which is
+     how printing breaks with nothing on screen changing. */
+  ${scope} { --jot-fit: 1; }
   ${scope} .jot-doc { max-width: none; margin: 0; padding: 0; }
   ${scope}[data-mode="doc"] { background: none; padding: 0; }
   ${scope}[data-mode="doc"] .jot-doc { border: 0; box-shadow: none; border-radius: 0; padding: 0; }

@@ -57,6 +57,29 @@ const extraCss = `
 .seg button[aria-pressed="true"] { color: var(--jot-color-notebook-paper); }
 .seg button:focus-visible { outline: 2px solid var(--jot-accent); outline-offset: 2px; }
 
+/* Save as PDF is the browser's own print, not a PDF library.
+   
+   The document already knows it is A4: renderPageCss() sets the paper size and
+   the margins, and the print rules keep a block whole, never end a page on a
+   heading, honour @pagebreak and turn a wide figure onto a landscape sheet. A
+   JS library would rasterise all of that back into a picture and lose the text
+   layer, the selectable prose and the real page geometry — to reproduce, worse,
+   something the browser does natively and at 1:1.
+   
+   So the button opens the print dialog. What comes out is the same paper the
+   print CSS has been describing since M0. */
+.pdf-btn {
+  font: 600 13px/1 var(--jot-font-label);
+  color: var(--jot-accent);
+  background: none;
+  border: 1px solid var(--jot-accent);
+  border-radius: 4px;
+  padding: 7px 12px;
+  cursor: pointer;
+}
+.pdf-btn:hover { background: var(--jot-color-accent-terracotta-pale); }
+.pdf-btn:focus-visible { outline: 2px solid var(--jot-accent); outline-offset: 2px; }
+
 /* Custom select: a native one cannot be styled consistently across platforms,
    and its default chrome is the single most off-brand thing on the page. */
 .picker { position: relative; }
@@ -175,7 +198,6 @@ const extraCss = `
      and no containment — a size container would fragment its own way across
      pages, and pagination here has to stay the browser's job. */
   #out-wrap { border: 0; box-shadow: none; container-type: normal; }
-  #out { zoom: 1; }
   #out .jot-doc { padding: 0; }
 }
 ${renderPageCss()}
@@ -214,6 +236,10 @@ ${renderPageCss()}
           <button id="m-notebook" aria-pressed="true">Notebook</button>
           <button id="m-doc" aria-pressed="false">Doc</button>
         </div>
+
+        <button class="pdf-btn" id="pdf" title="Opens your browser's print dialog. Choose Save as PDF.">
+          Save as PDF
+        </button>
       </div>
     </div>
 
@@ -457,6 +483,13 @@ ${renderPageCss()}
     src.addEventListener("input", paint);
     nbBtn.addEventListener("click", () => setMode("notebook"));
     docBtn.addEventListener("click", () => setMode("doc"));
+
+    // Save as PDF is the browser's own print dialog. Everything that makes the
+    // output right — A4, the margins, a block kept whole, a heading never
+    // ending a page, @pagebreak, a wide figure on a landscape sheet — is in the
+    // print CSS already, and has been since M0. There is nothing to add here
+    // but the way in.
+    document.getElementById("pdf")?.addEventListener("click", () => window.print());
     window.addEventListener("resize", moveThumb);
     if (document.fonts?.ready) void document.fonts.ready.then(moveThumb);
 

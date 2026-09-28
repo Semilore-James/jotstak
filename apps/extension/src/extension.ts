@@ -11,6 +11,7 @@ import { render } from "@jotstak/renderer";
 import { JotPreview } from "./preview.js";
 import { createDiagnostics } from "./diagnostics.js";
 import { registerIndentation, registerReparent } from "./indentation.js";
+import type { ExportKind } from "./export-menu.js";
 import { registerExtentRuler } from "./extent-ruler.js";
 import { isJot, offerAssociation } from "./jot-files.js";
 import { registerLanguageFeatures } from "./language-features.js";
@@ -60,21 +61,19 @@ export function activate(context: vscode.ExtensionContext): void {
       preview.toggleMode();
     }),
 
-    vscode.commands.registerCommand("jotstak.exportHtml", async () => {
+    vscode.commands.registerCommand("jotstak.export", async () => {
       const doc = activeJot();
       if (!doc) return;
-      const target = await vscode.window.showSaveDialog({
-        filters: { HTML: ["html"] },
-        defaultUri: vscode.Uri.file(doc.fileName.replace(/\.jot$/, "") + ".html"),
-      });
-      if (!target) return;
+      const { pickExport } = await import("./export-menu.js");
+      const kind = await pickExport();
+      if (kind) await runExport(context, doc, kind);
+    }),
 
-      const { exportHtml } = await import("./export.js");
-      const media = vscode.Uri.joinPath(context.extensionUri, "media").fsPath;
-      const title = doc.fileName.split(/[\\/]/).pop()?.replace(/\.jot$/, "") ?? "Document";
-      const html = exportHtml(doc.getText(), media, title);
-      await vscode.workspace.fs.writeFile(target, Buffer.from(html, "utf8"));
-      void vscode.window.showInformationMessage(`Exported ${target.path.split("/").pop()}.`);
+    // Kept as its own command so a keybinding or a task can go straight to the
+    // file without stopping at the menu.
+    vscode.commands.registerCommand("jotstak.exportHtml", async () => {
+      const doc = activeJot();
+      if (doc) await runExport(context, doc, "html");
     }),
 
     vscode.commands.registerCommand("jotstak.learnSyntax", () => {
@@ -85,6 +84,52 @@ export function activate(context: vscode.ExtensionContext): void {
   // Rendering on activation warms the module graph, so the first preview does
   // not pay for parsing the renderer while the author is watching.
   void render("", { mode: "notebook" });
+}
+
+/**
+ * Build the document and hand it over the chosen way.
+ *
+ * All three start from the same exportHtml() — one document, one set of
+ * embedded fonts, one page geometry — so a PDF and a pasted table cannot come
+ * out looking like two different tools rendered them.
+ */
+async function runExport(
+  context: vscode.ExtensionContext,
+  doc: vscode.TextDocument,
+  kind: ExportKind,
+): Promise<void> {
+  const { exportHtml } = await import("./export.js");
+  const { documentTitle, pdfStagingPath } = await import("./export-menu.js");
+
+  const media = vscode.Uri.joinPath(context.extensionUri, "media").fsPath;
+  const html = exportHtml(doc.getText(), media, documentTitle(doc.fileName));
+
+  if (kind === "clipboard") {
+    await vscode.env.clipboard.writeText(html);
+    void vscode.window.showInformationMessage("Document copied as HTML.");
+    return;
+  }
+
+  if (kind === "pdf") {
+    // VS Code has no print API, and a PDF library would rasterise a page the
+    // print CSS already describes exactly — losing the text layer and the real
+    // A4 geometry to reproduce, worse, what a browser does natively.
+    const target = vscode.Uri.file(pdfStagingPath(doc.fileName));
+    await vscode.workspace.fs.writeFile(target, Buffer.from(html, "utf8"));
+    await vscode.env.openExternal(target);
+    void vscode.window.showInformationMessage(
+      "Opened in your browser. Print it and choose Save as PDF — the page is already A4.",
+    );
+    return;
+  }
+
+  const target = await vscode.window.showSaveDialog({
+    filters: { HTML: ["html"] },
+    defaultUri: vscode.Uri.file(pdfStagingPath(doc.fileName)),
+  });
+  if (!target) return;
+  await vscode.workspace.fs.writeFile(target, Buffer.from(html, "utf8"));
+  void vscode.window.showInformationMessage(`Exported ${target.path.split("/").pop()}.`);
 }
 
 export function deactivate(): void {}
