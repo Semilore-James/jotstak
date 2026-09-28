@@ -37,8 +37,25 @@ export const JOURNEY = {
   dot: 9,
   /** Space between one stage column's text and the next. */
   gutter: 10,
-  /** Narrowest a stage may be: seven of these fit a portrait page. */
-  minColW: 96,
+  /**
+   * The emotional scale's gutter, down the left of the band.
+   *
+   * A journey map is an ARC, and the arc was being drawn with nothing to read
+   * it against: three levels, a faint neutral line, and no word anywhere
+   * saying which way was good. You could see the shape and not the meaning.
+   */
+  scaleW: 78,
+  scaleSize: 11,
+  /**
+   * Narrowest a stage may be: seven of these still fit a portrait page,
+   * alongside the scale.
+   *
+   * Was 96, which fitted seven across the whole printable width. The scale
+   * takes 78px off the top of that, and at 96 the seventh stage pushed the
+   * figure past the page and every seven-stage journey started reporting
+   * "scaled to 91%". 84 holds "Discover" (58px) on one line with room over.
+   */
+  minColW: 84,
   /** Vertical: the rail inset and the gap from rail to text. */
   railX: 7,
   railGap: 21,
@@ -227,8 +244,13 @@ export function measureJourney(m: JourneyModel, pinned = "auto"): JourneyMetrics
       : pinned === "column" || pinned === "wide"
         ? PAGE.portrait.column
         : PAGE.portrait.content;
-  const w = JOURNEY.minColW * widest > room ? JOURNEY.minColW * widest : room;
-  const column = w / widest;
+  // The scale takes its gutter off the top before the stages divide what is
+  // left, or the columns would each be a fraction narrower than measured and
+  // every wrap count computed from them would be off.
+  const lanes = room - JOURNEY.scaleW;
+  const w =
+    JOURNEY.minColW * widest > lanes ? JOURNEY.scaleW + JOURNEY.minColW * widest : room;
+  const column = (w - JOURNEY.scaleW) / widest;
   const cardW = column - JOURNEY.gutter * 2;
 
   const tracks: TrackMetrics[] = m.tracks.map((t) => ({
@@ -253,6 +275,26 @@ export interface JourneyHelpers {
   inline: (text: string) => string;
   escapeHtml: (s: string) => string;
   attr: (name: string, value: string | undefined) => string;
+}
+
+/**
+ * The scale the arc is read against: happy at the top, frustrated at the
+ * bottom, one label per level.
+ *
+ * Without it the band is three invisible rows and a dashed line, and a reader
+ * has to infer from the colours which direction is good. A journey map exists
+ * to show where it hurts; a chart whose axis is implied does not show that,
+ * it implies it too.
+ */
+function scale(): string {
+  const levels: Feeling[] = ["happy", "neutral", "frustrated"];
+  return (
+    `<div class="jot-journey-scale" aria-hidden="true">` +
+    levels
+      .map((f) => `<span class="jot-journey-level" data-feeling="${f}">${f}</span>`)
+      .join("") +
+    `</div>`
+  );
 }
 
 /**
@@ -326,7 +368,8 @@ export function renderJourney(
           // renderer already knows the index and a grid line from calc() is
           // newer than it needs to be.
           const cell = (s: Stage, i: number): string => {
-            const col = ` style="grid-column:${i + 1}`;
+            // +2, not +1: column 1 is the scale.
+            const col = ` style="grid-column:${i + 2}`;
             return (
               `<div class="jot-journey-stage" data-feeling="${s.feeling}">` +
               `<p class="jot-journey-name"${col}">${broken(h, s.name)}</p>` +
@@ -338,6 +381,7 @@ export function renderJourney(
           return (
             (t.name ? `<p class="jot-journey-track">${h.inline(t.name)}</p>` : "") +
             `<div class="jot-journey-lane" style="--jot-j-n:${cols};--jot-j-name:${m.name};--jot-j-items:${m.items}">` +
+            scale() +
             `<div class="jot-journey-band">${emotionLine(t.stages)}</div>` +
             t.stages.map(cell).join("") +
             `</div>`

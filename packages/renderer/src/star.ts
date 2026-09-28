@@ -267,15 +267,37 @@ export function measureStar(m: StarModel, pinned = "auto"): StarMetrics {
 }
 
 /**
- * Where a line from the centre of `from` towards the centre of `to` leaves
- * `from`'s edge. Connectors are drawn between edges rather than centres, so
- * they do not run underneath the boxes they join.
+ * The dimension a fact field points at, if it names one.
+ *
+ * A star schema's whole content is which fact column joins which dimension,
+ * and people already write it: `invoice_id: fk -> Invoices`. That arrow was
+ * being rendered as text and nothing else, so every connector left the fact
+ * from the same middle point and four dimensions came out as a cross — a
+ * shape with no more information in it than a tree.
+ *
+ * Reading the arrow lets each link leave the row it belongs to.
  */
-function edge(from: Box, to: Box): { x: number; y: number } {
+export function linkedDim(field: string): string | null {
+  const arrow = /(?:->|→)\s*([^,;]+?)\s*$/.exec(field);
+  return arrow ? arrow[1]!.trim() : null;
+}
+
+/** Which field, if any, links to a dimension of this name. */
+export function fieldFor(fields: string[], label: string): number {
+  const want = label.trim().toLowerCase();
+  return fields.findIndex((f) => (linkedDim(f) ?? "").toLowerCase() === want);
+}
+
+/**
+ * Where a line from the centre of `from` towards `(tx, ty)` leaves `from`'s
+ * edge. Connectors are drawn between edges rather than centres, so they do not
+ * run underneath the boxes they join.
+ */
+function edgeToward(from: Box, tx: number, ty: number): { x: number; y: number } {
   const fx = from.x + from.w / 2;
   const fy = from.y + from.h / 2;
-  const dx = to.x + to.w / 2 - fx;
-  const dy = to.y + to.h / 2 - fy;
+  const dx = tx - fx;
+  const dy = ty - fy;
   if (dx === 0 && dy === 0) return { x: fx, y: fy };
   // How far along the ray the box's own half-width and half-height are, and
   // whichever comes first is the side it leaves by.
@@ -284,6 +306,32 @@ function edge(from: Box, to: Box): { x: number; y: number } {
     dy === 0 ? Infinity : from.h / 2 / Math.abs(dy),
   );
   return { x: fx + dx * t, y: fy + dy * t };
+}
+
+/** Edge-to-edge between two boxes, which is the case with no field link. */
+const edge = (from: Box, to: Box): { x: number; y: number } =>
+  edgeToward(from, to.x + to.w / 2, to.y + to.h / 2);
+
+/**
+ * Where a link leaves the fact when a field names its dimension: the side the
+ * dimension is on, at the height of that field's own row.
+ *
+ * The fact's first row is its name, so field i sits on row i+1.
+ *
+ * Only for a dimension genuinely to the LEFT or RIGHT. A field row is a
+ * horizontal anchor, and for a dimension sitting directly above or below the
+ * fact it sent the line out of a side edge and back across the fact's own
+ * corner to reach it — a longer, uglier route to say the same thing. Those
+ * keep the edge-to-edge attachment, which for them is already the top or the
+ * bottom of the box.
+ */
+function fieldPort(fact: Box, index: number, dim: Box): { x: number; y: number } | null {
+  const dimX = dim.x + dim.w / 2;
+  if (dimX > fact.x && dimX < fact.x + fact.w) return null;
+  return {
+    x: dimX >= fact.x + fact.w / 2 ? fact.x + fact.w : fact.x,
+    y: fact.y + ROW * (index + 1) + ROW / 2,
+  };
 }
 
 export interface StarHelpers {
@@ -308,8 +356,15 @@ export function renderStar(
   });
 
   const title = model.title ? `<p class="jot-star-title">${h.inline(model.title)}</p>` : "";
+  const linkedNames = new Set(
+    metrics.dims.map((d) => d.label.trim().toLowerCase()),
+  );
   const fields = model.fields
-    .map((f) => `<p class="jot-star-field">${h.inline(f)}</p>`)
+    .map((f) => {
+      const target = linkedDim(f);
+      const joins = target !== null && linkedNames.has(target.toLowerCase());
+      return `<p class="jot-star-field"${joins ? " data-linked" : ""}>${h.inline(f)}</p>`;
+    })
     .join("");
 
   if (model.list) {
@@ -331,9 +386,17 @@ export function renderStar(
   // Connectors first, so the boxes paint over their ends.
   const lines = metrics.dims
     .map((d) => {
-      const a = edge(metrics.fact, d);
-      const b = edge(d, metrics.fact);
-      return `<line x1="${a.x.toFixed(1)}" y1="${a.y.toFixed(1)}" x2="${b.x.toFixed(1)}" y2="${b.y.toFixed(1)}" vector-effect="non-scaling-stroke" />`;
+      const linked = fieldFor(model.fields, d.label);
+      // A link named by a field leaves that field's row; anything else leaves
+      // the fact's edge on the way to the dimension's centre, as before.
+      const port = linked >= 0 ? fieldPort(metrics.fact, linked, d) : null;
+      const a = port ?? edge(metrics.fact, d);
+      const b = edgeToward(d, a.x, a.y);
+      return (
+        `<line x1="${a.x.toFixed(1)}" y1="${a.y.toFixed(1)}" x2="${b.x.toFixed(1)}" y2="${b.y.toFixed(1)}"` +
+        (linked >= 0 ? ` data-linked` : "") +
+        ` vector-effect="non-scaling-stroke" />`
+      );
     })
     .join("");
 

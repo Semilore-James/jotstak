@@ -110,6 +110,13 @@ ${scope} .jot-star[data-layout="list"] .jot-star-fact {
   margin: 0;
   padding: 0 ${STAR.factPadX}px;
 }
+/* A field that names a dimension is a JOIN, and the line leaving its row says
+   so. Marking the row in the same ink ties the two together: you can read the
+   schema down the fact, or follow it out to the dimension, and both say the
+   same thing. A field that is only a column stays quiet. */
+${scope} .jot-star .jot-star-field[data-linked] { color: var(--jot-ink); }
+${scope} .jot-star-lines line[data-linked] { stroke: var(--jot-color-accent-terracotta); }
+
 ${scope} .jot-star[data-layout="list"] .jot-star-field {
   font-size: ${STAR.fieldSize}px;
   padding-left: ${STAR.factPadX}px;

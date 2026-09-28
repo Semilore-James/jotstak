@@ -143,3 +143,4 @@ describe("headings sit on the ruling", () => {
     expect(baselineShift(16, 28)).toBeCloseTo(0, 3);
   });
 });
+

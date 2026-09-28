@@ -124,7 +124,12 @@ describe("how much page a journey takes", () => {
     // Equal columns for the same reason a matrix's quadrants are equal: a
     // stage with more written under it is not a longer stage.
     expect(measureJourney(model([stage("A"), stage("B")])).w).toBe(PAGE.portrait.content);
-    expect(measureJourney(model([stage("A"), stage("B")])).column).toBe(PAGE.portrait.content / 2);
+    // The scale takes its gutter first; the stages divide what is left. Every
+    // wrap count is computed from this column, so it has to be the width the
+    // browser will actually give them.
+    expect(measureJourney(model([stage("A"), stage("B")])).column).toBe(
+      (PAGE.portrait.content - JOURNEY.scaleW) / 2,
+    );
     expect(out(FOUR).html).toContain('data-width="full"');
   });
 
@@ -206,7 +211,8 @@ describe("a journey on ruled paper", () => {
   it("lets the stage's three parts land in three rows of the lane's grid", () => {
     // display: contents — the stage is a wrapper for authoring, not layout.
     expect(renderLayoutCss()).toContain(".jot-journey-stage { display: contents; }");
-    expect(out(FOUR).html).toMatch(/class="jot-journey-name" style="grid-column:1"/);
+    // Column 1 is the emotional scale, so the first stage starts at 2.
+    expect(out(FOUR).html).toMatch(/class="jot-journey-name" style="grid-column:2"/);
   });
 });
 

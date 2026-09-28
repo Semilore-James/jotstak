@@ -2,7 +2,7 @@
 
 import { describe, expect, it } from "vitest";
 import { render, renderLayoutCss } from "./index.js";
-import { angleOf, measureStar, readDim, STAR } from "./star.js";
+import { STAR, angleOf, fieldFor, linkedDim, measureStar, readDim } from "./star.js";
 import type { Dim, StarModel } from "./star.js";
 import { PAGE } from "./page.js";
 
@@ -212,5 +212,80 @@ describe("a star model on ruled paper", () => {
     // Positions are written as inline styles already multiplied by --u, so the
     // boxes and the lines between them shrink as one thing.
     expect(out(FOUR).html).toMatch(/left:calc\([\d.-]+ \* var\(--u, 1px\)\)/);
+  });
+});
+
+// ── A field that names a dimension is a join ─────────────────────────────
+//
+// "This looks like a worse tree." It did, and the reason was that every
+// connector left the fact from the same middle point, so four dimensions came
+// out as a cross — a shape carrying no more information than a tree does.
+//
+// A star schema's whole content is which fact column joins which dimension,
+// and people already write it: `invoice_id: fk -> Invoices`. That arrow was
+// rendered as text and nothing else. Reading it lets each link leave the row
+// it belongs to, which is the thing a tree cannot do.
+
+describe("a fact field that names a dimension", () => {
+  const src = (...lines: string[]): string => lines.join("\n");
+  const SCHEMA = src(
+    "@star_model",
+    "  fact: InvoiceEvents",
+    "    invoice_id: fk -> Invoices",
+    "    client_id: fk -> Clients",
+    "    amount: decimal",
+    "  dim Invoices at 3",
+    "  dim Clients at 12",
+    "  dim Plans at 9",
+  );
+
+  it("reads the arrow people already write", () => {
+    expect(linkedDim("invoice_id: fk -> Invoices")).toBe("Invoices");
+    expect(linkedDim("x: fk → Dates")).toBe("Dates");
+    expect(linkedDim("amount: decimal")).toBeNull();
+    expect(linkedDim("status: text")).toBeNull();
+  });
+
+  it("matches a dimension by name, whatever the case", () => {
+    const fields = ["invoice_id: fk -> invoices", "amount: decimal"];
+    expect(fieldFor(fields, "Invoices")).toBe(0);
+    expect(fieldFor(fields, "Plans")).toBe(-1);
+  });
+
+  it("marks the rows that are joins and leaves the columns alone", () => {
+    const html = render(SCHEMA, { mode: "notebook" }).html;
+    expect(html).toMatch(/class="jot-star-field" data-linked>invoice_id/);
+    expect(html).toMatch(/class="jot-star-field" data-linked>client_id/);
+    expect(html).toMatch(/class="jot-star-field">amount/);
+  });
+
+  it("leaves a side dimension's line from its own field's row", () => {
+    // The fact's first row is its name, so invoice_id is row 1 and its line
+    // starts half a row into it. Anything else would put the line next to a
+    // field it is not about.
+    const html = render(SCHEMA, { mode: "notebook" }).html;
+    const linked = [...html.matchAll(/<line x1="([\d.]+)" y1="([\d.]+)"[^>]*data-linked/g)];
+    expect(linked.length).toBeGreaterThan(0);
+    const ys = linked.map((m) => Number(m[2]));
+    // Row 1 of the fact, centred: a whole number of rows plus half of one.
+    expect(ys.some((y) => (y - STAR.row / 2) % STAR.row === 0)).toBe(true);
+  });
+
+  it("does not use a field row for a dimension directly above or below", () => {
+    // A field row is a horizontal anchor. For a dimension sitting over the
+    // fact it sent the line out of a SIDE edge and back across the fact's own
+    // corner — a longer, uglier route to say the same thing.
+    const html = render(SCHEMA, { mode: "notebook" }).html;
+    // Clients is at 12 o'clock and named by client_id, so it is marked as a
+    // join but still attaches at the top edge.
+    expect(html).toContain("data-linked");
+    const lines = [...html.matchAll(/<line x1="([\d.]+)" y1="([\d.]+)" x2="([\d.]+)" y2="([\d.]+)"/g)];
+    const vertical = lines.filter((m) => m[1] === m[3]);
+    expect(vertical.length, "the dimension above should hang straight down").toBeGreaterThan(0);
+  });
+
+  it("changes nothing for a star with no arrows in it", () => {
+    const plain = src("@star_model", "  fact: Orders", "  dim Customer at 3", "  dim Date at 9");
+    expect(render(plain, { mode: "notebook" }).html).not.toContain("data-linked");
   });
 });

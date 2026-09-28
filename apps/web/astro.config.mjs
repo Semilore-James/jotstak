@@ -30,6 +30,16 @@ function group(label, directory, extra = {}) {
 // Deploy target: Cloudflare Pages (static output).
 //
 export default defineConfig({
+  // Bind IPv4 explicitly.
+  //
+  // Vite's default is "localhost", and since Node 17 that is no longer
+  // reordered to prefer IPv4 — on Windows it resolves to ::1 and the server
+  // listens on IPv6 ONLY. The site was then reachable at localhost:4321 and at
+  // [::1]:4321 and not at 127.0.0.1:4321, which is the address every tool here
+  // actually uses. It looked like the dev server would not start; it was
+  // running the whole time, on an address nothing was asking for.
+  server: { host: "127.0.0.1" },
+
   // Demos are rendered in the Markdown pipeline, not as components: Astro's
   // per-instance compilation cost made ~38 component demos exhaust the heap.
   markdown: { remarkPlugins: [remarkJotDemo] },

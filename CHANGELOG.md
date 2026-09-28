@@ -4,6 +4,12 @@ All notable changes to Jotstak are recorded here. Format loosely follows [Keep a
 
 ## [Unreleased]
 
+### Fixed
+- **The dev server binds IPv4 now.** Vite's default host is `localhost`, and since Node 17 that is not reordered to prefer IPv4 — on Windows it resolved to `::1` and the server listened on IPv6 only. It was reachable at `localhost:4321` and not at `127.0.0.1:4321`, which is what every tool here uses. It looked like it would not start; it was running the whole time on an address nothing was asking for.
+- **A star model's links leave the fields that name them.** Your screenshot showed four dimensions reading as a cross. There was no geometry bug — every connector started exactly on the fact's edge — but all four left the same middle point, so the figure carried no more information than a tree. A fact field already says `invoice_id: fk -> Invoices`; that arrow is read now, and the link leaves that row. Rows that are joins are inked darker, their lines drawn in the accent. A star with no arrows in it renders identically to before.
+- **The journey map has an axis.** It drew an emotional arc with nothing saying which way was good: three levels, a faint neutral line, no labels. `HAPPY / NEUTRAL / FRUSTRATED` down the left now, each exactly level with the dots it describes, and every stage name takes its own feeling's colour instead of only `frustrated` — one orange word among three dark ones read as a mistake rather than a highlight.
+- `JOURNEY.minColW` 96 → 84, so seven stages still fit a portrait page alongside the new scale.
+
 ## [0.4.0]
 
 ### Added (getting the document out)

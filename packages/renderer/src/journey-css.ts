@@ -56,7 +56,7 @@ ${scope} .jot-journey .jot-journey-item {
    not a longer stage. */
 ${scope} .jot-journey-lane {
   display: grid;
-  grid-template-columns: repeat(var(--jot-j-n), 1fr);
+  grid-template-columns: ${u(JOURNEY.scaleW)} repeat(var(--jot-j-n), 1fr);
   grid-template-rows:
     calc(var(--jot-j-name) * ${u(R)})
     ${band}
@@ -76,9 +76,34 @@ ${scope} .jot-journey-items { grid-row: 3; align-self: start; }
    top of the line without needing a stacking context. */
 ${scope} .jot-journey-band {
   grid-row: 2;
-  grid-column: 1 / -1;
+  /* Column 2 onwards: the band belongs over the stages, not over the scale
+     that labels it. */
+  grid-column: 2 / -1;
   position: relative;
 }
+
+/* The scale the arc is read against. Three words down the left, one per
+   level, each on its own row of the band so a label is level with the dots it
+   describes. Without it the band was three invisible rows and a dashed line,
+   and which way was good had to be inferred from the colours. */
+${scope} .jot-journey-scale {
+  grid-row: 2;
+  grid-column: 1;
+  display: grid;
+  grid-template-rows: repeat(${JOURNEY.bandRows}, ${u(R)});
+  padding-right: ${u(JOURNEY.gutter)};
+}
+${scope} .jot-journey .jot-journey-level {
+  font-family: var(--jot-font-label);
+  font-size: ${u(JOURNEY.scaleSize)};
+  line-height: ${u(R)};
+  text-align: right;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--jot-ink-muted);
+}
+${scope} .jot-journey-level[data-feeling="happy"] { color: var(--jot-journey-happy); }
+${scope} .jot-journey-level[data-feeling="frustrated"] { color: var(--jot-journey-frustrated); }
 /* Neutral, drawn faintly, so rising above it and dropping below it both mean
    something at a glance. */
 ${scope} .jot-journey-band::before {
@@ -113,7 +138,14 @@ ${scope} .jot-journey-dot {
 }
 ${scope} .jot-journey-stage[data-feeling="happy"] > .jot-journey-dot { background: var(--jot-journey-happy); }
 ${scope} .jot-journey-stage[data-feeling="frustrated"] > .jot-journey-dot { background: var(--jot-journey-frustrated); }
-/* A stage that went wrong is worth finding without reading the map. */
+/* Every stage name takes its own feeling's colour.
+   
+   Only the frustrated one used to, which meant one orange word among three
+   dark ones: it read as a mistake rather than a highlight, because nothing
+   else on the row was colour-coded at all. With all three coded, the colour
+   is a scale you read rather than an exception you interpret. */
+${scope} .jot-journey-stage[data-feeling="happy"] > .jot-journey-name { color: var(--jot-journey-happy); }
+${scope} .jot-journey-stage[data-feeling="neutral"] > .jot-journey-name { color: var(--jot-ink); }
 ${scope} .jot-journey-stage[data-feeling="frustrated"] > .jot-journey-name { color: var(--jot-journey-frustrated); }
 
 /* ── Vertical ───────────────────────────────────────────────────────── */
