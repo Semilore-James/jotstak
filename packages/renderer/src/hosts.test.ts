@@ -46,12 +46,26 @@ function rules(source: string): Array<[string, string]> {
 describe.each(Object.keys(HOSTS))("%s", (path) => {
   const source = read(path);
 
-  it("sizes the sheet from the page geometry, not by eye", () => {
-    expect(source).toMatch(/SHEET = PAGE\.portrait\.content \+ 2 \* PAGE\.marginX/);
-    // Fit to the column, never magnified past 1:1.
-    expect(source).toMatch(/zoom:\s*min\(1,\s*calc\(100cqw\s*\/\s*\$\{SHEET\}px\)\)/);
-    // Real page margins, so the sheet is exactly A4 wide.
-    expect(source).toMatch(/padding-inline:\s*\$\{PAGE\.marginX\}px/);
+  it("takes the fit from the renderer rather than deriving its own", () => {
+    // The expression used to be written out in all five hosts, which is how
+    // three of them came to disagree about it. It lives in layout.ts now, as
+    // --jot-fit, and a host says only where to apply it. That also means the
+    // reflow below REFLOW_BELOW reaches every host at once instead of five
+    // times — a phone fitting an A4 sheet at 0.40 put body text at 6.4px.
+    expect(source).toMatch(/zoom:\s*var\(--jot-fit\)/);
+    // …over a wrapper the container query can find.
+    expect(source).toMatch(/container-type:\s*inline-size;\s*container-name:\s*jot-host/);
+    // And no host may go back to computing it.
+    expect(source, "this host derives its own zoom again").not.toMatch(/zoom:\s*min\(/);
+
+    // The zoom must sit on the .jotstak element ITSELF. --jot-fit is declared
+    // there by the renderer, and a custom property inherits downwards only —
+    // zoom a wrapper around it and the reflow sets the variable on a child
+    // nothing reads it from. The playground did exactly that: the document
+    // took `max-width: 100%` of a parent still scaled to 0.40 and came out
+    // the same 6.4px it had been.
+    const zoomed = /([^{};\n]*)\{[^{}]*zoom:\s*var\(--jot-fit\)/.exec(source)?.[1] ?? "";
+    expect(zoomed.trim(), `${path} zooms a wrapper, not .jotstak`).toMatch(/\.jotstak\s*$/);
   });
 
   it("never scrolls or clips the document", () => {

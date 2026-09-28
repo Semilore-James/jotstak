@@ -4,6 +4,13 @@ All notable changes to Jotstak are recorded here. Format loosely follows [Keep a
 
 ## [Unreleased]
 
+### Fixed (a document you can read on a phone)
+- **A document reflows below 680px of room instead of shrinking out of legibility.** Measured on a 375px phone: nothing broke, nothing overflowed, there was no horizontal scroll — the sheet was fitted at 0.40 and body text landed on screen at **6.4px**. Below the threshold the A4 proportion is given up and the document takes the width it has, at its real 16px with its real 28px ruling. Everything else is untouched, because none of it was ever a function of the page's width.
+- **The worst case was not the phone.** At 1024px the playground splits into two columns exactly when it decides there is room, halving what the sheet gets: the document came out at 10.6px, worse than a tablet. Every width now renders at or near 16px.
+- **One sizing rule instead of five.** The zoom expression was written out in each host, which is why `hosts.test.ts` exists — three of them had already drifted. The renderer declares `--jot-fit`; a host says only where to apply it.
+- **A sticky wall declares no height.** It used to compute how many notes fit across a printable page. Reflow gave a phone 343px, two fit instead of four, and a wall declared at 12 rows drew 24 — 338px of stickies over the next block. It is a grid now, and stays whole rows by arithmetic at any width.
+- `webview-shell.ts` had no viewport meta, so `preflight.mjs` laid a 375px page out at 980 and described a different page than the one being asked about. `export.ts` has carried that line from the start.
+
 ### Added
 - **A tree label takes a forced break.** The last label in the language that could not, and the reason was never effort: every look positioned its connectors off a node being exactly one row tall, which was the same arithmetic UX-32 was open on. With that settled, the whole thing came down to one decision — a line meets a node at the middle of its **first** row. Siblings of different heights then connect at the same offset from their own top, a column of connectors stays level, and not one existing offset had to change. A pill is the exception and handles itself: it grows to hold its lines and centres in the rows it was given, so the arrow still meets it in the middle.
 - Works in all six forms, at any number of lines, in a leaf, in a parent with children, and in a split hub. `broken()` and `brokenWidth()` moved into `measure.ts` beside `segments()`, since four blocks now both draw a break and measure it.

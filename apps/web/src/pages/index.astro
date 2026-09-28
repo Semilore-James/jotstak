@@ -98,13 +98,13 @@ const extraCss = `
   border: 1px solid var(--jot-color-notebook-rule-lines);
   border-radius: 4px;
   box-shadow: 2px 2px 0 var(--jot-color-notebook-rule-lines);
-  container-type: inline-size;
+  container-type: inline-size; container-name: jot-host;
 }
 /* A real sheet, zoomed to fit the column and never past 1:1 (ARC-14) — the
    same fit the playground and the docs demos use. It used to fold the margin
    channel under its anchor for want of room; the channel is where a note goes,
    and a landing page that hides it is selling something else. */
-.rendered > .jotstak { zoom: min(1, calc(100cqw / ${SHEET}px)); }
+.rendered > .jotstak { zoom: var(--jot-fit); }
 .rendered .jot-doc { padding-inline: ${PAGE.marginX}px; }
 
 @media (max-width: 860px) {

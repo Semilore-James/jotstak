@@ -53,15 +53,30 @@ ${scope} .jot-body:has(> .jot-sticky-wall) { grid-column: 1 / -1; }
    by side instead let a second cluster wrap below the wall's own height and
    run over the paragraph underneath — and the wall's height being fixed meant
    declared and drawn agreed the whole time it was happening. */
+/* The wall's height is not declared. It cannot be.
+   
+   It used to be: the renderer worked out how many notes fit across a printable
+   page, how many lines that made, and wrote the total in. That is right for
+   exactly one width. Under the reflow below REFLOW_BELOW a phone gives the
+   document 343px, two notes fit across instead of four, and a wall declared at
+   12 rows drew 24 — 338px of stickies over whatever came next.
+   
+   A grid gets it right at every width instead of guessing at one. And the
+   height stays a whole number of rows by ARITHMETIC rather than by arrangement:
+   a note is 5 rows, the gap between lines is 1, so any wall is 6n-1 rows
+   whatever the column count turns out to be. */
 ${scope} .jot-sticky-wall {
-  height: calc(var(--jot-sticky-wall-rows) * ${u(R)});
-  box-sizing: border-box;
   display: flex;
   flex-direction: column;
 }
 
 ${scope} .jot-sticky-group { display: flex; flex-direction: column; }
-${scope} .jot-sticky-notes { display: flex; flex-wrap: wrap; column-gap: ${u(STICKY.gap)}; row-gap: ${u(STICKY.rowGap)}; }
+${scope} .jot-sticky-notes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, ${u(STICKY_SIDE)});
+  column-gap: ${u(STICKY.gap)};
+  row-gap: ${u(STICKY.rowGap)};
+}
 
 /* The cluster's name, in the label face, on its own row above the notes. */
 ${scope} .jot-sticky-wall .jot-sticky-cluster {

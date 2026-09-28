@@ -28,6 +28,14 @@ export function shellHtml({ assetBase, cspSource, nonce }: ShellOptions): string
 <html lang="en">
 <head>
 <meta charset="utf-8" />
+<!-- The panel is never a phone, so this changes nothing about the preview.
+     It is here because scripts/preflight.mjs renders through this shell to
+     check a build at narrow widths, and WITHOUT it a small viewport is laid
+     out at 980px and scaled down: the page reported 980 where the emulator
+     said 375, the reflow below REFLOW_BELOW never fired, and the tool written
+     to settle how something looks was quietly describing a different page.
+     export.ts has carried this line from the start. -->
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${cspSource} 'unsafe-inline'; font-src ${cspSource}; img-src ${cspSource} data:; script-src 'nonce-${nonce}';" />
 <style>
 ${renderThemeCss({ assetBase })}
@@ -39,13 +47,13 @@ body {
   margin: 0;
   padding: 20px 16px 40px;
   background: var(--vscode-editor-background, #1e1e1e);
-  container-type: inline-size;
+  container-type: inline-size; container-name: jot-host;
 }
 #sheet { width: ${SHEET}px; max-width: 100%; margin: 0 auto; box-shadow: 0 2px 16px rgba(0, 0, 0, 0.22); }
 /* Fit to the pane, never magnified past 1:1 — the same fit every other host
    uses. No overflow: if something ever fails to fit it should hang over the
    edge where it can be seen, not be quietly cut. */
-#sheet > .jotstak { zoom: min(1, calc(100cqw / ${SHEET}px)); }
+#sheet > .jotstak { zoom: var(--jot-fit); }
 #sheet .jot-doc { padding-inline: ${PAGE.marginX}px; }
 #empty {
   margin: 0;

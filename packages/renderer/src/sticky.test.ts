@@ -8,8 +8,7 @@
 
 import { describe, expect, it } from "vitest";
 import { render, renderLayoutCss } from "./index.js";
-import { fitSticky, groupRows, notesAcross, STICKY, STICKY_COLORS, STICKY_SIDE, tilt } from "./sticky.js";
-import { PAGE } from "./page.js";
+import { fitSticky, STICKY, STICKY_COLORS, STICKY_SIDE, tilt } from "./sticky.js";
 
 const src = (...lines: string[]): string => lines.join("\n");
 const out = (s: string) => render(s, { mode: "notebook" });
@@ -57,12 +56,13 @@ describe("a wall of stickies", () => {
     );
   });
 
-  it("fits four across the page, which is what makes it a wall", () => {
+  it("is a square of whole rows, big enough to hold a real note", () => {
     // Four rows was the first size and gave 88px of inner width, about twelve
-    // characters a line — too small to be a sticky note at all.
-    const across = Math.floor((PAGE.portrait.content + STICKY.gap) / (STICKY_SIDE + STICKY.gap));
-    expect(across).toBe(4);
+    // characters a line — too small to be a sticky note at all. How many fit
+    // across is the grid's business, not the renderer's: it depends on the
+    // width the document was given, which reflow means is not fixed.
     expect(STICKY_SIDE).toBe(STICKY.rows * STICKY.row);
+    expect(STICKY.rows).toBe(5);
   });
 });
 
@@ -104,58 +104,44 @@ describe("fitting text to a square", () => {
     expect(out(src(...note(MEDIUM))).diagnostics).toEqual([]);
   });
 
-  it("gives the wall the height of its tallest note", () => {
-    const { html } = out(src(...note(SHORT), ...note(LONG)));
-    const wall = Number(/--jot-sticky-wall-rows:(\d+)/.exec(html)![1]);
-    expect(wall).toBe(fitSticky(LONG).rows);
-  });
-
-  it("adds a row for the cluster labels, and only when there are any", () => {
-    const rows = (s: string) => Number(/--jot-sticky-wall-rows:(\d+)/.exec(out(s).html)![1]);
-    expect(rows(src(...note("A")))).toBe(STICKY.rows);
-    expect(rows(src(...note("A", 'cluster="wins"')))).toBe(STICKY.rows + 1);
-  });
 });
 
 describe("a wall that wraps", () => {
-  // THE bug in this block, and the one a fixed height hides.
+  // THE bug here, twice over.
   //
-  // The first version counted one line of notes per group. The wall's height
-  // is set by CSS, so declared and drawn agreed perfectly while two clusters
-  // of three ran straight out of the bottom of the wall and over the paragraph
-  // below. Comparing a fixed height against itself proves nothing. What had to
-  // be measured was whether the CONTENT fits, and what found it was a
-  // screenshot.
-  it("counts every line of notes, not just the first", () => {
-    const five = Array.from({ length: 5 }, (_, i) => ({ text: `Note ${i}`, color: "yellow" as const, cluster: "" }));
-    // Four across, so five notes are two lines: 5 + 1 gap + 5.
-    expect(notesAcross(PAGE.portrait.content)).toBe(4);
-    expect(groupRows(five, 4)).toBe(STICKY.rows + STICKY.rowGap / STICKY.row + STICKY.rows);
+  // The first version counted one line of notes per group, so two clusters of
+  // three ran out of the bottom of the wall and over the paragraph below —
+  // while the check said declared 6, drawn 6, match. A fixed height agrees
+  // with itself.
+  //
+  // The second version counted the lines properly, for a printable page. Then
+  // reflow gave a phone 343px, two notes fit across instead of four, and a
+  // wall declared at 12 rows drew 24. Guessing a column count is right for
+  // exactly one width, and a document no longer has one width.
+  //
+  // So nothing is declared. The wall is a grid of fixed-size notes with a
+  // whole-row gap between lines, and its height comes out in whole rows by
+  // arithmetic at any width: a note is 5 rows, a gap is 1, so a wall is 6n-1.
+  it("declares no height at all, and lets the grid decide the columns", () => {
+    const html = out(src(...note("First"), ...note("Second"), ...note("Third"))).html;
+    expect(html).not.toContain("--jot-sticky-wall-rows");
+
+    const css = renderLayoutCss();
+    expect(css).toContain("grid-template-columns: repeat(auto-fill,");
+    expect(css).not.toMatch(/\.jot-sticky-wall \{[^}]*height:/);
   });
 
-  it("stacks one cluster under the next rather than beside it", () => {
-    const one = { text: "A", color: "yellow" as const, cluster: "wins" };
-    // Two groups of one are two bands, each a label plus a note.
-    expect(groupRows([one], 4) * 2).toBe(2 * (1 + STICKY.rows));
+  it("is built only from whole-row parts, so any wall is whole rows", () => {
+    // The arithmetic the grid relies on. If a note stopped being a whole
+    // number of rows, or the gap did, no column count would be safe.
+    expect(STICKY_SIDE % STICKY.row).toBe(0);
+    expect(STICKY.rowGap % STICKY.row).toBe(0);
   });
 
   it("puts a whole row between two lines of notes, not half of one", () => {
-    // 14px would be half a row, and five notes would measure 294px — not a
-    // whole number of rows, so the wall would round up and carry 14px of dead
-    // space at its foot forever.
+    // 14px would be half a row, and a wrapped wall would land off the ruling
+    // at every width rather than at none.
     expect(STICKY.rowGap).toBe(STICKY.row);
-    const five = Array.from({ length: 5 }, () => ({ text: "A", color: "yellow" as const, cluster: "" }));
-    expect((groupRows(five, 4) * STICKY.row) % STICKY.row).toBe(0);
-  });
-
-  it("never claims a line fits more notes than the page is wide", () => {
-    for (const width of [PAGE.portrait.content, PAGE.portrait.column, 100, 1]) {
-      const across = notesAcross(width);
-      expect(across).toBeGreaterThanOrEqual(1);
-      expect(across * STICKY_SIDE + (across - 1) * STICKY.gap).toBeLessThanOrEqual(
-        Math.max(width, STICKY_SIDE),
-      );
-    }
   });
 });
 

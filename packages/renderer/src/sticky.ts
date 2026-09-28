@@ -24,7 +24,6 @@
 import type { BlockNode } from "./ast.js";
 import type { Diagnostic } from "./index.js";
 import { ESTIMATE_SAFETY, measureText, segments } from "./measure.js";
-import { PAGE } from "./page.js";
 
 export const STICKY = {
   row: 28,
@@ -128,34 +127,6 @@ export function tilt(text: string): number {
   return (Math.abs(hash) % 5) * 0.75 - 1.5;
 }
 
-/** How many notes fit across `width`, at least one. */
-export function notesAcross(width: number): number {
-  return Math.max(1, Math.floor((width + STICKY.gap) / (STICKY_SIDE + STICKY.gap)));
-}
-
-/**
- * Rows one group takes: its label, then however many LINES of notes it needs,
- * each line as tall as the tallest note on it.
- *
- * The gap between lines is part of a line's height rather than extra, because
- * a note's own rows already round up to the grid and the gap has to fit inside
- * that rounding or the group stops being a whole number of rows.
- */
-export function groupRows(models: StickyModel[], perRow: number): number {
-  const label = models.some((m) => m.cluster) ? 1 : 0;
-  const fits = models.map((m) => fitSticky(m.text).rows);
-
-  let rows = 0;
-  for (let i = 0; i < fits.length; i += perRow) {
-    const line = fits.slice(i, i + perRow);
-    const tallest = Math.max(...line);
-    // Every line but the last carries the gap to the next one.
-    const gap = i + perRow < fits.length ? STICKY.rowGap / STICKY.row : 0;
-    rows += tallest + gap;
-  }
-  return label + rows;
-}
-
 export function readSticky(n: BlockNode, diagnostics: Diagnostic[]): StickyModel {
   const body = n.body.shape === "plain" ? n.body.lines.filter((l) => l.trim()) : [];
   const text = (n.title || body.join(" ")).trim();
@@ -217,17 +188,6 @@ export function renderStickies(
     else groups.push({ name: note.model.cluster, notes: [note] });
   }
 
-  // How many notes fit across the page, and therefore how many LINES of notes
-  // each group takes.
-  //
-  // Counting one line per group was the first version and it was wrong on the
-  // page rather than in the numbers: the wall's height was fixed by CSS, so
-  // declared and drawn agreed while the notes that did not fit ran straight
-  // out of the bottom and over the paragraph below. Two clusters of three and
-  // a run of five both did it. Comparing a fixed height against itself proves
-  // nothing — it is scrollHeight that had to be looked at, and a screenshot
-  // that showed it.
-  const perRow = notesAcross(PAGE.portrait.content);
 
   const one = ({ model }: (typeof notes)[number]): string => {
     const fit = fitSticky(model.text);
@@ -250,14 +210,14 @@ export function renderStickies(
     )
     .join("");
 
-  // Each group is a full-width band that wraps its own notes, and the bands
-  // stack. A cluster is a line of the wall, which is also how a wall works on
-  // an actual wall.
-  const rows = groups.reduce((total, g) => total + groupRows(g.notes.map((n) => n.model), perRow), 0);
 
+  // No declared height. The wall is a grid of fixed-size notes with a
+  // whole-row gap, so its height is a whole number of rows by arithmetic at
+  // whatever width it is given — including the narrow one a reflowed document
+  // has, where the old "four across a printable page" was out by a factor of
+  // two and drew 338px of stickies over the next block.
   return (
     `<div class="jot-sticky-wall" data-count="${notes.length}"` +
-    ` style="--jot-sticky-wall-rows:${rows}"` +
     `${h.attr("id", blocks[0]!.params.id)}>${wall}</div>`
   );
 }

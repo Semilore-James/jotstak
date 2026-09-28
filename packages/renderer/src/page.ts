@@ -52,6 +52,27 @@ export const PAGE = {
 export const LANDSCAPE_PAGE = "jot-landscape";
 
 /**
+ * How little room a document may be given before it stops being a SHEET and
+ * becomes a column of text.
+ *
+ * UX-36 says every surface shows a whole A4 sheet zoomed to fit and never past
+ * 1:1, and it is right about everything except a small screen. Measured on the
+ * playground: a phone at 375px fits the sheet at 0.40, which puts body text on
+ * screen at 6.4px. Nothing breaks, nothing overflows — the document is simply
+ * too small to read, which is the worse failure because it looks deliberate.
+ *
+ * Below this width the sheet is given up. The document takes the room it has,
+ * text at its real 16px and the ruling at its real 28px, and the figures fit
+ * themselves to the narrower column the way they already do. What is lost is
+ * the A4 proportion and the sense of paper; what is gained is a document
+ * somebody can read on the thing they are holding.
+ *
+ * 680, because at that width a fitted sheet is already down to 0.86 and body
+ * text to 13.7px. Below it, fitting costs more than reflowing.
+ */
+export const REFLOW_BELOW = 680;
+
+/**
  * The @page rules. These are GLOBAL by nature — CSS cannot scope a page — so
  * unlike renderThemeCss() and renderLayoutCss() this is opt-in: a host includes
  * it only when it is the document, not when a document is embedded in a page

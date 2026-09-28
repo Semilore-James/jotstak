@@ -15,7 +15,7 @@
 // borders + padding total exactly one row, and inner content is always row-multiples.
 
 import { notebookLayout, spacing, typography } from "./tokens.js";
-import { LANDSCAPE_PAGE, PAGE } from "./page.js";
+import { LANDSCAPE_PAGE, PAGE, REFLOW_BELOW } from "./page.js";
 import { renderTreeCss } from "./tree-css.js";
 import { renderMatrixCss } from "./matrix-css.js";
 import { renderTimelineCss } from "./timeline-css.js";
@@ -26,7 +26,9 @@ import { renderCoverCss, renderCoverPrintCss } from "./cover-css.js";
 import { renderStickyCss, renderStickyPrintCss } from "./sticky-css.js";
 import { FONT_METRICS } from "./font-metrics.js";
 
-const ROW = spacing.baselineGrid; // 28
+const ROW = spacing.baselineGrid;
+/** A whole sheet of A4 at 96dpi: the printable width plus the page margins. */
+const SHEET = PAGE.portrait.content + 2 * PAGE.marginX;
 
 /**
  * The page width below which the margin channel folds under its anchor.
@@ -113,6 +115,19 @@ function sitsOnRule(fontSize: string, lineHeightPx: number, face = LORA): string
 export function renderLayoutCss(scope = ".jotstak"): string {
   return `
 /* ── Page frame ─────────────────────────────────────────────────────── */
+/* ── How a host sizes a document (UX-36, and the exception to it) ─────── */
+/* The fit used to be written out in each of the five hosts, which is why
+   hosts.test.ts exists: three of them had quietly redefined it. It lives here
+   now, and a host writes zoom: var(--jot-fit) over a wrapper carrying
+   container-name: jot-host.
+
+   Above the reflow threshold this is exactly the old contract: a whole A4
+   sheet, fitted to the column, never magnified past 1:1. Below it the sheet is
+   given up rather than shrunk into illegibility — a phone at 375px was fitting
+   it at 0.40, which is body text at 6.4px. */
+${scope} { --jot-fit: min(1, calc(100cqw / ${SHEET}px)); }
+
+
 ${scope} .jot-doc {
   --jot-rule-offset: ${BASELINE_OFFSET}px;
   /* Exactly an A4 page's printable width (ARC-14), so anything that fits on
@@ -126,6 +141,14 @@ ${scope} .jot-doc {
      wide the window is. See the note at the bottom of this file. */
   container-type: inline-size;
   container-name: jot-page;
+}
+
+@container jot-host (max-width: ${REFLOW_BELOW - 1}px) {
+  ${scope} { --jot-fit: 1; }
+  /* The document takes the room it has. Everything else — the 28px row, 16px
+     body text, the figures fitting their container — is unchanged, because
+     none of it was ever a function of the page's width. */
+  ${scope} .jot-doc { max-width: 100%; }
 }
 /* One row per block: the block beside its margin notes. Rows are separate
    elements rather than cells of one document-wide grid because print needs

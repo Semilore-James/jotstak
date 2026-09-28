@@ -54,9 +54,9 @@ ${embeddedFonts(mediaDir)}
 ${theme}
 ${renderLayoutCss()}
 ${renderPageCss()}
-body { margin: 0; padding: 24px 16px; background: #e9e3d9; container-type: inline-size; }
+body { margin: 0; padding: 24px 16px; background: #e9e3d9; container-type: inline-size; container-name: jot-host; }
 #sheet { width: ${SHEET}px; max-width: 100%; margin: 0 auto; box-shadow: 0 2px 18px rgba(0,0,0,.18); }
-#sheet > .jotstak { zoom: min(1, calc(100cqw / ${SHEET}px)); }
+#sheet > .jotstak { zoom: var(--jot-fit); }
 #sheet .jot-doc { padding-inline: ${PAGE.marginX}px; }
 /* Printing this file gives the same A4 pages the editor promised, so the desk
    the sheet sits on has to get out of the way. */

@@ -130,12 +130,18 @@ const extraCss = `
    amount of room and the wrapper needs no height correction. It never zooms
    past 1 — paper is not magnified, only fitted. */
 #out-wrap {
-  container-type: inline-size;
+  container-type: inline-size; container-name: jot-host;
   border-radius: 4px;
   border: 1px solid var(--jot-color-notebook-rule-lines);
   box-shadow: 2px 2px 0 var(--jot-color-notebook-rule-lines);
 }
-#out { zoom: min(1, calc(100cqw / ${SHEET}px)); }
+/* On the .jotstak element itself, not on #out around it. --jot-fit is
+   declared by the renderer ON .jotstak, and a custom property inherits
+   downwards only: zooming the parent meant the reflow below REFLOW_BELOW set
+   the variable on a child that nothing was reading it from, so the document
+   took max-width 100% of a parent still scaled to 0.40 and stayed exactly as
+   small as before. The other four hosts already scoped it this way. */
+#out > .jotstak { zoom: var(--jot-fit); }
 /* The side margins are the page's real ones, so the sheet is exactly A4 wide
    (ARC-14). Doc mode already sets these; notebook mode had 24px of padding
    chosen by eye. */

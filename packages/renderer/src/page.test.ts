@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { LANDSCAPE_PAGE, PAGE, renderPageCss } from "./page.js";
+import { LANDSCAPE_PAGE, PAGE, REFLOW_BELOW, renderPageCss } from "./page.js";
 import { renderLayoutCss } from "./layout.js";
 import { notebookLayout } from "./tokens.js";
 import { render } from "./index.js";
@@ -125,5 +125,48 @@ describe("@pagebreak — a cut the printer could not have guessed", () => {
   it("is one row tall, so it costs the ruling nothing", () => {
     const rule = css.split("}").find((r) => r.includes(".jot-pagebreak {"))!;
     expect(rule).toContain(`height: ${ROW}px`);
+  });
+});
+
+// ── Reflow: the one screen the sheet is wrong for ────────────────────────
+//
+// UX-36 says every surface shows a whole A4 sheet zoomed to fit, and it is
+// right about everything except a small one. Measured on the playground: a
+// phone at 375px fits the sheet at 0.40, which puts body text on screen at
+// 6.4px. Nothing overflows and nothing breaks — the document is simply too
+// small to read, which is the worse failure because it looks deliberate.
+
+describe("a document reflows rather than shrink out of legibility", () => {
+  const css = renderLayoutCss();
+
+  it("fits the sheet above the threshold and gives it up below", () => {
+    expect(css).toContain(`--jot-fit: min(1, calc(100cqw / ${PAGE.portrait.content + 2 * PAGE.marginX}px))`);
+    expect(css).toContain(`@container jot-host (max-width: ${REFLOW_BELOW - 1}px)`);
+    expect(css).toContain("--jot-fit: 1;");
+  });
+
+  it("lets the reflow WIN, which is entirely a question of source order", () => {
+    // Both selectors are (0,2,0). A container query adds no specificity, so
+    // the only thing deciding which max-width applies is which comes last.
+    // Written the other way round the rule was present, correct, and dead —
+    // and a phone would have gone on rendering at 6.4px with the reflow
+    // sitting right there in the stylesheet.
+    const base = css.indexOf(`max-width: ${PAGE.portrait.content}px`);
+    const reflow = css.indexOf("max-width: 100%");
+    expect(base, "the sheet width is gone").toBeGreaterThan(-1);
+    expect(reflow, "the reflow is gone").toBeGreaterThan(-1);
+    expect(reflow, "the reflow comes first, so the sheet width wins and it does nothing").toBeGreaterThan(base);
+  });
+
+  it("changes nothing a document is made of", () => {
+    // Only the WIDTH is given up. The 28px row, the 16px body text and the
+    // baseline offset were never functions of the page's width, so reflowing
+    // must not touch them — a reflowed document is the same document, set
+    // narrower.
+    const reflow = /@container jot-host[^{]*\{([\s\S]*?)\n\}/.exec(css)?.[1] ?? "";
+    expect(reflow).toContain("max-width: 100%");
+    for (const property of ["font-size", "line-height", "--jot-rule-offset", "background-image"]) {
+      expect(reflow, `reflow changes ${property}`).not.toContain(property);
+    }
   });
 });

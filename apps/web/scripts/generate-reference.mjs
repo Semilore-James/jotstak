@@ -38,8 +38,8 @@ const DEMO_CHROME = `
 /* Zoomed to fit the column, never past 1:1 — the same fit the playground
    preview uses. No overflow:hidden: if something ever fails to fit it should
    hang over the edge where it can be seen, not be quietly cut. */
-.jot-demo-out { border-radius: 6px; border: 1px solid #e4d5be; container-type: inline-size; }
-.jot-demo-out > .jotstak { zoom: min(1, calc(100cqw / ${SHEET}px)); }
+.jot-demo-out { border-radius: 6px; border: 1px solid #e4d5be; container-type: inline-size; container-name: jot-host; }
+.jot-demo-out > .jotstak { zoom: var(--jot-fit); }
 .jot-demo-out .jot-doc { padding-inline: ${PAGE.marginX}px; }
 `;
 
