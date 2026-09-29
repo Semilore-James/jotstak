@@ -1,0 +1,8 @@
+# Pages that moved when the docs were streamlined (2026-09-29, PRD-30).
+# Cloudflare Pages reads this file; the first rule that matches wins.
+/docs/recipes                 /docs/examples/patterns/      301
+/docs/recipes/                /docs/examples/patterns/      301
+/docs/cookbook/product-tour   /docs/examples/product-tour/  301
+/docs/cookbook/product-tour/  /docs/examples/product-tour/  301
+/docs/cookbook                /docs/examples/patterns/      301
+/docs/cookbook/               /docs/examples/patterns/      301
