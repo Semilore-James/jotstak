@@ -178,11 +178,22 @@ function renderCard(n: BlockNode, diagnostics: Diagnostic[]): string {
   // @panel says what it is; a preset is named for what it is.
   const label = n.params.label ?? card.label ?? (n.name === "panel" ? "" : (spec?.name ?? n.name));
 
+  // A decision's date (UX-67). Written down so the record is findable in six
+  // months, and read by nothing until now. A real calendar date is marked up
+  // as one, so a screen reader and a search both know what it is.
+  const date = card.dateParam ? n.params[card.dateParam] : undefined;
+  const dated = date
+    ? /^\d{4}-\d{2}-\d{2}$/.test(date)
+      ? `<time class="jot-card-date" datetime="${escapeHtml(date)}">${escapeHtml(date)}</time>`
+      : `<span class="jot-card-date">${escapeHtml(date)}</span>`
+    : "";
+
   const parts: string[] = [];
-  if (label || badge) {
+  if (label || badge || date) {
     parts.push(
       `<p class="jot-card-kicker">${escapeHtml(label)}` +
         (badge ? `<span class="jot-badge"${alert ? ' data-alert="true"' : ""}>${escapeHtml(badge)}</span>` : "") +
+        dated +
         `</p>`,
     );
   }
@@ -320,6 +331,8 @@ interface PanelPreset {
   badgeParam?: string;
   /** Badge values that should read as a warning rather than neutral. */
   alertValues?: string[];
+  /** Param shown as a quiet date after the badge (UX-67). */
+  dateParam?: string;
   /** Kicker text. Defaults to the primitive's own name. */
   label?: string;
 }
@@ -332,7 +345,7 @@ interface PanelPreset {
  */
 const PANELS: Record<string, PanelPreset> = {
   panel:      { titleParam: "title", badgeParam: "badge" },
-  decision:   { titleParam: "title", badgeParam: "status", alertValues: ["deprecated", "superseded"] },
+  decision:   { titleParam: "title", badgeParam: "status", alertValues: ["deprecated", "superseded"], dateParam: "date" },
   risk:       { titleParam: "title", badgeParam: "level", alertValues: ["high", "critical"] },
   assumption: { titleParam: "title", badgeParam: "confidence", alertValues: ["low"] },
   persona:    { titleParam: "name" },

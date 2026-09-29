@@ -650,6 +650,16 @@ ${scope} .jot-field-value { font-size: ${typography.body.lg.size}; }
 ${scope} .jot-field-list { margin: 0; padding-left: ${ROW}px; }
 ${scope} .jot-field-list li { line-height: ${ROW}px; }
 
+/* A decision's date, after its status (UX-67). Quiet on purpose: the status is
+   what the card is read for, the date is what makes it findable later. Same
+   line, same face, so it cannot grow the row. */
+${scope} .jot-card .jot-card-date {
+  margin-left: ${ROW / 2}px;
+  color: var(--jot-ink-muted);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
 /* Badge beside the kicker: the card's status at a glance. Inline-block with a
    capped line-height so it cannot grow the row it sits in. */
 ${scope} .jot-badge {

@@ -27,10 +27,6 @@ const QUIET: Record<string, string> = {
   "note.id": "belongs to its block",
   "meta.id": "a row of chips",
   "divider.id": "a rule",
-  // Kept in the source and read by nobody yet. Three samples use it, so it is
-  // not marked planned (every playground visitor would get a note about it);
-  // whether the card should show it is an open decision (UX-67).
-  "decision.date": "shown nowhere yet: UX-67",
 };
 
 /** A value in the shape a setting expects, where any string will not do. */
@@ -89,5 +85,22 @@ describe("every setting the schema offers does something", () => {
     pages.add(render(src, { mode: "notebook" }).html);
     pages.add(render(withSetting(src, spec, p.name, "").replace(new RegExp(` ${p.name}=\\S*`), ""), { mode: "notebook" }).html);
     expect(pages.size, `every value of ${p.name} on @${spec.name} renders the same page`).toBeGreaterThan(1);
+  });
+});
+
+describe("a decision's date (UX-67)", () => {
+  it("shows after the status, marked up as a date when it is one", () => {
+    const { html, diagnostics } = render('@decision title="T" status=accepted date=2026-09-19\n  context: c', {
+      mode: "notebook",
+    });
+    expect(diagnostics).toEqual([]);
+    expect(html).toContain(
+      '<span class="jot-badge">accepted</span><time class="jot-card-date" datetime="2026-09-19">2026-09-19</time></p>',
+    );
+  });
+
+  it("keeps a date written any other way, as words", () => {
+    const { html } = render('@decision title="T" date="Q3 2026"\n  context: c', { mode: "notebook" });
+    expect(html).toContain('<span class="jot-card-date">Q3 2026</span>');
   });
 });
