@@ -24,12 +24,16 @@ const indent = (src: string, by: string): string =>
     .map((l) => (l ? by + l : l))
     .join("\n");
 
-/** The parent, then the child at the parent's own body indent. */
+/**
+ * The parent, then the child at the parent's own body indent — or, for a
+ * list, under its last item, since that is where a list takes a block.
+ */
 function compose(parent: PrimitiveSpec, child: PrimitiveSpec): { src: string; childLine: number } {
   const p = source(parent);
   const lines = p.split("\n");
   const bodyIndent = lines.slice(1).find((l) => l.trim())?.match(/^\s*/)![0] || "  ";
-  return { src: `${p}\n${indent(source(child), bodyIndent)}`, childLine: lines.length };
+  const at = parent.holds === "items" ? `${bodyIndent}  ` : bodyIndent;
+  return { src: `${p}\n${indent(source(child), at)}`, childLine: lines.length };
 }
 
 /** The first element a block renders as, with its class: what it looks like on the page. */
@@ -76,10 +80,7 @@ describe("the composition matrix", () => {
       // 2. Allowed means drawn as itself; refused means not. Counted against
       //    the parent alone, because a quote in a quote shares its markup.
       const sig = signature(child);
-      // A list keeps a misplaced list as its own sub-items, which are a list:
-      // correct, and indistinguishable by markup from the real thing.
-      const keptAsList = !allowed && parent.bodyShape === "indented" && parent.holds === "text";
-      if (sig && !child.planned && !keptAsList) {
+      if (sig && !child.planned) {
         const alone = count(render(source(parent), { mode: "notebook" }).html, sig);
         const composed = count(html, sig);
         if (allowed) expect(composed, `${sig} in\n${src}`).toBeGreaterThan(alone);
@@ -100,23 +101,15 @@ describe("a block written where only text can go", () => {
   const warnings = (src: string): string[] =>
     render(src, { mode: "notebook" }).diagnostics.filter(refusal).map((d) => d.message);
 
-  it("names the column it was written in", () => {
-    // The case that started this: a tree under a column's key printed its own
-    // source as a paragraph, with no diagnostic at all.
-    const [w] = warnings("@columns\n  left:\n    @tree\n      Root\n        Child\n  right:\n    Words");
-    expect(w).toContain("the `left` column");
-    expect(w).toContain("becomes a column of its own");
-  });
-
   it("names the tree node it was written under", () => {
     const [w] = warnings('@tree\n  Root\n    Child\n      @metric name="Churn" value="4%"');
     expect(w).toContain("the node “Child”");
     expect(w).toContain("drawn below the tree");
   });
 
-  it("catches a block under a Markdown list item", () => {
-    const [w] = warnings("- A point\n  @tree\n    Root\n      Child");
-    expect(w).toContain("under a list item");
+  it("catches a block between the items of @bullet rather than under one", () => {
+    const [w] = warnings("@bullet\n  A point\n  @tree\n    Root");
+    expect(w).toContain("between the items of `@bullet`");
   });
 
   it("reports a misplaced block once, not once per line of it", () => {
@@ -130,6 +123,59 @@ describe("a block written where only text can go", () => {
     expect(warnings("@panel\n  owner: @sam\n  @alex said this")).toEqual([]);
     expect(warnings("@tree\n  Root\n    @alex")).toEqual([]);
     expect(warnings("- Ask @priya about it")).toEqual([]);
+  });
+});
+
+describe("a block under a list item or a column's key (UX-65)", () => {
+  const html = (src: string): string => {
+    const r = render(src, { mode: "notebook" });
+    expect(r.diagnostics.filter(refusal), src).toEqual([]);
+    return r.html;
+  };
+
+  it("goes inside the list item it is written under", () => {
+    // The report that started the matrix: a point, then the tree that explains
+    // it. It used to come out as one line, "A point @tree Root Child".
+    const out = html("- A point\n  @tree\n    Root\n      Child\n- Next point");
+    expect(out).toMatch(/<li>A point<div class="jot-nested" style="--jot-depth:1"><div class="jot-figure"[\s\S]*?<\/li><li>Next point<\/li>/);
+  });
+
+  it("keeps the order it was written in, among the sub-points", () => {
+    const out = html('- A\n  - first\n  @metric name="M" value="1"\n  - second');
+    const at = (s: string): number => out.indexOf(s);
+    expect(at("first")).toBeLessThan(at('data-primitive="metric"'));
+    expect(at('data-primitive="metric"')).toBeLessThan(at("second"));
+  });
+
+  it("goes under a numbered item, and under a sub-item", () => {
+    expect(html("1. Step\n   @callout warn\n     Careful")).toMatch(/<ol><li>Step<div class="jot-nested" style="--jot-depth:1"><aside class="jot-callout"/);
+    expect(html("- A\n  - a1\n    @tree\n      Root")).toMatch(/<li>a1<div class="jot-nested" style="--jot-depth:2"><div class="jot-figure"/);
+  });
+
+  it("works in the @bullet spelling too", () => {
+    expect(html("@bullet\n  A point\n    @tree\n      Root")).toMatch(/<li>A point<div class="jot-nested" style="--jot-depth:1"><div class="jot-figure"/);
+  });
+
+  it("goes in the column whose key it is written under", () => {
+    const out = html("@columns\n  left:\n    Words first.\n    @tree\n      Root\n        Child\n  right:\n    Other words");
+    const left = /<div class="jot-col"><p class="jot-col-heading">left<\/p>([\s\S]*?)<div class="jot-col">/.exec(out)?.[1] ?? "";
+    expect(left).toContain("Words first.");
+    expect(left).toContain('class="jot-figure"');
+    expect(left.indexOf("Words first.")).toBeLessThan(left.indexOf("jot-figure"));
+  });
+
+  it("still joins a wrapped line onto the item, and leaves an @-mention as words", () => {
+    // Markdown's lazy continuation, and a name that happens to lead a line.
+    expect(html("- A point that\n  wraps onto a second line")).toContain("<li>A point that wraps onto a second line</li>");
+    const out = render("- Meeting\n  @priya to follow up", { mode: "notebook" }).html;
+    expect(out).not.toContain("jot-nested");
+    expect(out).toContain("@priya to follow up");
+  });
+
+  it("keeps a page-level block's words, and says where it goes instead", () => {
+    const r = render("- A point\n  @note check this", { mode: "notebook" });
+    expect(text(r.html)).toContain("check this");
+    expect(r.diagnostics.find(refusal)?.message).toContain("inside a list item");
   });
 });
 

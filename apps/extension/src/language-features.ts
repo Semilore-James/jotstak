@@ -131,8 +131,10 @@ export function describe(spec: PrimitiveSpec): vscode.MarkdownString {
 
   // Last, because it is the same for every primitive and putting it first
   // would bury the thing the reader came for.
+  // Not the unbuilt ones: advertising `icon` on every card was offering a
+  // setting that did nothing (ENG-34).
   md.appendMarkdown(
-    `\n_Plus ${UNIVERSAL_PARAMS.slice(0, 3)
+    `\n_Plus ${UNIVERSAL_PARAMS.filter((p) => !p.planned)
       .map((p) => `\`${p.name}\``)
       .join(", ")} on any block._`,
   );
@@ -382,7 +384,8 @@ function paramCompletions(spec: PrimitiveSpec): vscode.CompletionItem[] {
     const item = new vscode.CompletionItem(p.name, vscode.CompletionItemKind.Property);
     item.detail =
       (p.required ? "required · " : "") +
-      (p.type === "enum" && p.enumValues ? p.enumValues.join(" | ") : p.type);
+      (p.type === "enum" && p.enumValues ? p.enumValues.join(" | ") : p.type) +
+      (p.planned ? " · not built yet" : "");
     item.documentation = new vscode.MarkdownString(p.description);
     // A parameter is never useful without a value, so the cursor lands where
     // the value goes — inside the quotes for a string, in a choice list for an
@@ -394,7 +397,8 @@ function paramCompletions(spec: PrimitiveSpec): vscode.CompletionItem[] {
     // Required first, then the block's own, then the universal ones every
     // block shares. Required leads because it is the only group where leaving
     // one out is an error rather than a choice.
-    const rank = (p.required ? 200 : 0) + (own.has(p.name) ? 100 : 0);
+    // A setting that does nothing yet goes last, however it would rank.
+    const rank = p.planned ? -1 : (p.required ? 200 : 0) + (own.has(p.name) ? 100 : 0);
     item.sortText = `${rankText(rank)}${p.name}`;
     return item;
   });

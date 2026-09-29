@@ -86,7 +86,8 @@ function paramTable(params) {
   const rows = params.map((p) => {
     const type =
       p.type === "enum" ? (p.enumValues ?? []).map((v) => `\`${v}\``).join(" · ") : `\`${p.type}\``;
-    return `| \`${p.name}\` | ${type} | ${p.required ? "**yes**" : "no"} | ${p.default ? `\`${p.default}\`` : "—"} | ${esc(p.description)} |`;
+    const meaning = (p.planned ? "**Not built yet: does nothing for now.** " : "") + esc(p.description);
+    return `| \`${p.name}\` | ${type} | ${p.required ? "**yes**" : "no"} | ${p.default ? `\`${p.default}\`` : "—"} | ${meaning} |`;
   });
   return ["| Param | Type | Required | Default | Meaning |", "| --- | --- | --- | --- | --- |", ...rows].join("\n") + "\n";
 }
@@ -169,15 +170,16 @@ text. Which one depends on the outer block:
 
 | The outer block | What happens to a block written inside it |
 | --- | --- |
-| ${names((p) => p.holds === "inside")} | **Drawn inside it**, after its own content. In \`@columns\`, a block written at the columns' own indent becomes a column of its own. |
+| ${names((p) => p.holds === "inside")} | **Drawn inside it**, after its own content. In \`@columns\`, a block written under a column's \`key:\` goes in that column, and one at the columns' own indent becomes a column of its own. |
+| ${names((p) => p.holds === "items")}, and Markdown's \`-\` and \`1.\` | **Drawn inside the item it is written under**: a point, then the figure that explains it, indented beneath. |
 | ${names((p) => p.holds === "below")} | **Drawn below it.** A figure has nowhere inside it for another block, so a metric under a tree is under the tree, not in one of its nodes. |
 | ${names((p) => p.holds === "text")} | **Read as text.** These hold words, not blocks. |
 
 Some blocks belong to the page itself and never go inside another:
 ${names((p) => !p.nests)}.
 
-And anything that is a line of text — a column's lines under its \`key:\`, a
-list item, a node of a tree — holds text too. A block cannot start there.
+A line of text inside any other block — a card's \`key:\`, a node of a tree —
+holds text too. A block cannot start there.
 
 A block written somewhere it cannot go is never dropped silently: the editor
 underlines it and says where it can go instead.

@@ -1002,7 +1002,18 @@ ${renderPageCss()}
           } else if (slot.kind === "block") {
             const parent = slot.parent.name;
             fits = (name) => canHold(parent, name);
-            where = `Goes inside the <b>@${parent}</b>, at your cursor`;
+            // Straight under @columns it is a column of its own; under a key,
+            // it joins that column (UX-65).
+            let above = line - 1;
+            while (above > 0 && (!ls[above]!.trim() || indentOf(ls[above]!) >= here.length)) above--;
+            where =
+              slot.parent.holds === "items"
+                ? "Goes inside the list item, at your cursor"
+                : parent === "columns"
+                  ? opener(ls[above] ?? "")?.name === "columns"
+                    ? "Goes in a column of its own"
+                    : "Goes in this column, at your cursor"
+                  : `Goes inside the <b>@${parent}</b>, at your cursor`;
           } else {
             fits = () => false;
             where = `Goes after ${nameOf(ls[chunkStart(ls, line)]!)}: only text goes here`;

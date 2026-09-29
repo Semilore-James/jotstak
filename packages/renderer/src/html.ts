@@ -86,19 +86,68 @@ function renderHeading(n: HeadingNode): string {
   return `<h${n.level} class="jot-h${n.level}"${attr("id", id)}>${inline(n.text)}</h${n.level}>`;
 }
 
-function renderTree(items: TreeNode[], ordered: boolean): string {
+/**
+ * Lines of text and the blocks written among them, back in source order.
+ * Runs of text are handed to `text` together, each run of blocks goes into
+ * one .jot-nested. Used by a list item and by a column (UX-65), which are the
+ * two places a block can sit among lines rather than after a body.
+ */
+function interleave(
+  lines: TreeNode[],
+  blocks: readonly Node[] | undefined,
+  text: (run: TreeNode[]) => string,
+  diagnostics: Diagnostic[],
+  /** How many list levels in, so a drawn block can clear the ruling back to the page's edge. */
+  depth?: number,
+): string {
+  if (!blocks || blocks.length === 0) return lines.length > 0 ? text(lines) : "";
+  const all = [
+    ...lines.map((l) => ({ line: l.position.line, l })),
+    ...blocks.map((b) => ({ line: b.position.line, b })),
+  ].sort((a, b) => a.line - b.line);
+
+  // One wrapper per block rather than one per run, so each can say whether it
+  // is drawn: a figure or a card clears the ruling, a table sits on it.
+  const style = depth ? ` style="--jot-depth:${depth}"` : "";
+  let out = "";
+  let run: TreeNode[] = [];
+  const flushText = (): void => {
+    if (run.length > 0) out += text(run);
+    run = [];
+  };
+  for (const x of all) {
+    if ("l" in x) {
+      run.push(x.l);
+    } else {
+      flushText();
+      out += `<div class="jot-nested"${style}>${renderNode(x.b, diagnostics)}</div>`;
+    }
+  }
+  flushText();
+  return out;
+}
+
+function renderTree(items: TreeNode[], ordered: boolean, diagnostics: Diagnostic[], depth = 1): string {
   const tag = ordered ? "ol" : "ul";
   const body = items
     .map((it) => {
-      const kids = it.children.length > 0 ? renderTree(it.children, ordered) : "";
-      return `<li>${inline(it.text)}${kids}</li>`;
+      // A point, then the figure written under it, then its sub-points, in
+      // whatever order they were written.
+      const rest = interleave(
+        it.children,
+        it.blocks,
+        (run) => renderTree(run, ordered, diagnostics, depth + 1),
+        diagnostics,
+        depth,
+      );
+      return `<li>${inline(it.text)}${rest}</li>`;
     })
     .join("");
   return `<${tag}>${body}</${tag}>`;
 }
 
-function renderList(n: ListNode): string {
-  return renderTree(n.items, n.ordered);
+function renderList(n: ListNode, diagnostics: Diagnostic[]): string {
+  return renderTree(n.items, n.ordered, diagnostics);
 }
 
 function renderQuote(n: QuoteNode): string {
@@ -209,15 +258,20 @@ function renderColumns(n: BlockNode, diagnostics: Diagnostic[]): string {
     const heading = showHeadings
       ? `<p class="jot-col-heading">${inline(f.key)}</p>`
       : "";
-    const items =
-      f.children.length > 0
-        ? block(f.children.map((c) => renderNested(c)).join("\n"))
-        : "";
+    // A column's lines, and any block written under its key among them.
+    const items = interleave(
+      f.children,
+      f.blocks,
+      (run) => block(run.map((c) => renderNested(c)).join("\n")),
+      diagnostics,
+    );
     const basis = ratio[i] !== undefined ? ` style="flex-grow:${ratio[i]}"` : "";
     return `<div class="jot-col"${basis}>${heading}${items}</div>`;
   });
 
-  const nested = n.children.map((c) => renderNode(c, diagnostics)).join("");
+  // Wrapped one by one, like a block under a key, so a drawn one can clear
+  // the ruling around itself.
+  const nested = n.children.map((c) => `<div class="jot-nested">${renderNode(c, diagnostics)}</div>`).join("");
   const trailing = nested ? `<div class="jot-col">${nested}</div>` : "";
   return `<div class="jot-columns"${attr("id", n.params.id)}>${cols.join("")}${trailing}</div>`;
 }
@@ -450,7 +504,7 @@ function renderNode(n: Node, diagnostics: Diagnostic[]): string {
     case "heading":
       return renderHeading(n);
     case "list":
-      return renderList(n);
+      return renderList(n, diagnostics);
     case "divider":
       return `<hr class="jot-divider" data-style="${escapeHtml(n.style)}" />`;
     case "quote":

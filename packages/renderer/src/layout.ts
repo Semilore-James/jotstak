@@ -461,6 +461,23 @@ ${scope} .jot-body ol ol,
 ${scope} .jot-body ul ol,
 ${scope} .jot-body ol ul { margin-bottom: 0; }
 ${scope} .jot-body li::marker { color: var(--jot-accent); }
+/* A block under a list item (UX-65) sits a row clear of the point above it,
+   like a block inside a card, and the next point waits a row below it. This
+   comes after the rule that zeroes a last child's margin, and outranks it by
+   source order: the margin collapses out through the item and any sub-list,
+   so the gap is one row however deep the block sits, and at the end of the
+   list it merges with the list's own. */
+${scope} .jot-body li > .jot-nested { margin-bottom: ${ROW}px; }
+/* And a drawn block there clears the ruling across the whole row, the list's
+   indent included, the way one on the page does (UX-40): otherwise the rules
+   ran up to its left edge and on past its right. The wrapper paints paper under
+   itself, and its shadow is a copy of itself moved back to the page's edge —
+   one list level (one row) per --jot-depth. A table is left out on purpose:
+   it sits ON the ruling, which draws its row lines (UX-41). */
+${scope}[data-mode="notebook"] .jot-body li > .jot-nested:has(> .jot-figure, > .jot-card, > .jot-callout) {
+  background: var(--jot-surface);
+  box-shadow: calc(var(--jot-depth, 1) * -${ROW}px) 0 0 var(--jot-surface);
+}
 
 /* ── The host's defaults stop at the paper ──────────────────────────── */
 /* The theme is careful never to restyle its host. The converse has to be true
@@ -690,6 +707,16 @@ ${scope} .jot-columns { display: flex; flex-wrap: wrap; gap: 0 ${ROW}px; }
    they still wrap on a phone, where stacking is the right answer. */
 ${scope} .jot-col { flex: 1 1 150px; min-width: 0; }
 ${scope} .jot-col > :last-child { margin-bottom: 0; }
+/* A block that is a column of its own starts at the top, level with the
+   headings of the columns beside it. */
+${scope} .jot-col > .jot-nested:first-child { margin-top: 0; }
+/* A drawn block in a column (UX-65) clears the ruling across its column and
+   the gap either side, so rules do not run in the gutter between two boxes.
+   Text in another column keeps its own rules on the same rows. */
+${scope}[data-mode="notebook"] .jot-col > .jot-nested:has(> .jot-figure, > .jot-card, > .jot-callout) {
+  background: var(--jot-surface);
+  box-shadow: -${ROW}px 0 0 var(--jot-surface), ${ROW}px 0 0 var(--jot-surface);
+}
 ${scope} .jot-columns .jot-col-heading {
   font-family: var(--jot-font-label);
   font-size: ${typography.label.md.size};

@@ -32,6 +32,12 @@ export interface ParamSpec {
   description: string;
   enumValues?: string[];
   default?: string;
+  /**
+   * Named and specified, but read by nothing yet. Like a planned primitive:
+   * the editor says so rather than offering a setting that silently does
+   * nothing, which sends people looking for their own mistake (ENG-34).
+   */
+  planned?: true;
 }
 
 export interface PrimitiveSpec {
@@ -77,7 +83,11 @@ export interface PrimitiveSpec {
    * the composition matrix: which blocks go inside which.
    *
    *   "inside"  it renders inside this block, after its own content. The
-   *             cards, and @columns, where it becomes a column of its own.
+   *             cards; and @columns, where one written under a column's key
+   *             goes in that column, and one at the columns' own indent
+   *             becomes a column of its own.
+   *   "items"   it goes inside the item it is written under. The lists: a
+   *             point, and the tree that explains it, indented beneath.
    *   "below"   it is kept, and drawn directly beneath the figure. A drawing
    *             has nowhere inside it for another block: a metric under a
    *             tree is under the tree, not in one of its nodes.
@@ -90,7 +100,7 @@ export interface PrimitiveSpec {
    * The parser, the diagnostics, autocomplete and the docs all read this now,
    * and a test renders every pair so it cannot drift from what happens.
    */
-  holds: "inside" | "below" | "text";
+  holds: "inside" | "items" | "below" | "text";
   /**
    * Whether this block can go inside another at all. False for the ones that
    * belong to the page rather than to a block: page setup, the metadata row,
@@ -229,7 +239,7 @@ const bullet: PrimitiveSpec = {
     "Bullet list. Nesting up to 3 levels via indentation. Shorthand: `- ` at line start (nested by indent). No `@` needed for plain bullets — the parser recognizes `- ` lines.",
   params: [],
   bodyShape: "indented",
-  holds: "text",
+  holds: "items",
   nests: true,
   breaksRuling: false,
   examples: [
@@ -246,7 +256,7 @@ const numbered: PrimitiveSpec = {
     "Numbered list. Shorthand: `1. ` at line start. Auto-numbers; the actual digit you type is ignored.",
   params: [],
   bodyShape: "indented",
-  holds: "text",
+  holds: "items",
   nests: true,
   breaksRuling: false,
   examples: [
@@ -789,6 +799,8 @@ export const UNIVERSAL_PARAMS: ParamSpec[] = [
     required: false,
     description:
       "Optional Lucide icon name for this block. Nothing renders unless you set it — there are no automatic icons. Autocomplete suggests a fitting icon per primitive (see SUGGESTED_ICONS), but the choice is always yours.",
+    // Waits on @icon, which waits on the icon set in packages/icons.
+    planned: true,
   },
   {
     name: "icon_at",
@@ -798,6 +810,7 @@ export const UNIVERSAL_PARAMS: ParamSpec[] = [
       "Where the icon sits. `inline` = immediately before the block's title/first line. `margin` = out in the notebook margin channel, drawn larger, like a marginal doodle. `corner` = tucked into the card's top corner (card primitives only; falls back to inline with a diagnostic otherwise). Only meaningful when `icon` is set.",
     enumValues: ["inline", "margin", "corner"],
     default: "inline",
+    planned: true,
   },
 ];
 
@@ -870,7 +883,9 @@ export function compositionLine(spec: PrimitiveSpec): string {
   const holds =
     spec.holds === "inside"
       ? "Other blocks can go inside it."
-      : spec.holds === "below"
+      : spec.holds === "items"
+        ? "A block written under one of its items goes inside that item."
+        : spec.holds === "below"
         ? "A block written inside it is drawn below it."
         : "Holds text, not other blocks.";
   return spec.nests ? holds : `${holds} Goes on the page itself, never inside another block.`;

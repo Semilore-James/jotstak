@@ -154,6 +154,17 @@ function parseInlineParams(
       continue;
     }
     validateParamValue(spec, params[key]!, primitiveName, lineNum, diagnostics);
+    // Accepted, so a file written ahead of it keeps working the day it is
+    // built — but said, because a setting that silently does nothing sends
+    // people looking for their own mistake (ENG-34).
+    if (spec.planned) {
+      diagnostics.push({
+        severity: "info",
+        message: `\`${key}\` is not built yet, so it does nothing for now. It waits on the icon set.`,
+        line: lineNum,
+        column: 0,
+      });
+    }
   }
 
   const rest = paren ? paren.after : text.slice(lastIndex).trim();

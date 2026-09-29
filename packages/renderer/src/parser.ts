@@ -36,6 +36,8 @@ interface Entry {
   indent: number;
   text: string;
   position: Position;
+  /** Blocks written under this line: a list item's figure (UX-65). */
+  blocks?: Node[];
 }
 
 /** A node's own words, without the markers that steer layout rather than read. */
@@ -80,6 +82,7 @@ function buildTree(entries: Entry[], diagnostics?: Diagnostic[]): TreeNode[] {
 
   for (const e of entries) {
     const node: TreeNode = { text: e.text, children: [], position: e.position };
+    if (e.blocks) node.blocks = e.blocks;
     while (stack.length > 0 && stack[stack.length - 1]!.indent >= e.indent) {
       stack.pop();
     }
@@ -157,46 +160,119 @@ function extractNested(
       continue;
     }
 
-    const chunk: LineToken[] = [t];
-    let j = i + 1;
-    while (j < body.length) {
-      const c = body[j]!;
-      if (c.kind === "blank") {
-        chunk.push(c);
-        j++;
-        continue;
-      }
-      if (c.indent <= baseIndent) break;
-      chunk.push(c);
-      j++;
-    }
-    while (chunk.length > 0 && chunk[chunk.length - 1]!.kind === "blank") chunk.pop();
-
-    const text = chunk
-      .map((c) => (c.kind === "blank" ? "" : " ".repeat(Math.max(0, c.indent - baseIndent)) + c.content))
-      .join("\n");
-
-    const sub = lex(text);
-    // Map the sub-document's line numbers back onto the real file.
-    const remap = (line: number): Position => {
-      const origin = chunk[line];
-      return origin ? posOf(origin) : posOf(t);
-    };
-    for (const tok of sub.tokens) {
-      const p = remap(tok.line);
-      tok.line = p.line;
-      tok.column = p.column;
-    }
-    for (const d of sub.diagnostics) {
-      const p = remap(d.line);
-      diagnostics.push({ ...d, line: p.line, column: p.column });
-    }
-    children.push(...parseTokens(sub.tokens, diagnostics).children);
-    i = j;
+    const { chunk, next } = chunkAt(body, i);
+    children.push(...parseChunk(chunk, diagnostics));
+    i = next;
   }
 
   return { own, children };
 }
+
+/** The block starting at body[i]: that line, and every deeper line after it. */
+function chunkAt(body: LineToken[], i: number): { chunk: LineToken[]; next: number } {
+  const t = body[i]!;
+  const chunk: LineToken[] = [t];
+  let j = i + 1;
+  while (j < body.length) {
+    const c = body[j]!;
+    if (c.kind !== "blank" && c.indent <= t.indent) break;
+    chunk.push(c);
+    j++;
+  }
+  while (chunk.length > 0 && chunk[chunk.length - 1]!.kind === "blank") chunk.pop();
+  return { chunk, next: j };
+}
+
+/**
+ * Parse a chunk as a document of its own: dedented, lexed, parsed. Line
+ * numbers are mapped back onto the real file as the tokens come out, so
+ * diagnostics and editor positions still point at the line that was written.
+ */
+function parseChunk(chunk: LineToken[], diagnostics: Diagnostic[]): Node[] {
+  const head = chunk[0]!;
+  const text = chunk
+    .map((c) => (c.kind === "blank" ? "" : " ".repeat(Math.max(0, c.indent - head.indent)) + c.content))
+    .join("\n");
+
+  const sub = lex(text);
+  const remap = (line: number): Position => {
+    const origin = chunk[line];
+    return origin ? posOf(origin) : posOf(head);
+  };
+  for (const tok of sub.tokens) {
+    const p = remap(tok.line);
+    tok.line = p.line;
+    tok.column = p.column;
+  }
+  for (const d of sub.diagnostics) {
+    const p = remap(d.line);
+    diagnostics.push({ ...d, line: p.line, column: p.column });
+  }
+  return parseTokens(sub.tokens, diagnostics).children;
+}
+
+/** A line that opens a block the schema knows. `@alex said` is not one. */
+function knownOpener(t: LineToken): boolean {
+  if (t.kind === "blank") return false;
+  const m = /^@([a-zA-Z_][a-zA-Z0-9_]*)/.exec(t.content);
+  return !!m && !!getPrimitive(m[1]!);
+}
+
+/**
+ * Pull out the blocks written UNDER a line of a body, rather than at its base:
+ * the ones under a list item, or under a column's key (UX-65). `ownerOf` names
+ * the line each belongs to, or nothing, in which case it is left where it is
+ * for reportStrayBlocks to explain. Returned by owner line, in source order.
+ */
+function extractUnder(
+  body: LineToken[],
+  ownerOf: (i: number) => LineToken | undefined,
+  parent: PrimitiveSpec,
+  where: string,
+  diagnostics: Diagnostic[],
+): { own: LineToken[]; under: Map<number, Node[]> } {
+  const own: LineToken[] = [];
+  const under = new Map<number, Node[]>();
+  let i = 0;
+  while (i < body.length) {
+    const owner = knownOpener(body[i]!) ? ownerOf(i) : undefined;
+    if (!owner) {
+      own.push(body[i]!);
+      i++;
+      continue;
+    }
+    const { chunk, next } = chunkAt(body, i);
+    const nodes = parseChunk(chunk, diagnostics).map((c) => admit(c, parent, diagnostics, where));
+    under.set(owner.line, [...(under.get(owner.line) ?? []), ...nodes]);
+    i = next;
+  }
+  return { own, under };
+}
+
+/** The nearest line above body[i] that is less indented: the one it sits under. */
+const lineAbove =
+  (body: LineToken[]) =>
+  (i: number): LineToken | undefined => {
+    const t = body[i]!;
+    for (let k = i - 1; k >= 0; k--) {
+      const o = body[k]!;
+      if (o.kind !== "blank" && o.indent < t.indent) return o;
+    }
+    return undefined;
+  };
+
+/** The `key:` of the column body[i] is written in, at any depth inside it. */
+const columnAbove =
+  (body: LineToken[], baseIndent: number) =>
+  (i: number): LineToken | undefined => {
+    if (body[i]!.indent <= baseIndent) return undefined;
+    for (let k = i - 1; k >= 0; k--) {
+      const o = body[k]!;
+      if (o.kind === "blank" || o.indent !== baseIndent) continue;
+      return isFieldLine(o.content) ? o : undefined;
+    }
+    return undefined;
+  };
 
 // ── Composition ──────────────────────────────────────────────────────────
 //
@@ -255,19 +331,25 @@ function bodyText(body: BlockBody): string[] {
  * nothing (a note) or as a block with a wrong explanation (a sticky said it
  * had "no renderer yet").
  */
-function admit(child: Node, parent: PrimitiveSpec, diagnostics: Diagnostic[]): Node {
+function admit(
+  child: Node,
+  parent: PrimitiveSpec,
+  diagnostics: Diagnostic[],
+  where = `\`@${parent.name}\``,
+): Node {
   const written = nameOf(child);
   const spec = written ? getPrimitive(written) : undefined;
   if (!written || !spec) return child;
 
   if (!spec.nests) {
+    const after = parent.holds === "items" ? "list" : parent.name;
     const hint =
       spec.name === "note"
-        ? `Write it at the left edge, straight after the ${parent.name}, and it sits in the margin beside it.`
+        ? `Write it at the left edge, straight after the ${after}, and it sits in the margin beside it.`
         : "Write it at the left edge instead.";
     diagnostics.push({
       severity: "warning",
-      message: `\`@${written}\` goes on the page itself, not inside another block, so inside \`@${parent.name}\` it is read as text. ${hint}`,
+      message: `\`@${written}\` goes on the page itself, not inside another block, so inside ${where} it is read as text. ${hint}`,
       line: child.position.line,
       column: child.position.column,
     });
@@ -327,7 +409,11 @@ function reportStrayBlocks(
       : "It goes on the page itself, at the left edge.";
 
     let message: string;
-    if (!owner) {
+    if (!owner && parent.holds === "items") {
+      // In @bullet's own body every line is an item, so a block at that indent
+      // sits BETWEEN two items rather than under one.
+      message = `${at} can't go between the items of \`@${parent.name}\`. Indent it under the item it belongs to and it goes inside that item.`;
+    } else if (!owner) {
       message = `${at} can't go inside \`@${parent.name}\`, which holds text rather than blocks. ${elsewhere}`;
     } else {
       const field = isFieldLine(owner.content) ? FIELD_RE.exec(owner.content)![1]!.trim() : undefined;
@@ -352,6 +438,24 @@ function reportStrayBlocks(
     }
     diagnostics.push({ severity: "warning", message, line: t.line, column: t.column });
   });
+}
+
+/** Give each item or column the blocks that were written under it. */
+function attachUnder(body: BlockBody, under: Map<number, Node[]>): void {
+  const walk = (nodes: TreeNode[]): void => {
+    for (const n of nodes) {
+      const got = under.get(n.position.line);
+      if (got) n.blocks = got;
+      walk(n.children);
+    }
+  };
+  if (body.shape === "keyed" || body.shape === "mixed") {
+    for (const f of body.fields) {
+      const got = under.get(f.position.line);
+      if (got) f.blocks = got;
+    }
+  }
+  if (body.shape === "indented" || body.shape === "mixed") walk(body.roots);
 }
 
 /** Split body lines into base-indent fields and everything else, per body shape. */
@@ -619,8 +723,32 @@ export function parseTokens(
             entries.push({ indent: 0, text: cur.content, position: posOf(cur) });
             i++;
             const nested = collectBody(tokens, i);
-            for (const n of nested.body) {
+            const listSpec = getPrimitive(ordered ? "numbered" : "bullet")!;
+            for (let b = 0; b < nested.body.length; b++) {
+              const n = nested.body[b]!;
               if (n.kind === "blank") continue;
+
+              // A block under a list item goes inside that item (UX-65): a
+              // point, and the tree that explains it indented beneath. It
+              // used to be glued onto the item's words — "A point @tree Root
+              // Child" — which is the report that started the matrix.
+              if (knownOpener(n)) {
+                const { chunk, next } = chunkAt(nested.body, b);
+                let owner = entries[entries.length - 1]!;
+                for (let k = entries.length - 1; k >= 0; k--) {
+                  if (entries[k]!.indent < n.indent) {
+                    owner = entries[k]!;
+                    break;
+                  }
+                }
+                const blocks = parseChunk(chunk, diagnostics).map((c) =>
+                  admit(c, listSpec, diagnostics, "a list item"),
+                );
+                owner.blocks = [...(owner.blocks ?? []), ...blocks];
+                b = next - 1;
+                continue;
+              }
+
               const marker = /^(?:[-*]\s+|\d+\.\s+)/.exec(n.content);
               if (marker) {
                 entries.push({
@@ -629,19 +757,6 @@ export function parseTokens(
                   position: posOf(n),
                 });
               } else {
-                // A block under a list item. It stays a continuation — the
-                // matrix says a list item holds text — but it says so, because
-                // "A point @tree Root Child" on one line is not what anyone
-                // writing a tree under a point was trying to get.
-                const stray = DIRECTIVE_RE.exec(n.content);
-                if (stray && getPrimitive(stray[1]!)) {
-                  diagnostics.push({
-                    severity: "warning",
-                    message: `\`@${stray[1]}\` can't go under a list item, which holds text rather than blocks. Write it at the left edge, after the list.`,
-                    line: n.line,
-                    column: n.column,
-                  });
-                }
                 // No marker: a wrapped continuation of the item above, not a
                 // child of it. Markdown's lazy continuation — losing this makes
                 // every line-wrapped bullet sprout a phantom sub-bullet.
@@ -738,14 +853,26 @@ export function parseTokens(
         // starts with `@`. Pulling those out as blocks is what used to lose
         // them: a quote, a heading or a note had nowhere to render a child,
         // so the child and everything under it simply went.
+        // A list's body is its items, so a list keeps its lines too, and takes
+        // out only the blocks written UNDER an item, below.
         const extracted =
-          spec.holds === "text"
+          spec.holds === "text" || spec.holds === "items"
             ? { own: collected.body, children: [] as Node[] }
             : extractNested(collected.body, baseIndent, diagnostics);
-        const own = extracted.own;
+        let own = extracted.own;
         const nested = extracted.children.map((c) => admit(c, spec, diagnostics));
+
+        // Blocks under a line rather than at the base (UX-65): under a list
+        // item they go inside the item; under a column's key, in that column.
+        let under = new Map<number, Node[]>();
+        if (spec.holds === "items") {
+          ({ own, under } = extractUnder(own, lineAbove(own), spec, "a list item", diagnostics));
+        } else if (spec.name === "columns") {
+          ({ own, under } = extractUnder(own, columnAbove(own, baseIndent), spec, "a column", diagnostics));
+        }
         reportStrayBlocks(own, baseIndent, spec, diagnostics);
         const body = shapeBody(own, spec.bodyShape, diagnostics);
+        if (under.size > 0) attachUnder(body, under);
 
         // Normalise onto the node type that matches the concept, so the
         // renderer never has to care which spelling was used.

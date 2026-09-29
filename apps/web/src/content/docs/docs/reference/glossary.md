@@ -25,8 +25,8 @@ looks: `@tree(dir=right)`. Written `param` in the reference tables.
 `choice:` and `consequences:` fields.
 
 **Nesting** — putting a block inside another block, by indenting it further.
-The cards and `@columns` hold other blocks; a figure draws one below itself;
-the rest hold only text. See [What goes inside what](/docs/functions/#what-goes-inside-what).
+The cards, `@columns` and list items hold other blocks; a figure draws one
+below itself; the rest hold only text. See [What goes inside what](/docs/functions/#what-goes-inside-what).
 
 **Margin note** — an aside beside the text, in handwriting. Write
 `@note your text` and it appears next to the paragraph above it.

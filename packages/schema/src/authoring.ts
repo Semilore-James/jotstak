@@ -196,6 +196,7 @@ export type Slot =
   | { kind: "text"; line: number };
 
 const OPENER = /^\s*@([a-zA-Z_][a-zA-Z0-9_]*)/;
+const MARKER = /^\s*(?:[-*]|\d+[.)])\s/;
 
 const indentOf = (line: string): number => line.length - line.trimStart().length;
 
@@ -203,20 +204,48 @@ const indentOf = (line: string): number => line.length - line.trimStart().length
  * What a line at `indent` on `line` belongs to.
  *
  * The parser's own rule, restated: the nearest line above with less indent
- * owns this one. If that is a block's opening line, this is that block's body;
- * if it is anything else — a `key:`, a list item, a node — this is under a
- * line of text, and a block cannot start there. `line` on the result is the
- * owning line, so a caller can find the block to put something after.
+ * owns this one. Directly under a block's opening line is that block's body.
+ * Under a line of text it depends on what the text is part of: a list item
+ * and a column hold blocks (UX-65); a card's `key:`, a tree's node and a
+ * paragraph do not. `line` on the result is the owning line, so a caller can
+ * find the block to put something after.
  */
 export function slotAt(lines: string[], line: number, indent: number): Slot {
   if (indent === 0) return { kind: "page" };
+  let need = indent;
+  let first = -1;
+  let underText = false;
+  let list: "bullet" | "numbered" | undefined;
+
   for (let k = line - 1; k >= 0; k--) {
     const text = lines[k]!;
-    if (!text.trim() || indentOf(text) >= indent) continue;
+    if (!text.trim() || indentOf(text) >= need) continue;
+    if (first === -1) first = k;
+
     const m = OPENER.exec(text);
     const spec = m ? getPrimitive(m[1]!) : undefined;
-    if (!spec || spec.holds === "text") return { kind: "text", line: k };
-    return { kind: "block", parent: spec, line: k };
+    if (spec) {
+      // Straight under the opening line: the block's own body.
+      if (!underText && !list) {
+        return spec.holds === "inside" || spec.holds === "below"
+          ? { kind: "block", parent: spec, line: k }
+          : { kind: "text", line: k };
+      }
+      // Under a line inside it: only a column or a list item holds a block.
+      if (spec.name === "columns" || spec.holds === "items") return { kind: "block", parent: spec, line: k };
+      return { kind: "text", line: first };
+    }
+
+    if (MARKER.test(text)) {
+      list ??= /^\s*[-*]/.test(text) ? "bullet" : "numbered";
+      // A Markdown list on the page itself. One inside a card is that card's
+      // text, which the loop finds out when it reaches the card.
+      if (indentOf(text) === 0) return { kind: "block", parent: getPrimitive(list)!, line: k };
+    } else if (!list) {
+      underText = true;
+    }
+    need = indentOf(text);
+    if (need === 0) break;
   }
-  return { kind: "page" };
+  return first === -1 ? { kind: "page" } : { kind: "text", line: first };
 }

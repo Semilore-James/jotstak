@@ -16,6 +16,12 @@ export interface Field {
   key: string;
   value: string;
   children: TreeNode[];
+  /**
+   * Blocks written under this key, where the primitive lets a key hold them:
+   * the columns of @columns. In source order, with positions, so they can be
+   * set among the key's lines of text where they were written.
+   */
+  blocks?: Node[];
   position: Position;
 }
 
@@ -23,6 +29,8 @@ export interface Field {
 export interface TreeNode {
   text: string;
   children: TreeNode[];
+  /** Blocks written under this line, where that means something: a list item. */
+  blocks?: Node[];
   position: Position;
 }
 
