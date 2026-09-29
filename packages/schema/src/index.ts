@@ -72,6 +72,31 @@ export interface PrimitiveSpec {
   scaffoldLines?: number;
   /** Body lines: "none" | "plain" | "keyed" | "indented" | "mixed". */
   bodyShape: "none" | "plain" | "keyed" | "indented" | "mixed";
+  /**
+   * What becomes of a block written inside this one. With `nests`, this is
+   * the composition matrix: which blocks go inside which.
+   *
+   *   "inside"  it renders inside this block, after its own content. The
+   *             cards, and @columns, where it becomes a column of its own.
+   *   "below"   it is kept, and drawn directly beneath the figure. A drawing
+   *             has nowhere inside it for another block: a metric under a
+   *             tree is under the tree, not in one of its nodes.
+   *   "text"    this block holds words, not blocks. The lines are kept as
+   *             text and a warning says so.
+   *
+   * Written down because it used to be an accident of each renderer. A tree
+   * in a panel worked; a tree in a column printed its own source back as a
+   * paragraph; a tree in a quote vanished. None of the three said anything.
+   * The parser, the diagnostics, autocomplete and the docs all read this now,
+   * and a test renders every pair so it cannot drift from what happens.
+   */
+  holds: "inside" | "below" | "text";
+  /**
+   * Whether this block can go inside another at all. False for the ones that
+   * belong to the page rather than to a block: page setup, the metadata row,
+   * a cover, a page break, a margin note, and a wall of stickies.
+   */
+  nests: boolean;
   /** Does this primitive cut the ruled lines to breathe (a "drawn" block)? */
   breaksRuling: boolean;
   examples: string[];
@@ -92,6 +117,8 @@ const meta: PrimitiveSpec = {
     { name: "show", type: "boolean", required: false, description: "Render the chip row. Set false to keep the metadata for tooling but hide it from the page.", default: "true" },
   ],
   bodyShape: "keyed",
+  holds: "text",
+  nests: false,
   breaksRuling: false,
   examples: [
     "@meta\n  project: Autonomous Agent Orchestrator\n  pillar: Reliability & Traceability\n  status: active\n  owner: @alex\n  updated: 2026-09-17",
@@ -113,6 +140,8 @@ const page: PrimitiveSpec = {
     { name: "breaks", type: "enum", required: false, description: "What a single Enter does in prose. `on` (the default) keeps the line you broke — this is ruled paper, and a line you ended is a line. `off` restores Markdown's own rule, where a single newline is a space and only a blank line starts a paragraph: set it when pasting a .md file that was hard-wrapped to a column width, so its wrap points do not become real breaks.", enumValues: ["on", "off"], default: "on" },
   ],
   bodyShape: "none",
+  holds: "text",
+  nests: false,
   breaksRuling: false,
   examples: [
     "@page margin=both rule=ruled",
@@ -139,6 +168,8 @@ const panel: PrimitiveSpec = {
     { name: "accent", type: "enum", required: false, description: "Colour treatment. `alert` marks something needing attention; `quiet` drops the fill entirely.", enumValues: ["neutral", "alert", "positive", "info", "quiet"], default: "neutral" },
   ],
   bodyShape: "mixed",
+  holds: "inside",
+  nests: true,
   breaksRuling: true,
   examples: [
     '@panel(label="Risk" badge=high accent=alert title="Churn among small teams")\n  mitigation: Grandfather existing plans for 12 months.',
@@ -158,6 +189,8 @@ const columns: PrimitiveSpec = {
     { name: "headings", type: "boolean", required: false, description: "Render each column's key as a heading above it. Set false to use the keys purely as structure.", default: "true" },
   ],
   bodyShape: "keyed",
+  holds: "inside",
+  nests: true,
   breaksRuling: true,
   examples: [
     '@columns(ratio="1:2")\n  left:\n    The diagram\n  right:\n    The paragraph that explains it',
@@ -177,6 +210,8 @@ const heading: PrimitiveSpec = {
     { name: "level", type: "enum", required: false, description: "Heading depth, 1 to 6.", enumValues: ["1", "2", "3", "4", "5", "6"], default: "1" },
   ],
   bodyShape: "plain",
+  holds: "text",
+  nests: true,
   breaksRuling: false,
   examples: [
     "@heading Overview",
@@ -194,6 +229,8 @@ const bullet: PrimitiveSpec = {
     "Bullet list. Nesting up to 3 levels via indentation. Shorthand: `- ` at line start (nested by indent). No `@` needed for plain bullets — the parser recognizes `- ` lines.",
   params: [],
   bodyShape: "indented",
+  holds: "text",
+  nests: true,
   breaksRuling: false,
   examples: [
     "- First item\n  - Nested\n    - Deep nested",
@@ -209,6 +246,8 @@ const numbered: PrimitiveSpec = {
     "Numbered list. Shorthand: `1. ` at line start. Auto-numbers; the actual digit you type is ignored.",
   params: [],
   bodyShape: "indented",
+  holds: "text",
+  nests: true,
   breaksRuling: false,
   examples: [
     "1. First\n2. Second\n   1. Sub-item",
@@ -227,6 +266,8 @@ const pagebreak: PrimitiveSpec = {
     { name: "label", type: "string", required: false, description: "Words on the marker, e.g. \"Appendix\". Shown on screen only — it is a note to whoever is editing, and printing has already obeyed the break by then." },
   ],
   bodyShape: "none",
+  holds: "text",
+  nests: false,
   breaksRuling: false,
   examples: ["@pagebreak", '@pagebreak label="Appendix"', "@newpage"],
 };
@@ -241,6 +282,8 @@ const divider: PrimitiveSpec = {
     { name: "style", type: "enum", required: false, description: "Visual style.", enumValues: ["line", "dots", "wave"], default: "line" },
   ],
   bodyShape: "none",
+  holds: "text",
+  nests: true,
   breaksRuling: false,
   examples: ["@divider", "---", "@divider style=wave"],
 };
@@ -257,6 +300,8 @@ const cover: PrimitiveSpec = {
     { name: "style", type: "enum", required: false, description: "How loudly the band announces itself. `minimal` is one hairline underneath, with the title a size down. `default` is rules above and below. `bold` sets the type in a tinted field.", enumValues: ["default", "minimal", "bold"], default: "default" },
   ],
   bodyShape: "plain",
+  holds: "text",
+  nests: false,
   breaksRuling: true,
   examples: [
     // Not `subtitle="…"` on the line below, which is what this said until the
@@ -287,6 +332,8 @@ const note: PrimitiveSpec = {
     { name: "loose", type: "boolean", required: false, description: "Detach from any anchor — no tick rule. The note just flows in the margin at this point. For general asides about a whole section.", default: "false" },
   ],
   bodyShape: "plain",
+  holds: "text",
+  nests: false,
   breaksRuling: false,
   examples: [
     "@note revisit this at scale",
@@ -310,6 +357,8 @@ const quote: PrimitiveSpec = {
     { name: "tag", type: "string", required: false, description: "Theme tag for clustering, e.g. onboarding, pricing." },
   ],
   bodyShape: "plain",
+  holds: "text",
+  nests: true,
   breaksRuling: false,
   examples: [
     '@quote by="User P7" source="Discovery interview 3"\n  I just want it to not lose my work.',
@@ -329,6 +378,8 @@ const callout: PrimitiveSpec = {
     { name: "flavor", type: "enum", required: false, description: "Callout flavor. Can also be used as the shortcode name directly.", enumValues: ["info", "warn", "tip", "question"], default: "info" },
   ],
   bodyShape: "plain",
+  holds: "inside",
+  nests: true,
   breaksRuling: false,
   examples: [
     "@callout warn\n  This metric is lagging by two sprints.",
@@ -346,6 +397,8 @@ const footnote: PrimitiveSpec = {
   params: [],
   planned: true,
   bodyShape: "plain",
+  holds: "text",
+  nests: true,
   breaksRuling: false,
   examples: [
     "See the original research[^disco1].\n\n@footnote id=disco1\n  Findings from the March discovery sprint, slide 14.",
@@ -369,6 +422,8 @@ const table: PrimitiveSpec = {
     { name: "align", type: "string", required: false, description: 'Per-column alignment, e.g. "left,left,right". A column of nothing but figures is right-aligned on its own.' },
   ],
   bodyShape: "mixed",
+  holds: "below",
+  nests: true,
   // Only style=sketch draws a grid of its own; the default sits ON the rules
   // and lets the paper draw the rows, which is the whole point of ruled paper.
   breaksRuling: false,
@@ -392,6 +447,8 @@ const tree: PrimitiveSpec = {
     { name: "nodes", type: "enum", required: false, description: "How each node is drawn. `text` sets the labels on the page, joined by thin lines — quiet enough to sit inside prose. `boxed` draws every node as a pill, branches darker than leaves, with arrows from parent to child — an infographic that carries more weight.", enumValues: ["text", "boxed"], default: "text" },
   ],
   bodyShape: "indented",
+  holds: "below",
+  nests: true,
   breaksRuling: true,
   examples: [
     "@tree dir=right\n  Table\n    Cell\n      Content type\n      Interaction\n    Row\n      Actions\n    Column\n      Width",
@@ -420,6 +477,8 @@ const star_model: PrimitiveSpec = {
   ],
   scaffoldLines: 2,
   bodyShape: "mixed",
+  holds: "below",
+  nests: true,
   breaksRuling: true,
   examples: [
     '@star_model Telemetry warehouse\n  fact: TaskExecutionEvents\n  dim Agents at 12\n  dim Models at 3\n  dim LatencyBuckets at 6\n  dim CostCenters at 9',
@@ -441,6 +500,8 @@ const journey: PrimitiveSpec = {
     { name: "dir", type: "enum", required: false, description: "`horizontal` draws stages across the page with the emotion line under their names. `vertical` runs down the page — no line, the feeling is carried by the mark beside each stage — and fits any number of stages.", enumValues: ["horizontal", "vertical"], default: "horizontal" },
   ],
   bodyShape: "indented",
+  holds: "below",
+  nests: true,
   breaksRuling: true,
   examples: [
     '@journey title="Onboarding"\n  stage Discover feeling=happy\n    Finds the landing page\n    Tries the playground\n  stage Install feeling=neutral\n    Copies the command\n    Waits for download\n  stage First doc feeling=happy\n    Opens welcome.jot\n    Edits and sees it render',
@@ -462,6 +523,8 @@ const matrix: PrimitiveSpec = {
     { name: "title", type: "string", required: false, description: "Optional title above the matrix." },
   ],
   bodyShape: "indented",
+  holds: "below",
+  nests: true,
   breaksRuling: true,
   examples: [
     '@matrix x="Effort" y="Impact"\n  Search at tr\n  Export at tl\n  Dark mode at br\n  Animations at bl',
@@ -483,6 +546,8 @@ const timeline: PrimitiveSpec = {
     { name: "alternate", type: "boolean", required: false, description: "Alternate events above and below the line. Turning it off puts everything underneath, and halves how wide each card can be.", default: "true" },
   ],
   bodyShape: "indented",
+  holds: "below",
+  nests: true,
   breaksRuling: true,
   examples: [
     '@timeline title="Project milestones"\n  Q3 2026: Discovery\n    Interviews, synthesis, personas\n  Oct 2026: Alpha\n    Core primitives, extension preview\n  Dec 2026: Beta\n    Full primitive set, docs\n  Q1 2027: Launch\n    Marketplace, site, community',
@@ -504,6 +569,8 @@ const doodle: PrimitiveSpec = {
   ],
   planned: true,
   bodyShape: "plain",
+  holds: "text",
+  nests: true,
   breaksRuling: true,
   examples: [
     '@doodle rows=6 caption="Rough architecture"\n  box "API" at 2,1 size 3,2\n  box "DB" at 2,4 size 3,2\n  arrow from "API" to "DB"',
@@ -527,6 +594,8 @@ const decision: PrimitiveSpec = {
     { name: "date", type: "string", required: false, description: "Date the decision was made, e.g. 2026-09-17." },
   ],
   bodyShape: "keyed",
+  holds: "inside",
+  nests: true,
   breaksRuling: false,
   examples: [
     '@decision title="Adopt event sourcing" status=accepted date=2026-09-17\n  context: Writes are bursty, reads need projections\n  choice: Event store with CQRS\n  consequences: Simpler writes, eventual consistency on reads',
@@ -549,6 +618,8 @@ const metric: PrimitiveSpec = {
     { name: "status", type: "enum", required: false, description: "Health signal.", enumValues: ["on-track", "at-risk", "off-track"], default: "on-track" },
   ],
   bodyShape: "plain",
+  holds: "inside",
+  nests: true,
   breaksRuling: false,
   examples: [
     '@metric name="Weekly active users" value="1,240" target="2,000" trend=up status=on-track\n  Growing 8% week-over-week since the playground launched.',
@@ -568,6 +639,8 @@ const persona: PrimitiveSpec = {
     { name: "image", type: "string", required: false, description: "Path or URL to an avatar image." },
   ],
   bodyShape: "keyed",
+  holds: "inside",
+  nests: true,
   breaksRuling: true,
   examples: [
     '@persona name="Marta, the systems PM"\n  role: Platform PM at a mid-size fintech\n  goal: Sketch data relationships inside the spec, not in a separate tool\n  frustration: Notion has no star schema view, Miro loses sync with the doc\n  tools: VS Code, Datadog, dbt, Notion (reluctantly)\n  quote: "I just want the diagram next to the paragraph that explains it."',
@@ -587,6 +660,8 @@ const risk: PrimitiveSpec = {
     { name: "title", type: "string", required: false, description: "One-line risk name (shown as a heading)." },
   ],
   bodyShape: "mixed",
+  holds: "inside",
+  nests: true,
   breaksRuling: false,
   examples: [
     '@risk level=high title="Syntax awkwardness drives churn"\n  New users may bounce in the first hour if the syntax feels like work.\n  mitigation: Strong welcome file, interactive tour, sensible defaults.',
@@ -605,6 +680,8 @@ const assumption: PrimitiveSpec = {
     { name: "confidence", type: "enum", required: false, description: "How sure we are.", enumValues: ["high", "medium", "low"], default: "medium" },
   ],
   bodyShape: "mixed",
+  holds: "inside",
+  nests: true,
   breaksRuling: false,
   examples: [
     '@assumption title="PMs will learn a syntax" confidence=medium\n  Code-adjacent PMs will invest an afternoon to learn .jot if the output is good enough.\n  validation: 3 real PMs try the welcome file unaided; 2/3 produce a usable doc.',
@@ -629,6 +706,8 @@ const sticky: PrimitiveSpec = {
     { name: "cluster", type: "string", required: false, description: "A name for this group. Consecutive stickies sharing one are drawn together under it, which is the only thing the name is for." },
   ],
   bodyShape: "plain",
+  holds: "text",
+  nests: false,
   breaksRuling: true,
   examples: [
     '@sticky color=green cluster="wins"\n  Playground drove 3x installs on launch day',
@@ -650,6 +729,8 @@ const icon: PrimitiveSpec = {
   ],
   planned: true,
   bodyShape: "none",
+  holds: "text",
+  nests: true,
   breaksRuling: false,
   examples: [
     '@icon name=lightbulb Key insight below.',
@@ -767,6 +848,37 @@ export function getAllParams(name: string): ParamSpec[] {
 /** The icon autocomplete should offer first for this primitive, if any. */
 export function getSuggestedIcon(name: string): string | undefined {
   return SUGGESTED_ICONS[name];
+}
+
+/**
+ * Can `child` be written inside `parent`? The whole composition matrix is
+ * this one line: the parent must hold blocks, and the child must be a block
+ * that goes inside others. Unknown names answer false.
+ */
+export function canHold(parent: string, child: string): boolean {
+  const p = getPrimitive(parent);
+  const c = getPrimitive(child);
+  return !!p && !!c && p.holds !== "text" && c.nests;
+}
+
+/**
+ * The matrix for one block, in words: what goes inside it, and whether it can
+ * go inside anything. One phrasing, so the hover card, the docs and the
+ * playground cannot describe the same rule three ways.
+ */
+export function compositionLine(spec: PrimitiveSpec): string {
+  const holds =
+    spec.holds === "inside"
+      ? "Other blocks can go inside it."
+      : spec.holds === "below"
+        ? "A block written inside it is drawn below it."
+        : "Holds text, not other blocks.";
+  return spec.nests ? holds : `${holds} Goes on the page itself, never inside another block.`;
+}
+
+/** The blocks that hold other blocks inside them, for "put it in one of these". */
+export function containers(): PrimitiveSpec[] {
+  return PRIMITIVES.filter((p) => p.holds === "inside");
 }
 
 export function getPrimitivesByGroup(group: PrimitiveGroup): PrimitiveSpec[] {

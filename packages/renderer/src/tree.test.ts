@@ -179,6 +179,13 @@ describe("@tree — the stylesheet keeps the promises", () => {
     expect(css).toMatch(/\.jot-body:has\(> \.jot-figure\) \{ container-type: inline-size; \}/);
   });
 
+  it("fits a figure inside a card or a column to that, not to the page", () => {
+    // Without it 100cqw inside a card meant the whole sheet, and a star model
+    // in a panel drew at full size and ran 19px out of the card's right edge.
+    // Measured in a browser: with it, nothing spills from any card or column.
+    expect(css).toMatch(/\.jot-nested:has\(> \.jot-figure\),\s*\.jotstak \.jot-col:has\(> \.jot-figure\) \{ container-type: inline-size; \}/);
+  });
+
   it("out-ranks the prose list rules, which once kept a scaled tree's text at 16px", () => {
     // .jotstak .jot-body li is (0,2,1); the tree's node rule must beat it.
     expect(css).toMatch(/\.jotstak \.jot-tree \.jot-tree-node \{[^}]*font-size: calc\(16 \* var\(--u, 1px\)\)/);

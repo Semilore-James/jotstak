@@ -334,7 +334,7 @@ function bodyParts(n: BlockNode, diagnostics: Diagnostic[] = []): string {
             : "";
 
   // Nested blocks render after the body's own content. This is what lets a table
-  // sit inside a card, or a metric inside a diagram node.
+  // sit inside a card. Which blocks reach here is the schema's call (`holds`).
   const nested = n.children.map((c) => renderNode(c, diagnostics)).join("");
   return nested ? `${own}<div class="jot-nested">${nested}</div>` : own;
 }
@@ -365,9 +365,11 @@ function renderUnsupported(n: BlockNode, diagnostics: Diagnostic[]): string {
 //
 // Laid out in CSS rather than drawn in SVG. Three reasons, in order of weight:
 //
-//   1. Nodes must be able to CONTAIN other blocks. A metric inside a tree node
-//      is the whole point of composition, and SVG cannot hold arbitrary flow
-//      content without foreignObject, which brings its own problems.
+//   1. Nodes should be able to CONTAIN other blocks. A metric inside a tree
+//      node was the aim of composition, and SVG cannot hold arbitrary flow
+//      content without foreignObject, which brings its own problems. It is
+//      not built: today a block inside a figure is drawn below it (`holds:
+//      "below"` in the schema), and CSS keeps the door open.
 //   2. Text stays selectable, searchable and readable by a screen reader.
 //   3. Boxes inherit the design tokens and the row contract for free; an SVG
 //      would re-implement both and drift.

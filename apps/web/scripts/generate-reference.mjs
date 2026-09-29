@@ -5,7 +5,7 @@
 // with prev/next are readable and one 27-section page is not. Each page shows
 // the real rendered output, built with the actual renderer, not a screenshot.
 
-import { PRIMITIVES, UNIVERSAL_PARAMS, getPrimitive } from "@jotstak/schema";
+import { PRIMITIVES, UNIVERSAL_PARAMS, compositionLine, getPrimitive } from "@jotstak/schema";
 import { RENDER_FUNCTIONS, renderThemeCss, renderLayoutCss, PAGE } from "@jotstak/renderer";
 import { writeFileSync, mkdirSync, rmSync, existsSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -129,6 +129,7 @@ ${meta.blurb}
     md += `## \`@${spec.name}\`\n\n`;
     if (spec.aliases?.length) md += `Also written as ${spec.aliases.map((a) => `\`@${a}\``).join(", ")}.\n\n`;
     md += `${spec.summary}\n\n`;
+    md += `_${compositionLine(spec)}_ [What goes inside what](/docs/functions/#what-goes-inside-what)\n\n`;
 
     if (spec.examples.length > 0) {
       md += demo(spec.examples[0]);
@@ -152,6 +153,36 @@ ${meta.blurb}
   writeFileSync(join(fnDir, `${fn}.md`), md);
 }
 
+/**
+ * The composition matrix, as a reader needs it: four short lists rather than
+ * a 28-by-28 grid, because the whole matrix is one rule — the outer block has
+ * to hold blocks, and the inner one has to be a block that goes inside others.
+ */
+const names = (pred) =>
+  PRIMITIVES.filter(pred)
+    .map((p) => `\`@${p.name}\``)
+    .join(", ");
+const composition = `## What goes inside what
+
+A block indented under another is drawn inside it, drawn below it, or read as
+text. Which one depends on the outer block:
+
+| The outer block | What happens to a block written inside it |
+| --- | --- |
+| ${names((p) => p.holds === "inside")} | **Drawn inside it**, after its own content. In \`@columns\`, a block written at the columns' own indent becomes a column of its own. |
+| ${names((p) => p.holds === "below")} | **Drawn below it.** A figure has nowhere inside it for another block, so a metric under a tree is under the tree, not in one of its nodes. |
+| ${names((p) => p.holds === "text")} | **Read as text.** These hold words, not blocks. |
+
+Some blocks belong to the page itself and never go inside another:
+${names((p) => !p.nests)}.
+
+And anything that is a line of text — a column's lines under its \`key:\`, a
+list item, a node of a tree — holds text too. A block cannot start there.
+
+A block written somewhere it cannot go is never dropped silently: the editor
+underlines it and says where it can go instead.
+`;
+
 // Index page for the group.
 writeFileSync(
   join(fnDir, "index.md"),
@@ -174,6 +205,7 @@ none of it still renders.
 | --- | --- |
 ${entries.map(([fn, m]) => `| [${m.title}](/docs/functions/${fn}/) | ${RENDER_FUNCTIONS[fn].map((n) => `\`@${n}\``).join(", ")} |`).join("\n")}
 
+${composition}
 ## Parameters every function accepts
 
 ${paramTable(UNIVERSAL_PARAMS)}

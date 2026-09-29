@@ -36,8 +36,9 @@
 //           already uses.
 
 import * as vscode from "vscode";
-import { PRIMITIVES, UNIVERSAL_PARAMS, getPrimitive } from "@jotstak/schema";
+import { PRIMITIVES, UNIVERSAL_PARAMS, canHold, compositionLine, getPrimitive } from "@jotstak/schema";
 import type { ParamSpec, PrimitiveSpec } from "@jotstak/schema";
+import { slotAt } from "./composition.js";
 import { isJot } from "./jot-files.js";
 
 /** `@panel`, wherever the cursor is inside it. */
@@ -133,6 +134,10 @@ export function describe(spec: PrimitiveSpec): vscode.MarkdownString {
 
   const example = spec.examples[0];
   if (example) md.appendCodeblock(example, "jot");
+
+  // "Can I put a tree in here?" is the question this answers, and it used to
+  // be answerable only by trying it and reading the page.
+  md.appendMarkdown(`\n_${compositionLine(spec)}_\n`);
 
   if (spec.aliases?.length) {
     md.appendMarkdown(`\nAlso ${spec.aliases.map((a) => `\`@${a}\``).join(", ")}.\n`);
@@ -419,9 +424,16 @@ export function registerLanguageFeatures(context: vscode.ExtensionContext): void
           const spec = started ? getPrimitive(started[1]!) : undefined;
           if (spec) return paramCompletions(spec);
 
-          // Otherwise, every primitive there is.
-          if (!/@[a-zA-Z_]*$/.test(before)) return undefined;
-          return primitiveCompletions(usedHere(doc.getText()));
+          // Otherwise, the blocks that can go HERE. A block only starts a line,
+          // so an `@` mid-line — `owner: @alex` — is somebody's name, not a
+          // request for a list of twenty-eight blocks.
+          if (!/^\s*@[a-zA-Z_]*$/.test(before)) return undefined;
+          const text = doc.getText();
+          const slot = slotAt(text.split(/\r?\n/), position.line, before.indexOf("@"));
+          // Inside a quote, a column's lines or a list item, any block you
+          // picked would be read as words and warned about. Offer nothing.
+          if (slot.kind === "text") return undefined;
+          return primitiveCompletions(usedHere(text), slot.kind === "block" ? slot.parent : undefined);
         },
       },
       "@",
@@ -435,8 +447,14 @@ function allParams(spec: PrimitiveSpec): ParamSpec[] {
   return [...spec.params, ...UNIVERSAL_PARAMS];
 }
 
-export function primitiveCompletions(used: Set<string>): vscode.CompletionItem[] {
-  return PRIMITIVES.map((p) => {
+/**
+ * The blocks to offer, each as a working scaffold. Inside `parent`, only the
+ * ones the composition matrix lets it hold: a margin note or a cover offered
+ * inside a panel is an item that is guaranteed to draw a warning.
+ */
+export function primitiveCompletions(used: Set<string>, parent?: PrimitiveSpec): vscode.CompletionItem[] {
+  const offer = parent ? PRIMITIVES.filter((p) => canHold(parent.name, p.name)) : PRIMITIVES;
+  return offer.map((p) => {
     const item = new vscode.CompletionItem(p.name, vscode.CompletionItemKind.Function);
     item.detail = signature(p);
     item.documentation = describe(p);

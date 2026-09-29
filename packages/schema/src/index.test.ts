@@ -7,6 +7,8 @@ import {
   PRIMITIVES,
   SUGGESTED_ICONS,
   UNIVERSAL_PARAMS,
+  canHold,
+  containers,
   getAllParams,
   getPrimitive,
 } from "./index.js";
@@ -60,6 +62,29 @@ describe("params", () => {
         expect(param.enumValues, `"${param.name}" default`).toContain(param.default);
       }
     }
+  });
+});
+
+describe("the composition matrix", () => {
+  it("never claims a block with no body can hold one", () => {
+    for (const p of PRIMITIVES) {
+      if (p.bodyShape === "none") expect(p.holds, `@${p.name}`).toBe("text");
+    }
+  });
+
+  it("is one rule: the parent holds blocks and the child nests", () => {
+    expect(canHold("panel", "tree")).toBe(true);
+    expect(canHold("tree", "metric")).toBe(true); // drawn below it
+    expect(canHold("quote", "tree")).toBe(false); // a quote holds text
+    expect(canHold("panel", "note")).toBe(false); // a note belongs to the page
+    expect(canHold("warn", "table")).toBe(true); // aliases resolve
+    expect(canHold("panel", "nonsense")).toBe(false);
+  });
+
+  it("offers a container for anything that nests", () => {
+    // Every "can't go here" message points somewhere, so somewhere has to exist.
+    expect(containers().map((p) => p.name)).toContain("panel");
+    expect(PRIMITIVES.filter((p) => p.nests).every((c) => canHold("panel", c.name))).toBe(true);
   });
 });
 

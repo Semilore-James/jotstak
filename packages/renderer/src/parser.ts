@@ -198,6 +198,162 @@ function extractNested(
   return { own, children };
 }
 
+// ── Composition ──────────────────────────────────────────────────────────
+//
+// Which blocks go inside which is the schema's call (`holds` and `nests`), not
+// each renderer's. Before it was, a tree in a panel worked, a tree in a column
+// printed its own source back as a paragraph, and a tree in a quote vanished,
+// all three without a word. The rule now is one sentence: a block written
+// somewhere it cannot go keeps its words as text, and a warning says where it
+// can go instead.
+
+const DIRECTIVE_RE = /^@([a-zA-Z_][a-zA-Z0-9_]*)/;
+
+/** The @-name a node was written as, for the node types that have one. */
+function nameOf(n: Node): string | undefined {
+  switch (n.type) {
+    case "block":
+      return n.writtenAs ?? n.name;
+    case "margin_note":
+      return "note";
+    case "quote":
+      return "quote";
+    case "heading":
+      return "heading";
+    case "divider":
+      return "divider";
+    case "list":
+      return n.ordered ? "numbered" : "bullet";
+    default:
+      return undefined;
+  }
+}
+
+/** Every word a body holds, children included, so a demoted block loses nothing. */
+function bodyText(body: BlockBody): string[] {
+  const tree = (nodes: TreeNode[]): string[] => nodes.flatMap((t) => [t.text, ...tree(t.children)]);
+  const fields = (fs: Field[]): string[] =>
+    fs.flatMap((f) => [`${f.key}: ${f.value}`.trim(), ...tree(f.children)]);
+  switch (body.shape) {
+    case "plain":
+      return body.lines;
+    case "keyed":
+      return fields(body.fields);
+    case "indented":
+      return tree(body.roots);
+    case "mixed":
+      return [...fields(body.fields), ...tree(body.roots)];
+    default:
+      return [];
+  }
+}
+
+/**
+ * Check one block nested inside `parent` against the matrix. A block that
+ * belongs to the page rather than to a block — a margin note, a cover, a
+ * sticky — is turned back into its words, where it used to be rendered as
+ * nothing (a note) or as a block with a wrong explanation (a sticky said it
+ * had "no renderer yet").
+ */
+function admit(child: Node, parent: PrimitiveSpec, diagnostics: Diagnostic[]): Node {
+  const written = nameOf(child);
+  const spec = written ? getPrimitive(written) : undefined;
+  if (!written || !spec) return child;
+
+  if (!spec.nests) {
+    const hint =
+      spec.name === "note"
+        ? `Write it at the left edge, straight after the ${parent.name}, and it sits in the margin beside it.`
+        : "Write it at the left edge instead.";
+    diagnostics.push({
+      severity: "warning",
+      message: `\`@${written}\` goes on the page itself, not inside another block, so inside \`@${parent.name}\` it is read as text. ${hint}`,
+      line: child.position.line,
+      column: child.position.column,
+    });
+    const words =
+      child.type === "block"
+        ? [child.title, ...bodyText(child.body)]
+        : child.type === "margin_note"
+          ? child.lines
+          : [];
+    return { type: "markdown", text: words.filter(Boolean).join("\n"), position: child.position };
+  }
+
+  if (parent.holds === "below") {
+    diagnostics.push({
+      severity: "info",
+      message: `\`@${written}\` is drawn below this ${parent.name}, not inside it: a figure has nowhere inside it for another block. Write it at the left edge to say so.`,
+      line: child.position.line,
+      column: child.position.column,
+    });
+  }
+  return child;
+}
+
+/**
+ * Report a `@block` written where only text can go: the body of a block that
+ * holds text, a column of @columns, a line of a tree. These are read as words,
+ * which is correct — a directive only means something where a block can be —
+ * but nothing on the page says that the words were meant to be a figure.
+ */
+function reportStrayBlocks(
+  own: LineToken[],
+  baseIndent: number,
+  parent: PrimitiveSpec,
+  diagnostics: Diagnostic[],
+): void {
+  own.forEach((t, i) => {
+    if (t.kind === "blank") return;
+    const m = DIRECTIVE_RE.exec(t.content);
+    const child = m ? getPrimitive(m[1]!) : undefined;
+    if (!child) return;
+
+    let owner: LineToken | undefined;
+    for (let k = i - 1; k >= 0 && t.indent > baseIndent; k--) {
+      const o = own[k]!;
+      if (o.kind !== "blank" && o.indent < t.indent) {
+        owner = o;
+        break;
+      }
+    }
+    // Under another stray block, which has already been reported: one warning
+    // per mistake, not one per line of it.
+    if (owner && DIRECTIVE_RE.test(owner.content) && getPrimitive(DIRECTIVE_RE.exec(owner.content)![1]!)) return;
+
+    const at = `\`@${m![1]}\``;
+    const elsewhere = child.nests
+      ? "A `@panel` can hold it."
+      : "It goes on the page itself, at the left edge.";
+
+    let message: string;
+    if (!owner) {
+      message = `${at} can't go inside \`@${parent.name}\`, which holds text rather than blocks. ${elsewhere}`;
+    } else {
+      const field = isFieldLine(owner.content) ? FIELD_RE.exec(owner.content)![1]!.trim() : undefined;
+      const label = bareLabel(owner.content);
+      const where =
+        field !== undefined
+          ? parent.name === "columns"
+            ? `the \`${field}\` column`
+            : `the \`${field}\` field`
+          : parent.name === "tree"
+            ? `the node “${label}”`
+            : `the line “${label}”`;
+      const hint =
+        parent.name === "columns"
+          ? "Write it at the columns' own indent and it becomes a column of its own."
+          : parent.holds === "inside"
+            ? `Write it at the ${parent.name}'s own indent and it goes inside the ${parent.name}.`
+            : parent.holds === "below"
+              ? `Write it at the ${parent.name}'s own indent and it is drawn below the ${parent.name}.`
+              : elsewhere;
+      message = `${at} can't go under ${where}, which holds text rather than blocks. ${hint}`;
+    }
+    diagnostics.push({ severity: "warning", message, line: t.line, column: t.column });
+  });
+}
+
 /** Split body lines into base-indent fields and everything else, per body shape. */
 function shapeBody(
   body: LineToken[],
@@ -473,6 +629,19 @@ export function parseTokens(
                   position: posOf(n),
                 });
               } else {
+                // A block under a list item. It stays a continuation — the
+                // matrix says a list item holds text — but it says so, because
+                // "A point @tree Root Child" on one line is not what anyone
+                // writing a tree under a point was trying to get.
+                const stray = DIRECTIVE_RE.exec(n.content);
+                if (stray && getPrimitive(stray[1]!)) {
+                  diagnostics.push({
+                    severity: "warning",
+                    message: `\`@${stray[1]}\` can't go under a list item, which holds text rather than blocks. Write it at the left edge, after the list.`,
+                    line: n.line,
+                    column: n.column,
+                  });
+                }
                 // No marker: a wrapped continuation of the item above, not a
                 // child of it. Markdown's lazy continuation — losing this makes
                 // every line-wrapped bullet sprout a phantom sub-bullet.
@@ -565,7 +734,17 @@ export function parseTokens(
         );
         const realLines = collected.body.filter((b) => b.kind !== "blank");
         const baseIndent = realLines.length > 0 ? Math.min(...realLines.map((b) => b.indent)) : 2;
-        const { own, children: nested } = extractNested(collected.body, baseIndent, diagnostics);
+        // A block that holds text keeps every line as text, including one that
+        // starts with `@`. Pulling those out as blocks is what used to lose
+        // them: a quote, a heading or a note had nowhere to render a child,
+        // so the child and everything under it simply went.
+        const extracted =
+          spec.holds === "text"
+            ? { own: collected.body, children: [] as Node[] }
+            : extractNested(collected.body, baseIndent, diagnostics);
+        const own = extracted.own;
+        const nested = extracted.children.map((c) => admit(c, spec, diagnostics));
+        reportStrayBlocks(own, baseIndent, spec, diagnostics);
         const body = shapeBody(own, spec.bodyShape, diagnostics);
 
         // Normalise onto the node type that matches the concept, so the
@@ -573,13 +752,21 @@ export function parseTokens(
         switch (spec.name) {
           case "heading": {
             const lvl = Number(resolved.params.level ?? "1");
+            const lines = bodyToLines(body);
             children.push({
               type: "heading",
               level: (lvl >= 1 && lvl <= 6 ? lvl : 1) as HeadingLevel,
-              text: resolved.title || bodyToLines(body)[0] || "",
+              text: resolved.title || lines[0] || "",
               params: resolved.params,
               position: startPos,
             });
+            // A heading is one line. Whatever else was indented under it used
+            // to go nowhere at all — found by rendering every block inside
+            // every other one — so it follows the heading as a paragraph.
+            const rest = resolved.title ? lines : lines.slice(1);
+            if (rest.some((l) => l.trim())) {
+              children.push({ type: "markdown", text: rest.join("\n"), position: startPos });
+            }
             break;
           }
           case "divider": {

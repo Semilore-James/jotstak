@@ -40,6 +40,12 @@ export function renderTreeCss(scope: string): string {
    back in phase. An outline wraps like prose and sets neither, so all of this
    resolves to "invalid", which CSS turns back into ordinary auto sizing. */
 ${scope} .jot-body:has(> .jot-figure) { container-type: inline-size; }
+/* A figure inside another block fits THAT block, not the page. With only the
+   row above as a container, 100cqw inside a card still meant the whole sheet:
+   a star model in a panel drew at full size in a box 38px narrower and ran
+   19px out of its right edge. The fluid figures hid it by stretching. */
+${scope} .jot-nested:has(> .jot-figure),
+${scope} .jot-col:has(> .jot-figure) { container-type: inline-size; }
 ${scope} .jot-body:has(> .jot-figure[data-width="full"]) { grid-column: 1 / -1; }
 ${scope} .jot-figure {
   --u: min(1px, calc(100cqw / var(--jot-w)));

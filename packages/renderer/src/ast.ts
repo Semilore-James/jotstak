@@ -54,8 +54,9 @@ export interface BlockNode {
   /**
    * Blocks nested inside this one's body. This is what makes primitives
    * COMPOSE rather than each being a special case: a table can sit inside a
-   * card, a metric inside a diagram node. Without it every combination would
-   * need its own primitive, which is how a language ends up with thirty.
+   * card, a quote inside a decision. Without it every combination would need
+   * its own primitive, which is how a language ends up with thirty. Which
+   * blocks may go here is the schema's `holds` and `nests`, not this field's.
    */
   children: Node[];
   position: Position;
