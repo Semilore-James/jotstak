@@ -1,14 +1,14 @@
 ---
 title: Patterns
-description: Short answers to the shapes that come up constantly. For whole documents, see the cookbook.
+description: Short answers to the shapes that come up constantly. Copy one and change the words.
 sidebar:
-  order: 2
+  order: 1
 ---
 
-The [function pages](/docs/functions/) describe pieces one at a time. This page
-is the shapes that come up over and over — a decision, a risk, a number worth
-quoting. Copy one and change the words. For whole documents end to end, see the
-[cookbook](/docs/cookbook/).
+The [block pages](/docs/functions/) describe pieces one at a time. This page is
+the shapes that come up over and over — a decision, a risk, a number worth
+quoting. Copy one and change the words. For a whole document end to end, see
+[A product tour](/docs/examples/product-tour/).
 
 ## A decision worth finding again in six months
 
@@ -59,17 +59,36 @@ status.
   Growing 8% week-over-week since the playground shipped.
 ```
 
+## A point, and the picture that explains it
+
+Indent a block under a point in a list and it sits under that point, so the
+argument and the diagram stay in the order you would say them.
+
+```jot-demo
+- Retention is where the money is
+  @tree dir=down nodes=boxed
+    Retention
+      Onboarding
+      Habit loop
+- Acquisition can wait a quarter
+```
+
 ## Two things side by side
 
 Use `@columns` when a diagram and its explanation belong on the same line of
-thought — the thing that normally forces a second tool.
+thought — the thing that normally forces a second tool. Anything written under
+a column's name goes in that column, a diagram included.
 
 ```jot-demo
 @columns(ratio="1:1")
   What we tried:
-    Seat-based pricing with volume discounts
+    Seat-based pricing with volume discounts.
+    @tree dir=down
+      Seats
+        Volume discount
+        Annual plan
   What we learned:
-    Discounts did not change the adoption behaviour
+    Discounts did not change the adoption behaviour.
 ```
 
 ## Metadata at the top of a spec

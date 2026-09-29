@@ -71,7 +71,7 @@ const FUNCTIONS = {
   journey: { title: "Journey", blurb: "Stages left to right, optionally in parallel lanes." },
   star: { title: "Star model", blurb: "A central entity with satellites around it." },
   sticky: { title: "Sticky notes", blurb: "Clustered notes, for synthesis." },
-  freeform: { title: "Freeform", blurb: "The escape hatch, for what the named functions cannot express. Reach for a named function first." },
+  freeform: { title: "Freeform", blurb: "The escape hatch, for what the named blocks cannot express. Reach for a named block first." },
   inline: { title: "Inline marks", blurb: "Marks that sit inside a line rather than forming a block." },
   config: { title: "Page setup", blurb: "Configures the document. Renders nothing itself." },
 };
@@ -82,14 +82,14 @@ const esc = (s) => String(s).replace(/\|/g, "\\|").replace(/</g, "&lt;");
 const yaml = (s) => JSON.stringify(String(s).replace(/\s+/g, " ").trim());
 
 function paramTable(params) {
-  if (params.length === 0) return "_No parameters of its own._\n";
+  if (params.length === 0) return "_No settings of its own._\n";
   const rows = params.map((p) => {
     const type =
       p.type === "enum" ? (p.enumValues ?? []).map((v) => `\`${v}\``).join(" · ") : `\`${p.type}\``;
     const meaning = (p.planned ? "**Not built yet: does nothing for now.** " : "") + esc(p.description);
     return `| \`${p.name}\` | ${type} | ${p.required ? "**yes**" : "no"} | ${p.default ? `\`${p.default}\`` : "—"} | ${meaning} |`;
   });
-  return ["| Param | Type | Required | Default | Meaning |", "| --- | --- | --- | --- | --- |", ...rows].join("\n") + "\n";
+  return ["| Setting | Type | Required | Default | Meaning |", "| --- | --- | --- | --- | --- |", ...rows].join("\n") + "\n";
 }
 
 // Demos are plain fenced blocks. A remark plugin renders them during Markdown
@@ -123,11 +123,16 @@ ${meta.blurb}
 `;
 
   if (names.length > 1) {
-    md += `Written as ${names.map((n) => `\`@${n}\``).join(", ")} — all one function, so they render through the same code and stay visually consistent.\n\n`;
+    md += `Written as ${names.map((n) => `\`@${n}\``).join(", ")} — one look under several names, so they always match.\n\n`;
   }
 
   for (const spec of specs) {
     md += `## \`@${spec.name}\`\n\n`;
+    // Said before anything else on the page, because the summary and example
+    // below describe what it WILL do.
+    if (spec.planned) {
+      md += `:::caution[Not built yet]\nThis block is planned. It already reads and keeps your words, and shows them as plain text for now.\n:::\n\n`;
+    }
     if (spec.aliases?.length) md += `Also written as ${spec.aliases.map((a) => `\`@${a}\``).join(", ")}.\n\n`;
     md += `${spec.summary}\n\n`;
     md += `_${compositionLine(spec)}_ [What goes inside what](/docs/functions/#what-goes-inside-what)\n\n`;
@@ -136,7 +141,7 @@ ${meta.blurb}
       md += demo(spec.examples[0]);
     }
 
-    md += `<details>\n<summary>Parameters</summary>\n\n${paramTable(spec.params)}\n</details>\n\n`;
+    md += `<details>\n<summary>Settings</summary>\n\n${paramTable(spec.params)}\n</details>\n\n`;
 
     if (spec.examples.length > 1) {
       // Every example renders, because an example of a *visual* parameter that
@@ -189,26 +194,27 @@ underlines it and says where it can go instead.
 writeFileSync(
   join(fnDir, "index.md"),
   `---
-title: "All functions"
-description: "Every rendering function in Jotstak, and the names that map onto it."
+title: "All blocks"
+description: "Every block in Jotstak, grouped by how it looks, with what goes inside what."
 sidebar:
   order: 0
 ---
 
-Jotstak has **${entries.length} rendering functions** across **${PRIMITIVES.length} names**. Several
-names are presets over the same function — \`@risk\` and \`@decision\` are both a
-panel and produce identical markup with different defaults. **Learn the
-functions; the presets are optional shorthand.**
+Jotstak has **${PRIMITIVES.length} blocks**, and they come in **${entries.length} looks**. Several blocks
+share a look: \`@risk\` and \`@decision\` are both panels, with a different label
+and colour filled in for you. **Learn the looks; the named blocks are
+shorthand.** ${PRIMITIVES.filter((p) => p.planned).length} of them are planned and not built yet:
+${PRIMITIVES.filter((p) => p.planned).map((p) => `\`@${p.name}\``).join(", ")}.
 
-Everything here is optional. \`.jot\` is a superset of Markdown, so a file using
-none of it still renders.
+Everything here is optional. A \`.jot\` file is Markdown with more it can do,
+so a file using none of it still renders.
 
-| Function | Written as |
+| Page | Blocks |
 | --- | --- |
 ${entries.map(([fn, m]) => `| [${m.title}](/docs/functions/${fn}/) | ${RENDER_FUNCTIONS[fn].map((n) => `\`@${n}\``).join(", ")} |`).join("\n")}
 
 ${composition}
-## Parameters every function accepts
+## Settings every block accepts
 
 ${paramTable(UNIVERSAL_PARAMS)}
 `,

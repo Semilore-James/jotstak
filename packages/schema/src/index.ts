@@ -139,24 +139,25 @@ const page: PrimitiveSpec = {
   name: "page",
   group: "structure",
   short:
-    "Page setup for the whole document: margins, ruling, and what Enter does.",
+    "Page setup for the whole document. Today it sets what a single Enter does.",
   summary:
-    "Page setup for the rendered document. Controls which margin channels exist, how wide they are, and what the paper ruling looks like. Declare once near the top; it applies to the whole document. Every field is optional with a sensible default.",
+    "Page setup for the rendered document. Declare once near the top; it applies to the whole document. Today it sets one thing, `breaks`: what a single Enter in your prose means. The margin, ruling and rhythm settings are named and planned, but not built yet.",
   params: [
-    { name: "margin", type: "enum", required: false, description: "Which margin channels exist for notes.", enumValues: ["right", "left", "both", "none"], default: "right" },
-    { name: "margin_width", type: "enum", required: false, description: "How much page the margin channel takes.", enumValues: ["narrow", "normal", "wide"], default: "normal" },
-    { name: "rule", type: "enum", required: false, description: "Paper ruling behind the text.", enumValues: ["ruled", "dotted", "grid", "blank"], default: "ruled" },
-    { name: "rhythm", type: "number", required: false, description: "Baseline grid in px. Everything locks to this; drawn blocks round up to whole multiples of it.", default: "28" },
+    // The four below are specified and read by nothing yet (ENG-34's rule).
+    { name: "margin", type: "enum", required: false, description: "Which margin channels exist for notes.", enumValues: ["right", "left", "both", "none"], default: "right", planned: true },
+    { name: "margin_width", type: "enum", required: false, description: "How much page the margin channel takes.", enumValues: ["narrow", "normal", "wide"], default: "normal", planned: true },
+    { name: "rule", type: "enum", required: false, description: "Paper ruling behind the text.", enumValues: ["ruled", "dotted", "grid", "blank"], default: "ruled", planned: true },
+    { name: "rhythm", type: "number", required: false, description: "Baseline grid in px. Everything locks to this; drawn blocks round up to whole multiples of it.", default: "28", planned: true },
     { name: "breaks", type: "enum", required: false, description: "What a single Enter does in prose. `on` (the default) keeps the line you broke — this is ruled paper, and a line you ended is a line. `off` restores Markdown's own rule, where a single newline is a space and only a blank line starts a paragraph: set it when pasting a .md file that was hard-wrapped to a column width, so its wrap points do not become real breaks.", enumValues: ["on", "off"], default: "on" },
   ],
   bodyShape: "none",
   holds: "text",
   nests: false,
   breaksRuling: false,
+  // Only what works. These used to show margin=, rule= and rhythm=, which the
+  // docs then rendered as examples of settings that did nothing.
   examples: [
-    "@page margin=both rule=ruled",
-    "@page margin=none rule=blank",
-    "@page margin=right margin_width=wide rhythm=32",
+    "@page breaks=off",
   ],
 };
 
@@ -334,12 +335,14 @@ const note: PrimitiveSpec = {
   short:
     "A handwritten note in the margin, beside the block it follows.",
   summary:
-    "Margin note in the handwritten typeface. By default it anchors to the block it follows in source and floats beside it in the margin channel, joined by a tick rule. The block it is attached to narrows to make room; every other block keeps the full page width. Overlapping notes are nudged apart by the renderer — you never place them by hand.",
+    "Margin note in the handwritten typeface. It belongs to the block it follows in source and sits beside it in the margin, joined by a tick rule. The block it is attached to narrows to make room; every other block keeps the full page width. Several notes on one block stack; a note longer than its block makes the row taller rather than running into the next. On a narrow screen notes fold in under the block they belong to.",
   params: [
-    { name: "side", type: "enum", required: false, description: "Which margin channel. `right` is default; `left` uses the left channel (requires @page margin: left or both).", enumValues: ["right", "left"], default: "right" },
-    { name: "align", type: "enum", required: false, description: "Vertical alignment against its anchor block — matters when the anchor is tall, like a diagram.", enumValues: ["top", "middle", "bottom"], default: "top" },
-    { name: "at", type: "string", required: false, description: "Anchor to a specific block by its `id=` instead of the preceding block. Lets you group notes together in source while still pointing at the right place." },
-    { name: "loose", type: "boolean", required: false, description: "Detach from any anchor — no tick rule. The note just flows in the margin at this point. For general asides about a whole section.", default: "false" },
+    // All four are specified and read by nothing yet (ENG-34's rule): a note
+    // is drawn from its words alone, beside the block it follows.
+    { name: "side", type: "enum", required: false, description: "Which margin channel. `right` is default; `left` uses the left channel (requires @page margin: left or both).", enumValues: ["right", "left"], default: "right", planned: true },
+    { name: "align", type: "enum", required: false, description: "Vertical alignment against its anchor block — matters when the anchor is tall, like a diagram.", enumValues: ["top", "middle", "bottom"], default: "top", planned: true },
+    { name: "at", type: "string", required: false, description: "Anchor to a specific block by its `id=` instead of the preceding block. Lets you group notes together in source while still pointing at the right place.", planned: true },
+    { name: "loose", type: "boolean", required: false, description: "Detach from any anchor — no tick rule. The note just flows in the margin at this point. For general asides about a whole section.", default: "false", planned: true },
   ],
   bodyShape: "plain",
   holds: "text",
@@ -347,9 +350,7 @@ const note: PrimitiveSpec = {
   breaksRuling: false,
   examples: [
     "@note revisit this at scale",
-    "@note side=left align=middle\n  The fan-out here is the risky part.",
-    '@decision title="Use Astro" id=astro-choice\n\n@note at=astro-choice\n  Revisit when traffic grows past the free tier.',
-    "@note loose\n  General thoughts on this section, not tied to any one line.",
+    '@decision title="Move to usage-based pricing" status=accepted\n  context: Seat pricing punishes the teams who adopt fastest\n\n@note\n  The fan-out here is the risky part.',
   ],
 };
 
@@ -646,7 +647,7 @@ const persona: PrimitiveSpec = {
     "Persona card. Body uses `key: value` lines for structured fields. Keys are freeform — use whatever fields suit the persona (name, role, goal, frustration, quote, tools, context). Renders as a styled card with the name prominent.",
   params: [
     { name: "name", type: "string", required: true, description: "Persona name or archetype label." },
-    { name: "image", type: "string", required: false, description: "Path or URL to an avatar image." },
+    { name: "image", type: "string", required: false, description: "Path or URL to an avatar image.", planned: true },
   ],
   bodyShape: "keyed",
   holds: "inside",
@@ -782,7 +783,7 @@ export const UNIVERSAL_PARAMS: ParamSpec[] = [
     type: "string",
     required: false,
     description:
-      "A label for this block so other things can point at it — `@note at=<id>`, footnotes, cross-references. Never rendered.",
+      "A name for this block, so a link can jump straight to it: `#pricing-decision` after the page's address. Never shown on the page.",
   },
   {
     name: "width",

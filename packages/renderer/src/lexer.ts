@@ -160,7 +160,7 @@ function parseInlineParams(
     if (spec.planned) {
       diagnostics.push({
         severity: "info",
-        message: `\`${key}\` is not built yet, so it does nothing for now. It waits on the icon set.`,
+        message: `\`${key}\` is not built yet, so it does nothing for now.`,
         line: lineNum,
         column: 0,
       });

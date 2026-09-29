@@ -125,7 +125,7 @@ describe("settings that are not built yet (ENG-34)", () => {
   it("say so when used, and still parse", () => {
     const { diagnostics } = render('@panel icon=star title="P"\n  Words', { mode: "notebook" });
     expect(diagnostics.map((d) => `${d.severity}: ${d.message}`)).toEqual([
-      "info: `icon` is not built yet, so it does nothing for now. It waits on the icon set.",
+      "info: `icon` is not built yet, so it does nothing for now.",
     ]);
   });
 });

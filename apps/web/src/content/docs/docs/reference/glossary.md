@@ -18,8 +18,12 @@ indented.
 **Directive** — the `@` line that starts a block. `@risk` starts a risk,
 `@tree` starts a diagram.
 
-**Setting** — something in brackets on the `@` line that changes how the block
-looks: `@tree(dir=right)`. Written `param` in the reference tables.
+**Setting** — something on the `@` line that changes how the block looks:
+`@tree dir=right`, or in brackets, `@tree(dir=right)`. A setting marked *not
+built yet* is planned, and does nothing for now.
+
+**Look** — how a block is drawn. Several blocks share one: `@risk` and
+`@decision` are both panels, with a different label and colour.
 
 **Field** — a `key: value` line inside a block. A decision has `context:`,
 `choice:` and `consequences:` fields.

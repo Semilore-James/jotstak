@@ -675,8 +675,10 @@ ${renderPageCss()}
     // The blocks the renderer reads the shared width setting on. Offering it
     // on a panel would be a chip that does nothing.
     const READS_WIDTH = new Set(["table", "tree", "star_model", "journey", "matrix", "timeline", "cover"]);
+    // Nor anything not built yet: a chip that writes a setting nothing reads
+    // is the exact fault ENG-34 took out of the editor.
     const settingsOf = (spec: PrimitiveSpec): ParamSpec[] => [
-      ...spec.params,
+      ...spec.params.filter((p) => !p.planned),
       ...(READS_WIDTH.has(spec.name) ? UNIVERSAL_PARAMS.filter((p) => p.name === "width") : []),
     ];
     const choicesOf = (p: ParamSpec): string[] | undefined =>

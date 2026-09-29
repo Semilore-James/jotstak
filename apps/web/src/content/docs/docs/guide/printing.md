@@ -1,20 +1,50 @@
 ---
-title: "Pages and printing"
-description: "Your document is A4, and it prints like it."
-draft: true
+title: "Pages, print and PDF"
+description: "What you see is a page. Print it, or save it as a PDF, and you get the same thing on paper."
 sidebar:
-  order: 7
+  order: 5
 ---
 
-<!-- SHELL PAGE. An outline of what this page covers, not the finished
-     page. `draft: true` keeps it off the site until it is written. -->
+Every document is a sheet of A4. On screen it scrolls as one long page; printed,
+it breaks into real pages, and nothing is cut off or rearranged on the way.
 
-What you see is a page. Print it and you get the same thing on paper, with nothing cut off or reflowed.
+## Where the page breaks go
 
-## What this page covers
+You do not place them. When a document is printed:
 
-- A document is A4 by default
-- The screen scrolls; printing puts the breaks in sensible places
-- A block never splits away from its margin note
-- Something too wide for the page gets a sideways page of its own
-- Print to PDF from the playground today
+- a block that does not fit at the bottom of a page moves to the next one
+  whole, rather than being cut in two
+- a heading never sits alone at the bottom of a page, apart from what it
+  introduces
+- a block and the margin notes beside it move together
+- a diagram too wide for the page gets a sideways page of its own
+
+A block taller than a whole page is the one thing allowed to continue onto the
+next.
+
+## A break of your own
+
+When you want a new page at a particular point — an appendix, a section someone
+will hand on separately — write `@pagebreak`. It shows on screen as a marked
+line, so you can see where it will fall.
+
+```jot-demo
+The last line of the summary.
+
+@pagebreak Appendix
+
+The appendix starts on a page of its own.
+```
+
+## Saving a PDF
+
+- **In the playground:** click **Save as PDF**. Your browser's print window
+  opens; choose *Save as PDF*.
+- **In VS Code:** run **Jotstak: Export…** and pick **PDF**. The document opens
+  in your browser with the print window; choose *Save as PDF*.
+
+The same Export menu can also save a single **HTML file** that opens anywhere
+with no internet, or **copy the document** to paste into an email or a wiki.
+
+Notebook mode prints as it looks, paper and lines included. Doc mode prints on
+plain white.

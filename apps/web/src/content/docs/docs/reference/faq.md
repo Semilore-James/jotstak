@@ -1,21 +1,59 @@
 ---
 title: "FAQ"
-description: "The questions people ask before reading anything else."
-draft: true
+description: "Short answers, each pointing to the page that goes further."
 sidebar:
-  order: 1
+  order: 2
 ---
 
-<!-- SHELL PAGE. An outline of what this page covers, not the finished
-     page. `draft: true` keeps it off the site until it is written. -->
+## Is this just Markdown?
 
-Short answers, each linking to the page that goes deeper.
+It is Markdown with more it can do: blocks for things like decisions, risks,
+tables and diagrams, notes in the margin, and `==highlight==`. There is one
+difference from Markdown, and it is small: pressing Enter ends a line.
+[Text and emphasis](/docs/guide/text/) explains why.
 
-## What this page covers
+## Will my existing `.md` file work?
 
-- Is this just Markdown?
-- Does my existing `.md` file work? (yes, as it is)
-- Is anything uploaded? (no — it runs on your machine)
-- Can I get a PDF?
-- Why not Mermaid, or Miro, or Docs?
-- What happens to my file if Jotstak goes away?
+Yes, as it is. Rename it to `.jot`. If it was wrapped at a fixed width, put
+`@page breaks=off` at the top and its lines join back up the way Markdown would
+join them.
+
+## Is anything I write uploaded?
+
+No. The playground draws your document in your own browser; nothing you type
+leaves the page. This website counts page visits, without cookies or anything
+that identifies you, and that is all it sees.
+
+## Can I get a PDF?
+
+Yes, from the playground or from VS Code. See
+[Pages, print and PDF](/docs/guide/printing/).
+
+## Where can I use it?
+
+In the [playground](/playground), in your browser, with nothing to install. A VS
+Code extension, with a live preview beside your file, is being prepared for the
+Marketplace.
+
+## Why not Mermaid, Miro or Google Docs?
+
+- **Mermaid** draws a diagram. Jotstak is the whole document the diagram sits
+  in — the prose, the tables and the notes — laid out on real pages.
+- **Miro** is a canvas you drag things around on, kept apart from the document
+  that explains them. In Jotstak the diagram is text in the same file, so the two
+  change together.
+- **Google Docs** is for prose. A diagram in it is a pasted picture that goes out
+  of date. In Jotstak it is written out, so editing it is editing text.
+
+## What happens to my files if Jotstak goes away?
+
+They are plain text. Any text editor opens them, and the Markdown parts read as
+Markdown anywhere. Jotstak itself is open source under the MIT licence.
+
+## Why is something underlined, or not showing?
+
+The editor and the playground explain themselves. An **error** means something
+could not be drawn, a **warning** means it was drawn but probably not as you
+meant, and **info** means a choice was made you should know about. A block
+written somewhere it cannot go is the most common one:
+[What goes inside what](/docs/functions/#what-goes-inside-what) has the list.

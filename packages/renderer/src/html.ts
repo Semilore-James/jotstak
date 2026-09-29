@@ -160,7 +160,7 @@ function renderQuote(n: QuoteNode): string {
     .join(" · ");
   const tag = n.params.tag ? `<span class="jot-badge">${escapeHtml(n.params.tag)}</span>` : "";
   const caption = credit || tag ? `<cite>${credit}${tag}</cite>` : "";
-  return `<blockquote class="jot-quote">${text}${caption}</blockquote>`;
+  return `<blockquote class="jot-quote"${attr("id", n.params.id)}>${text}${caption}</blockquote>`;
 }
 
 function renderNote(n: MarginNoteNode): string {

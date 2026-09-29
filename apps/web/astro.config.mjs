@@ -80,22 +80,18 @@ export default defineConfig({
             { label: "Quick start", link: "/docs/start/" },
           ],
         },
-        group("Writing documents", "docs/guide"),
-        group("Cookbook", "docs/cookbook"),
+        // Four sections, every page in them finished. There used to be a
+        // Cookbook, Patterns under Resources, and eleven draft pages; they
+        // were folded into these on 2026-09-29.
+        group("Writing", "docs/guide"),
+        group("Examples", "docs/examples"),
         {
           label: "Reference",
           items: [
+            // One page per look, ordered by the generator. Starlight gives
+            // prev/next across a group for free.
+            { label: "Blocks", collapsed: true, items: [{ autogenerate: { directory: "docs/functions" } }] },
             { autogenerate: { directory: "docs/reference" } },
-            // One page per rendering function, ordered by the generator.
-            // Starlight gives prev/next across a group for free.
-            { label: "Functions", collapsed: true, items: [{ autogenerate: { directory: "docs/functions" } }] },
-          ],
-        },
-        {
-          label: "Resources",
-          items: [
-            { label: "Patterns", link: "/docs/recipes/" },
-            { autogenerate: { directory: "docs/resources" } },
           ],
         },
       ].filter(Boolean),

@@ -2,7 +2,7 @@
 title: "Text and emphasis"
 description: "Line breaks, bold, italics, links and code — everywhere text appears."
 sidebar:
-  order: 5
+  order: 2
 ---
 
 Prose in a `.jot` file is Markdown. If you already write Markdown, you already
