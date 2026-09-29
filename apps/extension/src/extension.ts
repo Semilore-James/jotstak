@@ -77,7 +77,9 @@ export function activate(context: vscode.ExtensionContext): void {
     }),
 
     vscode.commands.registerCommand("jotstak.learnSyntax", () => {
-      void vscode.env.openExternal(vscode.Uri.parse("https://jotstak.com/docs/"));
+      // pages.dev, not jotstak.com: that domain is not registered yet, so the
+      // button opened a page that did not exist. Move it back once it is.
+      void vscode.env.openExternal(vscode.Uri.parse("https://jotstak.pages.dev/docs/"));
     }),
   );
 
