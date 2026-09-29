@@ -7,19 +7,13 @@
 //
 // It costs around half a megabyte of base64. For a document meant to be sent
 // to someone, that is a fair price and it is paid once.
+//
+// The page itself is renderStandalone(), shared with the website's PDF
+// service, so a file exported here and a PDF downloaded there are one page.
 
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import {
-  FONT_FACES,
-  PAGE,
-  render,
-  renderLayoutCss,
-  renderPageCss,
-  renderThemeCss,
-} from "@jotstak/renderer";
-
-const SHEET = PAGE.portrait.content + 2 * PAGE.marginX;
+import { FONT_FACES, renderStandalone } from "@jotstak/renderer";
 
 /** The @font-face rules, with the files inlined as data URIs. */
 function embeddedFonts(mediaDir: string): string {
@@ -38,40 +32,5 @@ function embeddedFonts(mediaDir: string): string {
 }
 
 export function exportHtml(source: string, mediaDir: string, title = "Document"): string {
-  const { html } = render(source, { mode: "notebook" });
-  // No assetBase: the theme emits no @font-face rules of its own, and the
-  // embedded ones above take their place.
-  const theme = renderThemeCss();
-
-  return `<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>${escapeHtml(title)}</title>
-<style>
-${embeddedFonts(mediaDir)}
-${theme}
-${renderLayoutCss()}
-${renderPageCss()}
-body { margin: 0; padding: 24px 16px; background: #e9e3d9; container-type: inline-size; container-name: jot-host; }
-#sheet { width: ${SHEET}px; max-width: 100%; margin: 0 auto; box-shadow: 0 2px 18px rgba(0,0,0,.18); }
-#sheet > .jotstak { zoom: var(--jot-fit); }
-#sheet .jot-doc { padding-inline: ${PAGE.marginX}px; }
-/* Printing this file gives the same A4 pages the editor promised, so the desk
-   the sheet sits on has to get out of the way. */
-@media print {
-  body { padding: 0; background: none; container-type: normal; }
-  #sheet { width: auto; box-shadow: none; }
-  /* The page's margins are the document's own padding in print (renderPageCss),
-     repeated on every page: margins left to the browser came out white, with
-     its header and footer printed in them. */
+  return renderStandalone(source, { mode: "notebook", title, fontCss: embeddedFonts(mediaDir) }).html;
 }
-</style>
-</head>
-<body><div id="sheet">${html}</div></body>
-</html>`;
-}
-
-const escapeHtml = (s: string): string =>
-  s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");

@@ -30,7 +30,10 @@ const HOSTS: Record<string, RegExp> = {
   // to invent a fifth way to size a page. The preview's markup lives in a file
   // of its own so this test reads the thing that draws the page, not a copy.
   "apps/extension/src/webview-shell.ts": /#sheet\b/,
-  "apps/extension/src/export.ts": /#sheet\b/,
+  // The standalone page: what the extension exports, and what the website's
+  // PDF service prints. It lived in apps/extension/src/export.ts until the
+  // second of those needed it.
+  "packages/renderer/src/standalone.ts": /#sheet\b/,
 };
 
 const read = (path: string) =>

@@ -20,9 +20,14 @@ join them.
 
 ## Is anything I write uploaded?
 
-No. The playground draws your document in your own browser; nothing you type
-leaves the page. This website counts page visits, without cookies or anything
-that identifies you, and that is all it sees.
+Only if you download a PDF. The playground draws your document in your own
+browser, and nothing you type leaves the page while you write. When you choose
+**Download → PDF**, the document is sent to our server, printed there by a
+browser, and sent back to you as a file; it is not kept. **Download → Print**
+makes a PDF without sending anything anywhere.
+
+This website also counts page visits, without cookies or anything that
+identifies you.
 
 ## Can I get a PDF?
 

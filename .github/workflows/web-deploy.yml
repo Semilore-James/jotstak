@@ -23,9 +23,12 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: pages project create jotstak --production-branch=main
         continue-on-error: true
+      # From apps/web, so wrangler finds apps/web/functions — the PDF service
+      # (/api/pdf) — and deploys it with the site.
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v4
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy apps/web/dist --project-name=jotstak
+          workingDirectory: apps/web
+          command: pages deploy dist --project-name=jotstak

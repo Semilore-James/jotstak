@@ -38,8 +38,10 @@ The appendix starts on a page of its own.
 
 ## Saving a PDF
 
-- **In the playground:** click **Save as PDF**. Your browser's print window
-  opens; choose *Save as PDF*.
+- **In the playground:** click **Download → PDF**, and the file arrives in your
+  downloads. It is made on our server and not kept. To keep everything on your
+  computer instead, choose **Download → Print** and pick *Save as PDF* in the
+  print window.
 - **In VS Code:** run **Jotstak: Export…** and pick **PDF**. The document opens
   in your browser with the print window; choose *Save as PDF*.
 

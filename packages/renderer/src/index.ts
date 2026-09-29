@@ -73,3 +73,7 @@ export type {
   MarkdownNode,
   Node,
 } from "./ast.js";
+
+// One document as a page of its own, for the file export and the PDF service.
+export { renderStandalone, documentName } from "./standalone.js";
+export type { StandaloneOptions } from "./standalone.js";
