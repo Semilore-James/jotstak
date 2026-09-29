@@ -335,7 +335,7 @@ const note: PrimitiveSpec = {
   short:
     "A handwritten note in the margin, beside the block it follows.",
   summary:
-    "Margin note in the handwritten typeface. It belongs to the block it follows in source and sits beside it in the margin, joined by a tick rule. The block it is attached to narrows to make room; every other block keeps the full page width. Several notes on one block stack; a note longer than its block makes the row taller rather than running into the next. On a narrow screen notes fold in under the block they belong to.",
+    "Margin note in the handwritten typeface. It sits beside the last line written before it: after a list, beside the last point; after a paragraph, beside its last line. The lines beside it make room and take the full page width back below it. Beside a box — a card, a table, a diagram — the box narrows instead, since a box cannot wrap. Several notes stack in the order written; a note longer than its text makes the row taller rather than running into the next. On a narrow screen notes fold in under the block they belong to.",
   params: [
     // All four are specified and read by nothing yet (ENG-34's rule): a note
     // is drawn from its words alone, beside the block it follows.

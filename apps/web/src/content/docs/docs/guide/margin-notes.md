@@ -27,12 +27,15 @@ For a longer note, put the text on the lines under `@note`, indented:
 
 ## Where it goes
 
-- **Beside the block it follows**, in the margin, joined to it by a short line.
-  That block narrows to make room; every other block keeps the full width of the
-  page.
-- **Several notes on one block** stack in the margin, in the order you wrote them.
-  A note longer than its block makes that part of the page taller rather than
-  running into what comes next.
+- **Beside the last line you wrote before it.** Written after a list, it sits
+  beside the last point; after a paragraph, beside its last line. The lines next
+  to it make room, and once it ends the text takes the full width of the page
+  again.
+- **Beside a box** — a card, a table, a diagram — the box narrows to sit next to
+  it instead, because a box cannot wrap around anything.
+- **Several notes in a row** stack, in the order you wrote them. A note longer
+  than the text beside it makes that part of the page taller rather than running
+  into what comes next.
 - **On a narrow screen** there is no room for a margin, so a note moves in under
   the block it belongs to.
 - **In doc mode** the note stays beside its block, set more quietly.

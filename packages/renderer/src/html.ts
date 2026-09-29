@@ -78,12 +78,32 @@ const attr = (name: string, value: string | undefined): string =>
 
 // ── Node renderers ───────────────────────────────────────────────────────
 
-function renderHeading(n: HeadingNode): string {
+function renderHeading(n: HeadingNode, tail = ""): string {
   const id = n.params.id;
   // One class per level, all six. They used to collapse onto .jot-h3 past
   // three, which made @h4 and @h5 indistinguishable from each other and from
   // @h3 — six levels that produce three looks are not six levels.
-  return `<h${n.level} class="jot-h${n.level}"${attr("id", id)}>${inline(n.text)}</h${n.level}>`;
+  return `<h${n.level} class="jot-h${n.level}"${attr("id", id)}>${tail}${inline(n.text)}</h${n.level}>`;
+}
+
+/**
+ * Put `tail` at the start of the last line of the paragraph `html` ends with:
+ * after its last line break, or at its start if it has none. Nothing if the
+ * html does not end in a paragraph — a code block or a table is not a place
+ * to put a note inside.
+ */
+function intoLastLine(html: string, tail: string): string | undefined {
+  const end = html.trimEnd();
+  if (!end.endsWith("</p>")) return undefined;
+  const open = end.lastIndexOf("<p>");
+  if (open === -1) return undefined;
+  let at = open + "<p>".length;
+  const brk = end.lastIndexOf("<br>");
+  if (brk > open) {
+    at = brk + "<br>".length;
+    if (end[at] === "\n") at += 1;
+  }
+  return `${end.slice(0, at)}${tail}${end.slice(at)}\n`;
 }
 
 /**
@@ -127,7 +147,14 @@ function interleave(
   return out;
 }
 
-function renderTree(items: TreeNode[], ordered: boolean, diagnostics: Diagnostic[], depth = 1): string {
+function renderTree(
+  items: TreeNode[],
+  ordered: boolean,
+  diagnostics: Diagnostic[],
+  depth = 1,
+  /** Margin notes to open one item with: the point they were written after (UX-68). */
+  notes?: { at: TreeNode; html: string },
+): string {
   const tag = ordered ? "ol" : "ul";
   const body = items
     .map((it) => {
@@ -136,11 +163,12 @@ function renderTree(items: TreeNode[], ordered: boolean, diagnostics: Diagnostic
       const rest = interleave(
         it.children,
         it.blocks,
-        (run) => renderTree(run, ordered, diagnostics, depth + 1),
+        (run) => renderTree(run, ordered, diagnostics, depth + 1, notes),
         diagnostics,
         depth,
       );
-      return `<li>${inline(it.text)}${rest}</li>`;
+      const lead = notes && notes.at === it ? notes.html : "";
+      return `<li>${lead}${inline(it.text)}${rest}</li>`;
     })
     .join("");
   return `<${tag}>${body}</${tag}>`;
@@ -150,8 +178,13 @@ function renderList(n: ListNode, diagnostics: Diagnostic[]): string {
   return renderTree(n.items, n.ordered, diagnostics);
 }
 
-function renderQuote(n: QuoteNode): string {
-  const text = block(n.lines.join("\n"));
+function renderQuote(n: QuoteNode, tail = ""): string | undefined {
+  let text = block(n.lines.join("\n"));
+  if (tail) {
+    const into = intoLastLine(text, tail);
+    if (into === undefined) return undefined;
+    text = into;
+  }
   // @quote absorbed @evidence. They were one function: someone else's words
   // with provenance attached. A pull quote simply attaches less of it.
   const credit = [n.params.by, n.params.source, n.params.date]
@@ -163,8 +196,43 @@ function renderQuote(n: QuoteNode): string {
   return `<blockquote class="jot-quote"${attr("id", n.params.id)}>${text}${caption}</blockquote>`;
 }
 
-function renderNote(n: MarginNoteNode): string {
-  return `<p class="jot-note">${inline(n.lines.join(" "))}</p>`;
+/**
+ * A margin note. In the margin column beside a box, or — `wrap` — inside the
+ * text it is beside, as a float the lines flow around (UX-68). A span, because
+ * it sits inside a <p> or an <li>, where a <p> would close the one it is in.
+ */
+function renderNote(n: MarginNoteNode, wrap = false): string {
+  const words = inline(n.lines.join(" "));
+  return wrap ? `<span class="jot-note" data-wrap>${words}</span>` : `<p class="jot-note">${words}</p>`;
+}
+
+/** The point written last in a list: its last item, or that item's last sub-item, all the way down. */
+function lastPoint(items: TreeNode[]): TreeNode {
+  let last = items[items.length - 1]!;
+  while (last.children.length > 0) last = last.children[last.children.length - 1]!;
+  return last;
+}
+
+/**
+ * A text block with its notes placed where they were written (UX-68): in the
+ * last line or the last point before them. Nothing for a box, which cannot
+ * wrap around anything and keeps the margin column.
+ */
+function renderWrapped(n: Node, notes: string, diagnostics: Diagnostic[]): string | undefined {
+  switch (n.type) {
+    case "list":
+      return n.items.length > 0
+        ? renderTree(n.items, n.ordered, diagnostics, 1, { at: lastPoint(n.items), html: notes })
+        : undefined;
+    case "heading":
+      return renderHeading(n, notes);
+    case "markdown":
+      return intoLastLine(block(n.text), notes);
+    case "quote":
+      return renderQuote(n, notes);
+    default:
+      return undefined;
+  }
 }
 
 function renderCard(n: BlockNode, diagnostics: Diagnostic[]): string {
@@ -521,7 +589,7 @@ function renderNode(n: Node, diagnostics: Diagnostic[]): string {
     case "divider":
       return `<hr class="jot-divider" data-style="${escapeHtml(n.style)}" />`;
     case "quote":
-      return renderQuote(n);
+      return renderQuote(n) ?? "";
     case "markdown":
       return block(n.text);
     case "block":
@@ -592,11 +660,22 @@ export function renderDocument(
   const cells = toRows(ast.children)
     .map((row) => {
       const stickies = row.content.filter(isSticky);
+      // Text with notes beside it wraps around them, and they sit at the line
+      // they were written after (UX-68). A box cannot wrap, so it keeps the
+      // margin column and narrows beside it (UX-37). The column copy of the
+      // notes is always written too: on a narrow screen, where notes fold in
+      // under their block, that is the one shown.
+      const lone = row.content.length === 1 ? row.content[0] : undefined;
+      const wrapped =
+        row.notes.length > 0 && lone
+          ? renderWrapped(lone, row.notes.map((n) => renderNote(n, true)).join(""), diagnostics)
+          : undefined;
       const body =
-        stickies.length > 0 && stickies.length === row.content.length
+        wrapped ??
+        (stickies.length > 0 && stickies.length === row.content.length
           ? renderStickies(stickies, diagnostics, { inline, escapeHtml, attr })
-          : row.content.map((n) => renderNode(n, diagnostics)).join("");
-      const aside = row.notes.map(renderNote).join("");
+          : row.content.map((n) => renderNode(n, diagnostics)).join(""));
+      const aside = row.notes.map((n) => renderNote(n)).join("");
       // The row's kind lets CSS space blocks contextually. A uniform gap after
       // every block double-spaces a run of quotes and gives a horizontal rule
       // three rows to itself.
@@ -606,7 +685,7 @@ export function renderDocument(
       // cells of one document-wide grid, because a printed page can only be
       // named (the landscape sheet) on a block in normal flow. See page.ts.
       return (
-        `<div class="jot-row">` +
+        `<div class="jot-row"${wrapped !== undefined ? ' data-notes="wrap"' : ""}>` +
         `<div class="jot-body" data-kind="${escapeHtml(kind)}"${primitive ? ` data-primitive="${escapeHtml(primitive)}"` : ""}>${body}</div>` +
         `<div class="jot-aside">${aside}</div>` +
         `</div>`

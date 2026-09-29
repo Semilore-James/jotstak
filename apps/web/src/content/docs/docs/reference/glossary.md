@@ -33,7 +33,8 @@ The cards, `@columns` and list items hold other blocks; a figure draws one
 below itself; the rest hold only text. See [What goes inside what](/docs/functions/#what-goes-inside-what).
 
 **Margin note** — an aside beside the text, in handwriting. Write
-`@note your text` and it appears next to the paragraph above it.
+`@note your text` and it appears next to the line above it, with the text
+making room around it.
 
 **Ruled lines** — the faint horizontal lines across the page. Text sits on
 them, the way handwriting sits on lined paper.

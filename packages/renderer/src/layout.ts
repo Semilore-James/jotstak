@@ -848,6 +848,36 @@ ${scope}[data-mode="doc"] .jot-note {
   font-style: italic;
 }
 
+/* A note beside TEXT wraps it (UX-68). The whole block used to narrow for as
+   long as it was tall, so one short note beside a long list pulled every
+   point in; and the note sat at the top of its row, beside the first point,
+   wherever it had been written. Now the note floats inside the text, at the
+   line it was written after, as wide as the margin column would have been.
+   The lines beside it make room; one row below it they take the full width
+   back. A box cannot wrap, so a card, a table or a diagram keeps the column
+   and narrows beside it (UX-37). */
+${scope} .jot-row[data-notes="wrap"] > .jot-body { grid-column: 1 / -1; container-type: inline-size; }
+${scope} .jot-row[data-notes="wrap"] > .jot-aside { display: none; }
+/* .jot-body in the selector, to outrank .jot-body li > :last-child: in an item
+   that is otherwise plain text the note IS the last element, and that rule
+   zeroed the row of clearance below it. */
+${scope} .jot-body .jot-note[data-wrap] {
+  display: block;
+  float: right;
+  clear: right;
+  box-sizing: border-box;
+  width: calc((100cqw - ${ROW}px) * ${notebookLayout.marginChannelRatio});
+  margin: 0 0 ${ROW}px ${ROW}px;
+  /* Its own paper, and its gutter's: the rules stop where the text stops, as
+     they always have beside a note, and come back below it. */
+  background: var(--jot-surface);
+  box-shadow: -${ROW}px 0 0 var(--jot-surface);
+  /* It sits inside a list item or a heading; it keeps its own face. */
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
 /* ── Diagnostics surfaced in the output ─────────────────────────────── */
 ${scope} .jot-error {
   font-family: var(--jot-font-mono);
@@ -921,6 +951,9 @@ ${renderTablePrintCss(scope)}
   ${scope} .jot-row { grid-template-columns: 1fr; }
   ${scope} .jot-body, ${scope} .jot-aside { grid-column: 1; }
   ${scope} .jot-note { padding-left: ${ROW}px; margin-bottom: ${ROW}px; }
+  /* No room to wrap: the folded copy under the block is the one shown. */
+  ${scope} .jot-body .jot-note[data-wrap] { display: none; }
+  ${scope} .jot-row[data-notes="wrap"] > .jot-aside { display: flow-root; }
 }
 `.trimStart();
 }
