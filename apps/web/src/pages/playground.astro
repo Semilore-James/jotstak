@@ -7,6 +7,20 @@
 // tool works offline, and the reason this page costs nothing to host.
 import Base from "../layouts/Base.astro";
 import { PAGE, renderPageCss } from "@jotstak/renderer";
+import { PRIMITIVES } from "@jotstak/schema";
+import type { PrimitiveSpec } from "@jotstak/schema";
+
+// The rack: every block you can put on the page, as tiles, in the order a
+// document is usually built — its shape, then words, then things drawn.
+// Headings and lists are left off because Markdown already writes them
+// (`#`, `-`, `1.`) and a tile would teach a longer spelling of something
+// everyone knows. Blocks with no renderer yet are left off because a tile
+// that puts down a paragraph is a tile that lies.
+const GROUP_ORDER: PrimitiveSpec["group"][] = ["structure", "text", "lists", "diagrams", "pm-artifacts", "expressive"];
+const TYPED_IN_MARKDOWN = new Set(["heading", "bullet", "numbered"]);
+const rack = GROUP_ORDER.map((g) =>
+  PRIMITIVES.filter((p) => p.group === g && !p.planned && !TYPED_IN_MARKDOWN.has(p.name)),
+).filter((group) => group.length > 0);
 
 // A whole sheet of A4 at 96dpi: the printable width plus the page margins.
 const SHEET = PAGE.portrait.content + 2 * PAGE.marginX;
@@ -123,6 +137,106 @@ const extraCss = `
   .seg-thumb, .picker-btn svg, .picker-menu { transition: none; }
 }
 
+/* The rack: blocks as tiles, the way letters sit on a Scrabble rack. A tile
+   is paper with a ledge under it, so it reads as something you pick up; the
+   rack has a lip along its bottom edge for the same reason. Groups are split
+   by a gap rather than labelled, because a label per group would cost a row. */
+.rack-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.rack-where {
+  margin: 0 0 8px; font-family: var(--jot-font-label); font-size: 12px; color: var(--jot-ink-muted);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;
+}
+.rack-where b { color: var(--jot-accent); font-weight: 600; }
+.rack {
+  display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
+  padding: 10px 10px 12px; margin-bottom: 10px; border-radius: 6px;
+  background: var(--jot-color-notebook-paper-elevated);
+  border: 1px solid var(--jot-color-notebook-rule-lines);
+  box-shadow: inset 0 -3px 0 var(--jot-color-notebook-rule-lines);
+}
+.rack-gap { width: 6px; }
+.tile {
+  font: 600 12px/1 var(--jot-font-label); letter-spacing: 0.01em;
+  padding: 7px 9px 6px; border-radius: 4px; cursor: pointer;
+  color: var(--jot-color-notebook-ink);
+  background: var(--jot-color-notebook-paper);
+  border: 1px solid var(--jot-color-notebook-rule-lines);
+  box-shadow: 0 2px 0 var(--jot-color-notebook-rule-lines);
+  transition: transform 120ms ease, box-shadow 120ms ease, border-color 120ms ease, opacity 160ms ease;
+}
+.tile-at { color: var(--jot-accent); margin-right: 1px; }
+.tile:hover { transform: translateY(-1px); box-shadow: 0 3px 0 var(--jot-color-notebook-rule-lines); border-color: var(--jot-accent); }
+.tile:active { transform: translateY(1px); box-shadow: 0 1px 0 var(--jot-color-notebook-rule-lines); }
+.tile:focus-visible { outline: 2px solid var(--jot-accent); outline-offset: 2px; }
+/* Cannot go where the cursor is. Still clickable: it finds the nearest place
+   that can take it, and the card says where that was. */
+.tile[data-fit="no"] { opacity: 0.42; }
+
+/* The card: the settings of the block the cursor is in. Required first, then
+   the optional ones as chips you click to add. The meaning of each shows in
+   one line at the bottom when you point at it, so the card stays short. */
+.card {
+  margin-bottom: 12px; padding: 12px 14px; border-radius: 6px;
+  background: var(--jot-color-notebook-paper);
+  border: 1px solid var(--jot-color-notebook-rule-lines);
+  font-family: var(--jot-font-label); font-size: 12px; line-height: 18px;
+  color: var(--jot-color-notebook-ink);
+  max-height: 260px; overflow-y: auto;
+}
+.card-empty { margin: 0; color: var(--jot-ink-muted); }
+.card-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 8px; }
+.card-head code { font-family: var(--jot-font-mono); font-size: 13px; font-weight: 600; color: var(--jot-accent); white-space: nowrap; }
+.card-head span { color: var(--jot-ink-muted); }
+.card-note { margin: 0 0 8px; padding: 5px 8px; border-radius: 4px; background: var(--jot-color-accent-terracotta-pale); }
+.card-k {
+  margin: 10px 0 5px; font-size: 10px; font-weight: 600; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--jot-ink-muted);
+}
+.card-req { list-style: none; margin: 0; padding: 0; }
+.card-req li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; padding: 2px 0; }
+.card-req .mark { width: 12px; text-align: center; font-weight: 700; color: var(--jot-color-accent-sage); }
+.card-req .mark[data-missing] { color: var(--jot-accent); }
+.card-req code { font-family: var(--jot-font-mono); font-size: 12px; }
+.card-req button.val {
+  font-family: var(--jot-font-mono); font-size: 12px; color: var(--jot-ink-muted);
+  border: 0; background: none; padding: 0; cursor: pointer;
+  text-decoration: underline dotted; text-underline-offset: 3px;
+}
+.card-req button.val:hover { color: var(--jot-accent); }
+.card-req .mean { flex-basis: 100%; padding-left: 20px; color: var(--jot-ink-muted); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip {
+  display: inline-flex; align-items: center; gap: 2px; padding: 2px; border-radius: 4px;
+  border: 1px dashed var(--jot-color-notebook-rule-lines);
+  background: none; font: inherit; color: inherit;
+}
+.chip-name { padding: 2px 6px; font-family: var(--jot-font-mono); font-size: 11.5px; }
+.chip button, button.chip {
+  font: 500 11.5px/1 var(--jot-font-label); padding: 5px 7px; border-radius: 3px;
+  border: 0; background: none; color: var(--jot-color-notebook-ink); cursor: pointer;
+}
+button.chip { border: 1px dashed var(--jot-color-notebook-rule-lines); }
+.chip button:hover, button.chip:hover { background: var(--jot-color-notebook-paper-elevated); }
+.chip button[aria-pressed="true"], button.chip[aria-pressed="true"] { background: var(--jot-accent); color: var(--jot-color-notebook-paper); }
+.chip button[data-default]:not([aria-pressed="true"]) { text-decoration: underline dotted; text-underline-offset: 3px; }
+.chip:has([aria-pressed="true"]), button.chip[aria-pressed="true"] { border-style: solid; }
+.chip button:focus-visible, button.chip:focus-visible { outline: 2px solid var(--jot-accent); outline-offset: 1px; }
+.card-hint { margin: 10px 0 0; min-height: 18px; color: var(--jot-ink-muted); }
+.card-hint code { font-family: var(--jot-font-mono); color: var(--jot-color-notebook-ink); }
+.card-comp { margin: 6px 0 0; padding-top: 6px; border-top: 1px solid var(--jot-color-notebook-rule-lines); color: var(--jot-ink-muted); font-style: italic; }
+
+/* Where a tile landed, found on the page for a moment. An outline rather than
+   a wash of colour: a card paints its own background over the row, so a
+   tinted row showed only as a strip beneath the card and seemed to mark the
+   paragraph after it. */
+@keyframes jot-placed { from { outline-color: var(--jot-accent); } to { outline-color: transparent; } }
+#out .jot-row.is-placed { outline: 2px solid transparent; outline-offset: 6px; border-radius: 4px; animation: jot-placed 1800ms ease-in; }
+
+@media (prefers-reduced-motion: reduce) {
+  .tile { transition: none; }
+  #out .jot-row.is-placed { animation: none; outline: 2px solid var(--jot-accent); outline-offset: 4px; }
+}
+
 .pg-grid { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1.3fr); gap: 20px; align-items: start; }
 .pane { display: flex; flex-direction: column; min-width: 0; }
 /* The source stays within reach while the paper scrolls past it. The window
@@ -131,7 +245,7 @@ const extraCss = `
 .pane-label { font-family: var(--jot-font-label); font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--jot-ink-muted); margin: 0 0 8px; }
 
 #src {
-  flex: 1; width: 100%; box-sizing: border-box; resize: none;
+  flex: 1; min-height: 200px; width: 100%; box-sizing: border-box; resize: none;
   font-family: var(--jot-font-mono); font-size: 13.5px; line-height: 22px;
   padding: 18px 20px; tab-size: 2;
   background: var(--jot-color-notebook-paper-elevated);
@@ -183,6 +297,11 @@ const extraCss = `
      everything else, and takes a fixed slice of the viewport instead. */
   .pane-src { position: static; height: auto; }
   #src { min-height: 46vh; }
+  /* One row you swipe along, like a rack held in your hand, rather than four
+     rows of tiles pushing the editor off the screen. */
+  .rack { flex-wrap: nowrap; overflow-x: auto; scroll-snap-type: x proximity; -webkit-overflow-scrolling: touch; }
+  .tile { flex: none; scroll-snap-align: start; }
+  .rack-gap { flex: none; }
 }
 
 /* Printing the playground prints the DOCUMENT, on real A4 pages — not the
@@ -245,6 +364,23 @@ ${renderPageCss()}
 
     <div class="pg-grid">
       <section class="pane pane-src">
+        <div class="rack-head">
+          <p class="pane-label">Blocks</p>
+          <p class="rack-where" id="rack-where">Click one to put it on the page</p>
+        </div>
+        <div class="rack" id="rack" role="toolbar" aria-label="Blocks you can put on the page">
+          {rack.map((group, i) => (
+            <Fragment>
+              {i > 0 && <span class="rack-gap" aria-hidden="true" />}
+              {group.map((p) => (
+                <button class="tile" type="button" data-block={p.name} title={p.short}>
+                  <span class="tile-at" aria-hidden="true">@</span>{p.name}
+                </button>
+              ))}
+            </Fragment>
+          ))}
+        </div>
+        <div class="card" id="card" aria-live="polite"></div>
         <p class="pane-label">Source</p>
         <textarea id="src" spellcheck="false" aria-label="Jotstak source">{starter}</textarea>
         <div id="diags" role="status" aria-live="polite"></div>
@@ -258,7 +394,18 @@ ${renderPageCss()}
 </Base>
 
 <script>
-  import { render } from "@jotstak/renderer";
+  import { parse, render } from "@jotstak/renderer";
+  import type { Node as JotNode } from "@jotstak/renderer";
+  import {
+    UNIVERSAL_PARAMS,
+    briefly,
+    canHold,
+    compositionLine,
+    getPrimitive,
+    scaffoldSource,
+    slotAt,
+  } from "@jotstak/schema";
+  import type { ParamSpec, PrimitiveSpec } from "@jotstak/schema";
 
   const SAMPLES: Record<string, string> = {
     starter: "",
@@ -348,10 +495,20 @@ ${renderPageCss()}
   const thumb = $<HTMLSpanElement>("#seg-thumb");
   const nbBtn = $<HTMLButtonElement>("#m-notebook");
   const docBtn = $<HTMLButtonElement>("#m-doc");
+  const rackEl = $<HTMLDivElement>("#rack");
+  const cardEl = $<HTMLDivElement>("#card");
+  const whereEl = $<HTMLParagraphElement>("#rack-where");
 
-  if (src && out && diags && picker && pickerBtn && pickerLabel && pickerMenu && seg && thumb && nbBtn && docBtn) {
+  if (
+    src && out && diags && picker && pickerBtn && pickerLabel && pickerMenu && seg && thumb && nbBtn && docBtn &&
+    rackEl && cardEl && whereEl
+  ) {
     SAMPLES.starter = src.value;
     let mode: "notebook" | "doc" = "notebook";
+    /** Until someone has clicked into the source, a tile goes at the end of the page. */
+    let touched = false;
+    /** What the card says about where the last tile went, until the cursor moves on. */
+    let note = "";
 
     const paint = (): void => {
       const { html, diagnostics } = render(src.value, { mode });
@@ -403,6 +560,10 @@ ${renderPageCss()}
       src.value = SAMPLES[btn.dataset.value ?? "empty"] ?? "";
       setOpen(false);
       paint();
+      // A fresh document: the next tile goes at its end again.
+      touched = false;
+      note = "";
+      refresh();
     });
 
     // Indentation decides structure in .jot, so the editor has to help with it.
@@ -480,7 +641,439 @@ ${renderPageCss()}
       }
     });
 
+    // ── The rack and the card ───────────────────────────────────────────
+    //
+    // A tile puts a whole, working block on the page: the block the VS Code
+    // autocomplete writes, with the example's full body so there is something
+    // to look at (scaffoldSource in the schema, shared by both). It goes where
+    // the cursor is when the composition matrix says it can go there, and
+    // otherwise to the nearest place that can take it, and the card says which.
+    // The card shows the settings of whatever block the cursor is in, new or
+    // not: required ones first, optional ones as chips that write themselves
+    // into the source.
+
+    const OPENER = /^(\s*)@([a-zA-Z_][a-zA-Z0-9_]*)/;
+    const indentOf = (l: string): number => l.length - l.trimStart().length;
+    const esc = (s: string): string =>
+      s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    const lines = (): string[] => src.value.split("\n");
+    const offsetOf = (ls: string[], line: number): number => {
+      let n = 0;
+      for (let i = 0; i < line; i++) n += ls[i]!.length + 1;
+      return n;
+    };
+    const caretLine = (): number => src.value.slice(0, src.selectionStart).split("\n").length - 1;
+    const opener = (text: string): PrimitiveSpec | undefined => {
+      const m = OPENER.exec(text);
+      return m ? getPrimitive(m[2]!) : undefined;
+    };
+    // On a phone, focusing the source raises the keyboard over the page the
+    // tile was meant to show. Edits there skip the focus, and give up undo.
+    const coarse = window.matchMedia("(pointer: coarse)");
+    const still = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+    // The blocks the renderer reads the shared width setting on. Offering it
+    // on a panel would be a chip that does nothing.
+    const READS_WIDTH = new Set(["table", "tree", "star_model", "journey", "matrix", "timeline", "cover"]);
+    const settingsOf = (spec: PrimitiveSpec): ParamSpec[] => [
+      ...spec.params,
+      ...(READS_WIDTH.has(spec.name) ? UNIVERSAL_PARAMS.filter((p) => p.name === "width") : []),
+    ];
+    const choicesOf = (p: ParamSpec): string[] | undefined =>
+      p.type === "enum" ? p.enumValues : p.type === "boolean" ? ["true", "false"] : undefined;
+
+    /** The block the cursor is in: its opening line, and what it is. */
+    const blockAt = (ls: string[], line: number): { line: number; spec: PrimitiveSpec } | undefined => {
+      const here = ls[line] ?? "";
+      const own = here.trim() ? opener(here) : undefined;
+      if (own) return { line, spec: own };
+      let need = here.trim() ? indentOf(here) : here.length;
+      for (let k = line - 1; k >= 0 && need > 0; k--) {
+        const t = ls[k]!;
+        if (!t.trim() || indentOf(t) >= need) continue;
+        const spec = opener(t);
+        if (spec) return { line: k, spec };
+        need = indentOf(t);
+      }
+      return undefined;
+    };
+
+    /** A block's settings as the parser read them, aliases and shorthand resolved. */
+    const paramsAt = (line: number): Record<string, string> => {
+      const find = (nodes: JotNode[]): Record<string, string> | undefined => {
+        for (const n of nodes) {
+          if (n.position.line === line && "params" in n) return n.params;
+          if (n.type === "block") {
+            const inner = find(n.children);
+            if (inner) return inner;
+          }
+        }
+        return undefined;
+      };
+      return find(parse(src.value).ast.children) ?? {};
+    };
+
+    /** The first line of the top-level thing the cursor is in, and what to call it. */
+    const chunkStart = (ls: string[], line: number): number => {
+      let start = line;
+      while (start > 0 && (!ls[start]!.trim() || indentOf(ls[start]!) > 0)) start--;
+      return start;
+    };
+    const kindOf = (t: string): string =>
+      /^[-*]\s|^\d+[.)]\s/.test(t) ? "list" : /^>/.test(t) ? "quote" : /^\|/.test(t) ? "table" : /^[@#]/.test(t) ? "block" : "prose";
+    const nameOf = (head: string): string => {
+      const spec = opener(head);
+      if (spec) return `the <b>@${spec.name}</b>`;
+      return /^#/.test(head) ? "the heading" : kindOf(head) === "list" ? "the list" : kindOf(head) === "table" ? "the table" : "the paragraph";
+    };
+
+    /** The last line of the top-level thing the cursor is in. */
+    const chunkEnd = (ls: string[], line: number): number => {
+      const start = chunkStart(ls, line);
+      const head = ls[start]!;
+      if (/^```/.test(head)) {
+        for (let k = start + 1; k < ls.length; k++) if (/^```/.test(ls[k]!)) return k;
+        return ls.length - 1;
+      }
+      let last = start;
+      for (let k = start + 1; k < ls.length; k++) {
+        const t = ls[k]!;
+        if (!t.trim()) continue;
+        if (indentOf(t) > 0) {
+          last = k;
+          continue;
+        }
+        // Back at the left edge. Only a list, a quote, a table or a paragraph
+        // carries on, and only with no blank line in between.
+        const touching = !!ls[k - 1]!.trim();
+        if (!(touching && kindOf(head) !== "block" && kindOf(t) === kindOf(head))) break;
+        last = k;
+      }
+      return last;
+    };
+
+    interface Spot { from: number; to: number; text: string; note: string }
+
+    /** Where a tile's block goes, and why, if it is not where the cursor is. */
+    const spotFor = (spec: PrimitiveSpec): Spot => {
+      const ls = lines();
+      const block = scaffoldSource(spec, { body: "whole" });
+      const value = src.value;
+      if (!touched) {
+        const gap = value.trim() === "" ? "" : value.endsWith("\n\n") ? "" : value.endsWith("\n") ? "\n" : "\n\n";
+        return { from: value.length, to: value.length, text: gap + block + "\n", note: "" };
+      }
+
+      const line = caretLine();
+      const here = ls[line] ?? "";
+      let why = "";
+      if (!here.trim()) {
+        const slot = slotAt(ls, line, here.length);
+        if (slot.kind === "page" || (slot.kind === "block" && canHold(slot.parent.name, spec.name))) {
+          const pad = slot.kind === "page" ? "" : here;
+          const body = block
+            .split("\n")
+            .map((l) => (l ? pad + l : l))
+            .join("\n");
+          // On the page itself a block gets a blank line either side of it.
+          const page = slot.kind === "page";
+          const before = page && line > 0 && ls[line - 1]!.trim() ? "\n" : "";
+          const after = page && line + 1 < ls.length && ls[line + 1]!.trim() ? "\n" : "";
+          const at = offsetOf(ls, line);
+          return { from: at, to: at + here.length, text: before + body + after, note: "" };
+        }
+        if (slot.kind === "block") {
+          why = `@${spec.name} goes on the page itself, not inside another block, so it went after the @${slot.parent.name}.`;
+        } else {
+          const owner = opener(ls[slot.line] ?? "");
+          why = owner
+            ? `A @${owner.name} holds text, not other blocks, so the @${spec.name} went after it.`
+            : `A line of text can't hold a block, so the @${spec.name} went after this one.`;
+        }
+      }
+
+      const end = chunkEnd(ls, line);
+      const at = offsetOf(ls, end) + ls[end]!.length;
+      const next = ls[end + 1];
+      return { from: at, to: at, text: `\n\n${block}${next && next.trim() ? "\n" : ""}`, note: why };
+    };
+
+    /** Change the source the way typing would, so Ctrl+Z still takes it back. */
+    const edit = (from: number, to: number, text: string, caret?: number, focus = !coarse.matches): void => {
+      if (from === to && !text) {
+        // Nothing to change, only somewhere to type: a "delete" here would take
+        // out the character before the cursor.
+        src.focus({ preventScroll: true });
+        src.setSelectionRange(caret ?? from, caret ?? from);
+        refresh();
+        return;
+      }
+      if (focus) {
+        src.focus({ preventScroll: true });
+        src.setSelectionRange(from, to);
+        const done = text ? document.execCommand?.("insertText", false, text) : document.execCommand?.("delete");
+        if (!done) src.setRangeText(text, from, to, "end");
+      } else {
+        src.setRangeText(text, from, to, "end");
+      }
+      if (caret !== undefined) src.setSelectionRange(caret, caret);
+      paint();
+      refresh();
+    };
+
+    /** Bring the row a block landed in into view, and mark it for a moment. */
+    const showOnPage = (line: number): void => {
+      // The same grouping renderDocument uses: a margin note joins the row
+      // before it, and a run of stickies is one row.
+      let row = -1;
+      let allSticky = false;
+      let hasNote = false;
+      for (const n of parse(src.value).ast.children) {
+        if (n.position.line > line) break;
+        if (n.type === "margin_note") {
+          if (row < 0) row = 0;
+          hasNote = true;
+          continue;
+        }
+        const sticky = n.type === "block" && n.name === "sticky";
+        if (!(sticky && allSticky && !hasNote)) {
+          row++;
+          hasNote = false;
+          allSticky = sticky;
+        }
+      }
+      const el = out.querySelectorAll<HTMLElement>(".jot-row")[Math.max(0, row)];
+      if (!el) return;
+      el.scrollIntoView({ block: "center", behavior: still.matches ? "auto" : "smooth" });
+      el.classList.remove("is-placed");
+      void el.offsetWidth;
+      el.classList.add("is-placed");
+      window.setTimeout(() => el.classList.remove("is-placed"), 1900);
+    };
+
+    const place = (spec: PrimitiveSpec): void => {
+      const spot = spotFor(spec);
+      note = spot.note;
+      // From here the next tile goes relative to this one, not to the end.
+      touched = true;
+      const lead = spot.text.indexOf("@");
+      const lineEnd = spot.text.indexOf("\n", lead);
+      // The cursor ends on the new block's first line, so the card shows it.
+      edit(spot.from, spot.to, spot.text, spot.from + (lineEnd === -1 ? spot.text.length : lineEnd));
+      showOnPage(src.value.slice(0, spot.from + lead).split("\n").length - 1);
+    };
+
+    const EDIT = "\u0000edit";
+    /** Write, change or take off one setting on a block's opening line. */
+    const setParam = (line: number, spec: PrimitiveSpec, p: ParamSpec, value: string | null): void => {
+      const ls = lines();
+      const text = ls[line]!;
+      const base = offsetOf(ls, line);
+      const quoted = p.type === "string";
+      const token = new RegExp(`([\\s(])${p.name}=("[^"]*"|'[^']*'|[^\\s)]+)`).exec(text);
+
+      if (token) {
+        const from = token.index + token[1]!.length;
+        const to = token.index + token[0].length;
+        if (value === EDIT) {
+          const at = base + to - (/^["']/.test(token[2]!) ? 1 : 0);
+          return edit(at, at, "", at, true);
+        }
+        if (value === null) {
+          // With the space before it, or the one after it if it follows a bracket.
+          return token[1] === "("
+            ? edit(base + from, base + to + (text[to] === " " ? 1 : 0), "")
+            : edit(base + token.index, base + to, "");
+        }
+        return edit(base + from, base + to, `${p.name}=${quoted ? `"${value}"` : value}`);
+      }
+      if (value === null) return;
+
+      // `@callout warn`: the first word IS the setting, written without its name.
+      const bare = /^(\s*@[a-zA-Z_][a-zA-Z0-9_]*\s+)([a-z0-9_-]+)(?=\s|$)/.exec(text);
+      if (value !== EDIT && spec.params[0]?.name === p.name && bare && p.enumValues?.includes(bare[2]!)) {
+        const from = base + bare[1]!.length;
+        return edit(from, from + bare[2]!.length, value);
+      }
+
+      // After the settings already written, so they read in the order they
+      // were added, and before the title, which is where the parser wants it.
+      const nameEnd = OPENER.exec(text)![0].length;
+      const written = value === EDIT ? (quoted ? '""' : (p.default ?? "")) : quoted ? `"${value}"` : value;
+      let at: number;
+      let insert: string;
+      if (text[nameEnd] === "(") {
+        let close = -1;
+        let quote = "";
+        for (let i = nameEnd + 1; i < text.length && close === -1; i++) {
+          const ch = text[i]!;
+          if (quote) quote = ch === quote ? "" : quote;
+          else if (ch === '"' || ch === "'") quote = ch;
+          else if (ch === ")") close = i;
+        }
+        // A list that carries on to the next line has no ")" here: open it.
+        at = close === -1 ? nameEnd + 1 : close;
+        const inside = close === -1 ? "x" : text.slice(nameEnd + 1, close).trim();
+        insert = close === -1 ? `${p.name}=${written} ` : `${inside ? " " : ""}${p.name}=${written}`;
+      } else {
+        const run = /^(?:\s+[a-zA-Z_][a-zA-Z0-9_]*=(?:"[^"]*"|'[^']*'|[^\s)]+))*/.exec(text.slice(nameEnd))!;
+        at = nameEnd + run[0].length;
+        insert = ` ${p.name}=${written}`;
+      }
+      const valueAt = base + at + insert.indexOf("=") + 1;
+      const caret = value === EDIT ? valueAt + (quoted ? 1 : written.length) : undefined;
+      edit(base + at, base + at, insert, caret, value === EDIT || undefined);
+    };
+
+    const EMPTY =
+      '<p class="card-empty">Put your cursor inside a block to see its settings, or click a tile above to put a new one on the page.</p>';
+
+    const renderCard = (): void => {
+      // Before anyone has clicked in, the cursor is only at the top because
+      // that is where a textarea starts; it is not a choice to explain.
+      const at = touched ? blockAt(lines(), caretLine()) : undefined;
+      const said = note ? `<p class="card-note">${esc(note)}</p>` : "";
+      if (!at) {
+        cardEl.innerHTML = said + EMPTY;
+        delete cardEl.dataset.line;
+        return;
+      }
+      const set = paramsAt(at.line);
+      const all = settingsOf(at.spec);
+      const required = all.filter((p) => p.required);
+      const optional = all.filter((p) => !p.required);
+
+      const choices = (p: ParamSpec): string =>
+        choicesOf(p)!
+          .map(
+            (v) =>
+              `<button type="button" data-v="${esc(v)}" aria-pressed="${set[p.name] === v}"` +
+              `${v === p.default ? ' data-default title="the default"' : ""}>${esc(v)}</button>`,
+          )
+          .join("");
+
+      const row = (p: ParamSpec): string => {
+        const has = set[p.name] !== undefined;
+        const control = choicesOf(p)
+          ? `<span class="chip" data-param="${p.name}" data-kind="choice">${choices(p)}</span>`
+          : `<span data-param="${p.name}" data-kind="text"><button type="button" class="val">${has ? esc(set[p.name]!) : "add it"}</button></span>`;
+        return (
+          `<li><span class="mark"${has ? "" : " data-missing"}>${has ? "✓" : "!"}</span>` +
+          `<code>${p.name}</code>${control}<span class="mean">${esc(briefly(p.description, 90))}</span></li>`
+        );
+      };
+
+      const chip = (p: ParamSpec): string => {
+        if (choicesOf(p)) {
+          return `<span class="chip" data-param="${p.name}" data-kind="choice"><span class="chip-name">${p.name}</span>${choices(p)}</span>`;
+        }
+        const cur = set[p.name];
+        return cur !== undefined
+          ? `<button type="button" class="chip" data-param="${p.name}" data-kind="text" aria-pressed="true">` +
+              `<span class="chip-name">${p.name}</span>${esc(cur.length > 18 ? `${cur.slice(0, 17)}…` : cur)}</button>`
+          : `<button type="button" class="chip" data-param="${p.name}" data-kind="text">+ ${p.name}</button>`;
+      };
+
+      cardEl.dataset.line = String(at.line);
+      cardEl.dataset.block = at.spec.name;
+      cardEl.innerHTML =
+        `<div class="card-head"><code>@${at.spec.name}</code><span>${esc(at.spec.short)}</span></div>` +
+        said +
+        (required.length ? `<p class="card-k">Required</p><ul class="card-req">${required.map(row).join("")}</ul>` : "") +
+        (optional.length
+          ? `<p class="card-k">Optional · click to add</p><div class="chips">${optional.map(chip).join("")}</div>` +
+            `<p class="card-hint" id="card-hint">Point at a setting to see what it does.</p>`
+          : `<p class="card-k">No optional settings</p>`) +
+        `<p class="card-comp">${esc(compositionLine(at.spec))}</p>`;
+    };
+
+    /** Where a tile will go, said above the rack, and which tiles cannot go there. */
+    const updateRack = (): void => {
+      const ls = lines();
+      const line = caretLine();
+      const here = ls[line] ?? "";
+      let fits = (_name: string): boolean => true;
+      let where = "Click one to put it at the end of the page";
+      if (touched) {
+        if (!here.trim()) {
+          const slot = slotAt(ls, line, here.length);
+          if (slot.kind === "page") {
+            where = "Goes where your cursor is";
+          } else if (slot.kind === "block") {
+            const parent = slot.parent.name;
+            fits = (name) => canHold(parent, name);
+            where = `Goes inside the <b>@${parent}</b>, at your cursor`;
+          } else {
+            fits = () => false;
+            where = `Goes after ${nameOf(ls[chunkStart(ls, line)]!)}: only text goes here`;
+          }
+        } else {
+          where = `Goes after ${nameOf(ls[chunkStart(ls, line)]!)} your cursor is in`;
+        }
+      }
+      whereEl.innerHTML = where;
+      for (const t of rackEl.querySelectorAll<HTMLElement>(".tile")) {
+        t.dataset.fit = fits(t.dataset.block ?? "") ? "yes" : "no";
+      }
+    };
+
+    const refresh = (): void => {
+      renderCard();
+      updateRack();
+    };
+
+    rackEl.addEventListener("click", (e) => {
+      const tile = (e.target as HTMLElement).closest<HTMLElement>(".tile");
+      const spec = tile ? getPrimitive(tile.dataset.block ?? "") : undefined;
+      if (spec) place(spec);
+    });
+
+    cardEl.addEventListener("click", (e) => {
+      const target = e.target as HTMLElement;
+      const btn = target.closest<HTMLButtonElement>("button");
+      const holder = target.closest<HTMLElement>("[data-param]");
+      const spec = getPrimitive(cardEl.dataset.block ?? "");
+      if (!btn || !holder || !spec || cardEl.dataset.line === undefined) return;
+      const line = Number(cardEl.dataset.line);
+      const p = settingsOf(spec).find((q) => q.name === holder.dataset.param);
+      if (!p) return;
+      note = "";
+      if (holder.dataset.kind === "choice") {
+        const v = btn.dataset.v;
+        if (v === undefined) return;
+        // Clicking the value already set takes it off again, back to the default.
+        setParam(line, spec, p, paramsAt(line)[p.name] === v && !p.required ? null : v);
+      } else {
+        setParam(line, spec, p, EDIT);
+      }
+    });
+
+    // What a setting does, in one line, when you point at it.
+    const explain = (e: Event): void => {
+      const holder = (e.target as HTMLElement).closest<HTMLElement>("[data-param]");
+      const hint = cardEl.querySelector<HTMLElement>("#card-hint");
+      const spec = getPrimitive(cardEl.dataset.block ?? "");
+      const p = holder && spec ? settingsOf(spec).find((q) => q.name === holder.dataset.param) : undefined;
+      if (p && hint) hint.innerHTML = `<code>${p.name}</code> ${esc(briefly(p.description))}`;
+    };
+    cardEl.addEventListener("mouseover", explain);
+    cardEl.addEventListener("focusin", explain);
+
+    // The cursor moving on is what retires a note about the last placement.
+    const moved = (): void => {
+      touched = true;
+      note = "";
+      refresh();
+    };
+    src.addEventListener("click", moved);
+    src.addEventListener("keyup", moved);
+    src.addEventListener("focus", () => {
+      touched = true;
+      refresh();
+    });
+
     src.addEventListener("input", paint);
+    src.addEventListener("input", refresh);
     nbBtn.addEventListener("click", () => setMode("notebook"));
     docBtn.addEventListener("click", () => setMode("doc"));
 
@@ -495,5 +1088,6 @@ ${renderPageCss()}
 
     moveThumb();
     paint();
+    refresh();
   }
 </script>

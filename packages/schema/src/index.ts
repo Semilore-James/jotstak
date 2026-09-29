@@ -884,3 +884,6 @@ export function containers(): PrimitiveSpec[] {
 export function getPrimitivesByGroup(group: PrimitiveGroup): PrimitiveSpec[] {
   return PRIMITIVES.filter((p) => p.group === group);
 }
+
+// Writing blocks: scaffolds, one-line descriptions, and where the cursor is.
+export * from "./authoring.js";

@@ -36,9 +36,19 @@
 //           already uses.
 
 import * as vscode from "vscode";
-import { PRIMITIVES, UNIVERSAL_PARAMS, canHold, compositionLine, getPrimitive } from "@jotstak/schema";
+import {
+  BODY_FALLBACK,
+  PRIMITIVES,
+  UNIVERSAL_PARAMS,
+  briefly,
+  canHold,
+  compositionLine,
+  exampleBodyLines,
+  exampleTitle,
+  getPrimitive,
+  slotAt,
+} from "@jotstak/schema";
 import type { ParamSpec, PrimitiveSpec } from "@jotstak/schema";
-import { slotAt } from "./composition.js";
 import { isJot } from "./jot-files.js";
 
 /** `@panel`, wherever the cursor is inside it. */
@@ -54,38 +64,10 @@ const GROUP: Record<PrimitiveSpec["group"], string> = {
   expressive: "expressive",
 };
 
-/**
- * The short form of a parameter's description.
- *
- * The schema's descriptions are written for a documentation page, where there
- * is room to explain the reasoning: the longest is 444 characters and fifteen
- * of them turn on an em dash before the part that qualifies the first half. On
- * a hover card that is a wall, and a wall gets skipped.
- *
- * So the card takes what comes before the first full stop or the first em
- * dash, whichever arrives first. That is reliably the sentence that says what
- * the parameter IS; everything after it is why.
- */
-const CARD_LIMIT = 120;
-
-function oneLine(text: string): string {
-  // A full stop followed by a CAPITAL, so `e.g.` and `i.e.` do not count as
-  // the end of anything. Cutting on any full stop turned "kicker above the
-  // title, e.g. "Risk"" into "kicker above the title, e.g".
-  const cut = /^(.*?)(?:\.\s+(?=[A-Z])|\s—\s|$)/s.exec(text.trim());
-  const first = (cut?.[1] ?? text).trim().replace(/[.;,]$/, "");
-  if (first.length <= CARD_LIMIT) return first;
-
-  // Still a paragraph: some descriptions carry the whole argument in one
-  // sentence. Cut at a word rather than mid-word, and say it was cut.
-  const clipped = first.slice(0, CARD_LIMIT);
-  return clipped.slice(0, clipped.lastIndexOf(" ")) + "…";
-}
-
 function describeParam(p: ParamSpec): string {
   const type = p.type === "enum" && p.enumValues ? p.enumValues.join(" | ") : p.type;
   const tail = p.required ? " (required)" : p.default !== undefined ? ` (default ${p.default})` : "";
-  return `- \`${p.name}\` _${type}_${tail}  \n  ${oneLine(p.description)}`;
+  return `- \`${p.name}\` _${type}_${tail}  \n  ${briefly(p.description)}`;
 }
 
 /**
@@ -158,95 +140,15 @@ export function describe(spec: PrimitiveSpec): vscode.MarkdownString {
 }
 
 // ── what accepting a primitive leaves behind ─────────────────────────────
-
-/**
- * The first body line the primitive's own examples write UNDER the directive —
- * the hint we put in the scaffold.
- *
- * Taken from the examples rather than written here, so a block's scaffold and
- * its documentation cannot say different things. The rule is exactly "find the
- * line that opens this block, then take the first line of body beneath it",
- * which is what makes it safe to run over examples that are not shaped like a
- * single block:
- *
- *   `@footnote`  the example shows the reference first and the note second, so
- *                the directive is not on line one.
- *   `@cover`     what follows the directive is a continued parameter, not body.
- *   `@numbered`  the example is the Markdown form, `1. First`, which never
- *                opens a directive at all. Nothing to copy, so nothing is.
- */
-/**
- * The bare text the example writes ON the directive line, if it writes any.
- *
- * Several blocks take their title there rather than as a parameter —
- * `@cover Discovery phase`, `@star_model Telemetry warehouse`,
- * `@table(style=sketch) Q4 status`. A scaffold that gave you the parameters
- * and the body and left that out produced `@cover` with a subtitle and no
- * title, which the renderer then complained about: the editor writing a block
- * the renderer immediately objects to is the exact failure the render test
- * exists to catch, arriving from a different direction.
- */
-export function exampleTitle(spec: PrimitiveSpec): string | undefined {
-  const names = [spec.name, ...(spec.aliases ?? [])];
-  for (const example of spec.examples) {
-    for (const line of example.split("\n")) {
-      const open = new RegExp(`^@(${names.join("|")})\\b(.*)$`).exec(line.trim());
-      if (!open) continue;
-      const rest = (open[2] ?? "")
-        .replace(/\([^)]*\)/g, "") // a bracketed parameter list
-        .replace(/[a-zA-Z_][a-zA-Z0-9_]*=(?:"[^"]*"|'[^']*'|\S+)/g, "") // inline parameters
-        .trim();
-      if (rest) return rest;
-    }
-  }
-  return undefined;
-}
-
-export function exampleBodyLines(spec: PrimitiveSpec): string[] {
-  const names = [spec.name, ...(spec.aliases ?? [])];
-  const opens = (line: string): boolean =>
-    names.some((n) => new RegExp(`^@${n}\\b`).test(line.trim()));
-  const want = spec.scaffoldLines ?? 1;
-
-  for (const example of spec.examples) {
-    const lines = example.split("\n");
-    const at = lines.findIndex(opens);
-    if (at === -1) continue;
-
-    // The body lines at the FIRST indent only. A timeline's detail is indented
-    // under its event, and a scaffold that reaches into the second level starts
-    // the author halfway down a structure they have not written the top of.
-    const body: string[] = [];
-    let indent = -1;
-    for (const line of lines.slice(at + 1)) {
-      if (!/^\s+\S/.test(line)) break; // blank, or back to column zero: block over
-      const depth = line.search(/\S/);
-      const text = line.trim();
-      if (text.startsWith(")")) continue; // closing a parenthesised param list
-      if (/^[a-z_]+\s*=/.test(text)) continue; // a continued parameter
-      if (indent === -1) indent = depth;
-      if (depth > indent) continue;
-      body.push(text);
-      if (body.length === want) break;
-    }
-    if (body.length > 0) return body;
-  }
-  return [];
-}
+//
+// exampleTitle and exampleBodyLines live in the schema (authoring.ts) now,
+// because the playground rack writes the same blocks this does.
+export { exampleBodyLines, exampleTitle };
 
 /** The first body line, which is all that all but one primitive needs. */
 export function exampleBodyLine(spec: PrimitiveSpec): string | undefined {
   return exampleBodyLines(spec)[0];
 }
-
-/** What a body line of each shape looks like when the example gives us nothing. */
-const FALLBACK: Record<PrimitiveSpec["bodyShape"], string> = {
-  none: "",
-  plain: "text",
-  keyed: "key: value",
-  indented: "item",
-  mixed: "text",
-};
 
 /**
  * The punctuation a body line of this primitive is genuinely built from.
@@ -323,7 +225,7 @@ export function scaffold(spec: PrimitiveSpec): vscode.SnippetString {
     // content. `@heading Overview` and `@note revisit this at scale` say
     // everything they have to say on their own line, and adding an indented
     // `text` under them scaffolds a second empty place to write.
-    if (hints.length === 0 && !title) hints.push(FALLBACK[spec.bodyShape]);
+    if (hints.length === 0 && !title) hints.push(BODY_FALLBACK[spec.bodyShape]);
     for (const hint of hints) {
       const body = tabstops(hint, stop, separators(spec));
       stop += (body.match(/\$\{\d+[:|]/g) ?? []).length;

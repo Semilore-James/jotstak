@@ -3,9 +3,8 @@
 // offers a block the page will then warn about.
 
 import { describe, expect, it } from "vitest";
-import { PRIMITIVES, canHold, getPrimitive } from "@jotstak/schema";
+import { PRIMITIVES, canHold, getPrimitive, slotAt } from "@jotstak/schema";
 import { render } from "@jotstak/renderer";
-import { slotAt } from "./composition.js";
 import { describe as hoverFor, primitiveCompletions } from "./language-features.js";
 
 /** Where the `|` is, as a slot. */
