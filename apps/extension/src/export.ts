@@ -63,7 +63,9 @@ body { margin: 0; padding: 24px 16px; background: #e9e3d9; container-type: inlin
 @media print {
   body { padding: 0; background: none; container-type: normal; }
   #sheet { width: auto; box-shadow: none; }
-  #sheet .jot-doc { padding-inline: 0; }
+  /* The page's margins are the document's own padding in print (renderPageCss),
+     repeated on every page: margins left to the browser came out white, with
+     its header and footer printed in them. */
 }
 </style>
 </head>

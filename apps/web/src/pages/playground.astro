@@ -317,7 +317,10 @@ button.chip { border: 1px dashed var(--jot-color-notebook-rule-lines); }
      and no containment — a size container would fragment its own way across
      pages, and pagination here has to stay the browser's job. */
   #out-wrap { border: 0; box-shadow: none; container-type: normal; }
-  #out .jot-doc { padding: 0; }
+  /* No padding reset here any more: the page's margins are the document's
+     own padding in print, repeated on every page (renderPageCss), because
+     margins left to the browser came out white, with its header and footer
+     printed in them. */
 }
 ${renderPageCss()}
 `;

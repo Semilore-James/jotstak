@@ -37,8 +37,19 @@ describe("the page (ARC-14: print-true A4, continuous screen)", () => {
 
   it("declares A4 pages, and a named landscape page for figures that need one", () => {
     const css = renderPageCss();
-    expect(css).toContain(`@page { size: A4 portrait; margin: ${PAGE.portrait.marginY}px 56px; }`);
-    expect(css).toContain(`@page ${LANDSCAPE_PAGE} { size: A4 landscape; margin: ${PAGE.landscape.marginY}px 56px; }`);
+    expect(css).toContain("@page { size: A4 portrait; margin: 0; }");
+    expect(css).toContain(`@page ${LANDSCAPE_PAGE} { size: A4 landscape; margin: 0; }`);
+  });
+
+  it("puts the margins inside the paper, on every page", () => {
+    // Margins left to the browser printed white — a cream card on a white
+    // sheet, text flush to its edge — and carried the browser's own header
+    // and footer. Checked on a real four-page PDF: paper to every corner, no
+    // header, and the top margin repeated on pages two to four.
+    const css = renderPageCss();
+    expect(css).toMatch(
+      new RegExp(`\\.jot-doc \\{\\s*padding: ${PAGE.portrait.marginY}px 56px;[\\s\\S]*?box-decoration-break: clone;`),
+    );
   });
 
   it("prints blocks whole, never ends a page on a heading, and turns wide figures landscape", () => {

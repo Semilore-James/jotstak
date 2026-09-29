@@ -86,14 +86,28 @@ export const REFLOW_BELOW = 680;
 export function renderPageCss(scope = ".jotstak"): string {
   const p = PAGE.portrait;
   const l = PAGE.landscape;
+  // The page's own margins are ZERO, and the margins are padding inside the
+  // document, repeated on every page. Two reasons, both seen in a real PDF:
+  // a browser leaves @page margins white whatever the page's background, so
+  // the notebook printed as a cream card on a white sheet with the text flush
+  // to its edge; and it prints its own header and footer — date, title,
+  // address, page count — into any margin it is given. A page with no margin
+  // has no room for either. `clone` is what repeats the padding at the top and
+  // bottom of each page rather than only the first and last.
+  void l;
   return `
-@page { size: A4 portrait; margin: ${p.marginY}px ${MARGIN_X}px; }
-@page ${LANDSCAPE_PAGE} { size: A4 landscape; margin: ${l.marginY}px ${MARGIN_X}px; }
+@page { size: A4 portrait; margin: 0; }
+@page ${LANDSCAPE_PAGE} { size: A4 landscape; margin: 0; }
 @media print {
   html:has(${scope}[data-mode="notebook"]) {
     background: var(--jot-color-notebook-paper, #fcf8f2);
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
+  }
+  ${scope}[data-mode] .jot-doc {
+    padding: ${p.marginY}px ${MARGIN_X}px;
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
   }
 }
 `;
