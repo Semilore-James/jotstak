@@ -410,15 +410,38 @@ ${scope} [data-rows="2"] { --rows: 2; }
 ${scope} [data-rows="3"] { --rows: 3; }
 ${scope} [data-rows="4"] { --rows: 4; }
 
-/* A pill grows to hold its lines and stays centred in the rows it was given,
-   so the arrow still meets it in the middle. */
+/* A pill grows to hold its lines, and is entered where every node is: the
+   middle of its FIRST row (UX-59). It used to be entered there by its line and
+   in its middle by its arrow, a row apart, so on a two-line pill the line
+   stopped in mid-air above the arrowhead it was meant to end in.
+
+   Its corners stay those of a one-line pill rather than going round. A line
+   arriving at the first row meets a fully rounded pill on its curve; at a
+   one-line pill's radius the side is straight from exactly that height down. */
 ${scope} .jot-tree[data-nodes="boxed"] [data-rows] > .jot-tree-label > .jot-tree-text {
   height: calc(var(--rows) * ${u(R)} - ${u(2 * pillMargin)});
   display: flex;
   flex-direction: column;
   justify-content: center;
   line-height: calc(${u(TREE.pillHeight)} - 2px);
+  border-radius: ${u(TREE.pillHeight / 2)};
 }
+/* Every look that enters a pill from the side. A spread chart enters from
+   above, at the pill's top edge, and keeps its own arrow. */
+${scope} .jot-tree[data-look="chart"] .jot-tree-kids[data-flow="stack"] > .jot-tree-node[data-rows] > .jot-tree-label > .jot-tree-text::before,
+${scope} .jot-tree[data-look="columns"][data-nodes="boxed"] .jot-tree-kids > .jot-tree-node[data-rows] > .jot-tree-label > .jot-tree-text::before,
+${scope} .jot-tree[data-look="split"][data-nodes="boxed"] .jot-tree-side[data-side] .jot-tree-kids > .jot-tree-node[data-rows] > .jot-tree-label > .jot-tree-text::before {
+  /* [data-side] outranks the split's own arrows, which come later. */
+  top: ${u(M - pillMargin)};
+}
+/* A stack's rail ends where its last child is entered, which for a child of
+   several rows is not one half-row above the bottom. */
+${[2, 3, 4]
+  .map(
+    (rows) =>
+      `${scope} .jot-tree[data-look="chart"] .jot-tree-kids[data-flow="stack"]:has(> .jot-tree-node:last-child[data-rows="${rows}"])::before { bottom: ${u(rows * R - M)}; }`,
+  )
+  .join("\n")}
 
 /* ── dir=split: a bilateral mind map ────────────────────────────────── */
 /* Three columns — left branches, the hub, right branches — not one column per

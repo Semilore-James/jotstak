@@ -231,3 +231,39 @@ describe("@tree — pill shades pass WCAG AA (UX-29)", () => {
     expect(css).toContain("--pill-branch-fill: var(--jot-color-doc-viewport);");
   });
 });
+
+// A pill of two lines was entered by its line at the middle of its first row
+// and by its arrowhead at its own middle, a row lower: the line stopped in
+// mid-air above the arrow it was meant to end in, in every look that enters a
+// pill from the side. And a stack's rail ran on half a row past a last child
+// of two rows. Found in a real document, five two-line pills under one parent.
+describe("@tree — a two-line pill is entered at its first row, line and arrow alike (UX-59)", () => {
+  const css = renderLayoutCss();
+  const firstRow = `top: calc(${TREE.mid - (TREE.row - TREE.pillHeight) / 2} * var(--u, 1px));`;
+
+  it.each([
+    ['[data-look="chart"] .jot-tree-kids[data-flow="stack"]', "a stack"],
+    ['[data-look="columns"][data-nodes="boxed"] .jot-tree-kids', "dir=right"],
+    ['[data-look="split"][data-nodes="boxed"] .jot-tree-side[data-side] .jot-tree-kids', "a split"],
+  ])("puts the arrow where the line arrives in %s", (scope) => {
+    const rule = `${scope} > .jot-tree-node[data-rows] > .jot-tree-label > .jot-tree-text::before`;
+    const at = css.indexOf(rule);
+    expect(at, `no first-row arrow for ${scope}`).toBeGreaterThan(-1);
+    expect(css.slice(at, css.indexOf("}", at))).toContain(firstRow);
+  });
+
+  it("keeps a one-line pill's corners, so the line lands on a straight side", () => {
+    expect(css).toMatch(/\[data-rows\] > \.jot-tree-label > \.jot-tree-text \{[^}]*border-radius: calc\(12 \* var\(--u, 1px\)\);/);
+  });
+
+  it.each([2, 3, 4])("ends a stack's rail where a last child of %i rows is entered", (rows) => {
+    expect(css).toContain(
+      `:has(> .jot-tree-node:last-child[data-rows="${rows}"])::before { bottom: calc(${rows * TREE.row - TREE.mid} * var(--u, 1px)); }`,
+    );
+  });
+
+  it("marks a broken pill with its rows, which is what the rules key on", () => {
+    const { html } = render("@tree dir=down nodes=boxed\n  Root\n    One\\ntwo\n    Single", { mode: "notebook" });
+    expect(html).toMatch(/<li class="jot-tree-node" data-role="leaf" data-rows="2">/);
+  });
+});
