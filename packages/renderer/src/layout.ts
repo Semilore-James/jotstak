@@ -330,6 +330,11 @@ ${scope} .jot-body blockquote p {
    paragraphs — a card's kicker and title, a cover's title and subtitle, a
    column's heading are paragraphs too, with a class, and stay tight. */
 ${scope} .jot-body p:not([class]) + p:not([class]) { margin-top: ${ROW}px; }
+/* …and a block of prose gets the row below it that every other block gets.
+   The same zeroing rule took it away, so a card, a table or a diagram written
+   after a paragraph sat directly under its last line, and a heading after one
+   got half the space it gets after anything else. */
+${scope} .jot-body > p:not([class]):last-child { margin-bottom: ${ROW}px; }
 
 
 /* ── Headings: six levels, six looks ────────────────────────────────── */

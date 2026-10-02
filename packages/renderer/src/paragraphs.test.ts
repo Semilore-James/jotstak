@@ -21,6 +21,11 @@ describe("on the page", () => {
     expect(css).toMatch(/\.jotstak \.jot-body p:not\(\[class\]\) \+ p:not\(\[class\]\) \{ margin-top: 28px; \}/);
   });
 
+  it("gives a block of prose the row below it that every block gets", () => {
+    // A card after a paragraph sat directly under its last line.
+    expect(css).toMatch(/\.jotstak \.jot-body > p:not\(\[class\]\):last-child \{ margin-bottom: 28px; \}/);
+  });
+
   it("outranks the rule that zeroes every paragraph's margin", () => {
     // (0,4,2) against (0,2,1): two classes and two attribute tests beat two classes.
     expect(css.indexOf("p:not([class]) + p:not([class])")).toBeGreaterThan(css.indexOf(".jot-body blockquote p {"));
