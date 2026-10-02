@@ -5,12 +5,14 @@ sidebar:
   order: 5
 ---
 
-Every document is a sheet of A4. On screen it scrolls as one long page; printed,
-it breaks into real pages, and nothing is cut off or rearranged on the way.
+Every document is A4. In the playground and in VS Code you see its real pages,
+one sheet after another, and printing gives you exactly those pages: nothing
+moves, nothing is cut off or rearranged on the way. On a phone the pages give
+way to one column you can read at full size.
 
 ## Where the page breaks go
 
-You do not place them. When a document is printed:
+You do not place them. A document fills each sheet from the top, and:
 
 - a block that does not fit at the bottom of a page moves to the next one
   whole, rather than being cut in two
@@ -19,14 +21,16 @@ You do not place them. When a document is printed:
 - a block and the margin notes beside it move together
 - a diagram too wide for the page gets a sideways page of its own
 
-A block taller than a whole page is the one thing allowed to continue onto the
+Paragraphs, lists and quotes carry on to the next sheet between two lines. A
+block taller than a whole page is the one block allowed to continue onto the
 next.
 
 ## A break of your own
 
 When you want a new page at a particular point — an appendix, a section someone
-will hand on separately — write `@pagebreak`. It shows on screen as a marked
-line, so you can see where it will fall.
+will hand on separately — write `@pagebreak`, and the next sheet starts there.
+Where a document is not shown as pages, like the short example below, it
+appears as a marked line instead.
 
 ```jot-demo
 The last line of the summary.

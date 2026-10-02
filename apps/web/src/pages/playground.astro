@@ -280,7 +280,10 @@ button.chip { border: 1px dashed var(--jot-color-notebook-rule-lines); }
 /* The side margins are the page's real ones, so the sheet is exactly A4 wide
    (ARC-14). Doc mode already sets these; notebook mode had 24px of padding
    chosen by eye. */
-#out .jot-doc { padding-inline: ${PAGE.marginX}px; }
+#out .jotstak:not([data-paged]) .jot-doc { padding-inline: ${PAGE.marginX}px; }
+/* Laid out as pages (UX-73), the sheets sit on a desk of their own colour, so
+   cream paper still reads as paper against the cream site. */
+#out-wrap { --jot-desk: #e9e3d9; }
 
 #diags { margin-top: 10px; font-family: var(--jot-font-mono); font-size: 12px; line-height: 20px; }
 #diags:empty { display: none; }
@@ -406,7 +409,7 @@ ${renderPageCss()}
 </Base>
 
 <script>
-  import { documentName, parse, render } from "@jotstak/renderer";
+  import { PAGE_GEOMETRY, documentName, paginate, parse, render } from "@jotstak/renderer";
   import type { Node as JotNode } from "@jotstak/renderer";
   import {
     UNIVERSAL_PARAMS,
@@ -525,6 +528,9 @@ ${renderPageCss()}
     const paint = (): void => {
       const { html, diagnostics } = render(src.value, { mode });
       out.innerHTML = html;
+      // The pages are measured, so they are laid out after the HTML is in.
+      const root = out.querySelector<HTMLElement>(".jotstak");
+      if (root) paginate(root, PAGE_GEOMETRY);
       diags.innerHTML = diagnostics
         .map((d) => {
           const text = `${d.severity} · line ${d.line + 1} — ${d.message}`;
@@ -856,7 +862,12 @@ ${renderPageCss()}
           allSticky = sticky;
         }
       }
-      const el = out.querySelectorAll<HTMLElement>(".jot-row")[Math.max(0, row)];
+      // On pages a row is found by its place in the document; a row carried
+      // across a break appears twice, and the first is where it starts.
+      const at = Math.max(0, row);
+      const el =
+        out.querySelector<HTMLElement>(`.jot-row[data-row="${at}"]:not([data-continued])`) ??
+        out.querySelectorAll<HTMLElement>(".jot-row")[at];
       if (!el) return;
       el.scrollIntoView({ block: "center", behavior: still.matches ? "auto" : "smooth" });
       el.classList.remove("is-placed");
@@ -1204,6 +1215,19 @@ ${renderPageCss()}
       if (e.key === "Escape") setDl(false);
     });
     window.addEventListener("resize", moveThumb);
+    // Pages are laid out again when the width changes: across the phone
+    // threshold a document stops being sheets of A4 and becomes one column.
+    // And once the fonts arrive, since a page's breaks depend on how tall the
+    // text set.
+    let paneWidth = window.innerWidth;
+    let repage = 0;
+    window.addEventListener("resize", () => {
+      if (window.innerWidth === paneWidth) return;
+      paneWidth = window.innerWidth;
+      window.clearTimeout(repage);
+      repage = window.setTimeout(paint, 150);
+    });
+    if (document.fonts?.ready) void document.fonts.ready.then(paint);
     if (document.fonts?.ready) void document.fonts.ready.then(moveThumb);
 
     moveThumb();

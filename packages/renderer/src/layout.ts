@@ -25,6 +25,7 @@ import { renderTableCss, renderTablePrintCss } from "./table-css.js";
 import { renderCoverCss, renderCoverPrintCss } from "./cover-css.js";
 import { renderStickyCss, renderStickyPrintCss } from "./sticky-css.js";
 import { FONT_METRICS } from "./font-metrics.js";
+import { PAGE_GEOMETRY as SHEETS } from "./pages.js";
 
 const ROW = spacing.baselineGrid;
 /** A whole sheet of A4 at 96dpi: the printable width plus the page margins. */
@@ -144,12 +145,61 @@ ${scope} .jot-doc {
 }
 
 @container jot-host (max-width: ${REFLOW_BELOW - 1}px) {
-  ${scope} { --jot-fit: 1; }
+  /* --jot-reflow tells the pagination to leave the document as one column. */
+  ${scope} { --jot-fit: 1; --jot-reflow: 1; }
   /* The document takes the room it has. Everything else — the 28px row, 16px
      body text, the figures fitting their container — is unchanged, because
      none of it was ever a function of the page's width. */
   ${scope} .jot-doc { max-width: 100%; }
 }
+/* ── Pages on screen (UX-73) ────────────────────────────────────────── */
+/* Laid out by paginate() in pages.ts, which marks the document data-paged and
+   deals its rows onto sheets. A sheet is a real A4 page: the paper, its
+   margins, and a window exactly as many rows tall as the page holds. A row
+   that carries on to the next sheet is in both, and each window shows its
+   own part — whole rows, so a break always falls between two lines. */
+${scope}[data-paged] { padding: ${ROW}px 0; }
+${scope}[data-mode="notebook"][data-paged] { background: var(--jot-desk, transparent); }
+${scope} .jot-pages {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: ${ROW}px;
+}
+${scope} .jot-sheet {
+  flex: none;
+  box-sizing: border-box;
+  width: ${SHEETS.portrait.width}px;
+  height: ${SHEETS.portrait.height}px;
+  padding: ${SHEETS.portrait.marginY}px ${SHEETS.portrait.marginX}px;
+  background: var(--jot-surface);
+  box-shadow: 0 2px 14px rgba(0, 0, 0, 0.16);
+}
+${scope}[data-mode="doc"] .jot-sheet {
+  border: 1px solid var(--jot-color-doc-sheet-border);
+  box-shadow: var(--jot-shape-elevation-doc-sheet);
+}
+/* A landscape sheet is drawn at the width of a portrait one beside it, so the
+   column of pages stays one width; it prints full size. */
+${scope} .jot-sheet[data-orient="landscape"] {
+  width: ${SHEETS.landscape.width}px;
+  height: ${SHEETS.landscape.height}px;
+  zoom: ${(SHEETS.portrait.width / SHEETS.landscape.width).toFixed(4)};
+}
+${scope}[data-paged] .jot-sheet > .jot-doc {
+  position: relative;
+  max-width: none;
+  height: ${SHEETS.portrait.rows * ROW}px;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background: none;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+${scope}[data-paged] .jot-sheet[data-orient="landscape"] > .jot-doc { height: ${SHEETS.landscape.rows * ROW}px; }
+
 /* One row per block: the block beside its margin notes. Rows are separate
    elements rather than cells of one document-wide grid because print needs
    them to be. A browser honours a named page — the landscape sheet — only on

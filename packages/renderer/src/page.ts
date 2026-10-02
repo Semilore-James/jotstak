@@ -109,6 +109,24 @@ export function renderPageCss(scope = ".jotstak"): string {
     -webkit-box-decoration-break: clone;
     box-decoration-break: clone;
   }
+  /* A document laid out as sheets (UX-73) prints a sheet to a page, exactly
+     as it shows: the browser is given nothing to break, so the PDF cannot end
+     a page anywhere the screen did not. The margins are the sheet's own. */
+  ${scope}[data-paged] { background: none; padding: 0; }
+  ${scope}[data-paged] .jot-pages { display: block; }
+  ${scope}[data-paged] .jot-sheet {
+    width: 210mm;
+    height: 297mm;
+    margin: 0;
+    border: 0;
+    box-shadow: none;
+    zoom: 1;
+    break-inside: avoid;
+    break-after: page;
+  }
+  ${scope}[data-paged] .jot-sheet:last-child { break-after: auto; }
+  ${scope}[data-paged] .jot-sheet[data-orient="landscape"] { width: 297mm; height: 210mm; page: ${LANDSCAPE_PAGE}; }
+  ${scope}[data-mode][data-paged] .jot-sheet > .jot-doc { padding: 0; }
 }
 `;
 }

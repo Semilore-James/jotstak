@@ -10,7 +10,7 @@
 // the point: the rule about how a document is framed should be checked against
 // the thing that draws it, not against a copy of it.
 
-import { PAGE, renderLayoutCss, renderPageCss, renderThemeCss } from "@jotstak/renderer";
+import { PAGE, pagesScript, renderLayoutCss, renderPageCss, renderThemeCss } from "@jotstak/renderer";
 
 /** A whole sheet of A4 at 96dpi: the printable width plus the page margins. */
 export const SHEET = PAGE.portrait.content + 2 * PAGE.marginX;
@@ -54,7 +54,10 @@ body {
    uses. No overflow: if something ever fails to fit it should hang over the
    edge where it can be seen, not be quietly cut. */
 #sheet > .jotstak { zoom: var(--jot-fit); }
-#sheet .jot-doc { padding-inline: ${PAGE.marginX}px; }
+#sheet .jotstak:not([data-paged]) .jot-doc { padding-inline: ${PAGE.marginX}px; }
+/* Laid out as pages (UX-73), each sheet carries its own paper and shadow, and
+   they sit straight on the editor's background like pages in a PDF viewer. */
+#sheet:has(> .jotstak[data-paged]) { box-shadow: none; }
 #empty {
   margin: 0;
   padding: 8px 16px;
@@ -66,14 +69,33 @@ body {
 <body>
 <div id="sheet"><p id="empty">Rendering…</p></div>
 <script nonce="${nonce}">
+${pagesScript()}
   const api = acquireVsCodeApi();
   const sheet = document.getElementById("sheet");
+  let last = "";
+  // Replacing the markup in place keeps the scroll position, which is the
+  // whole point of not reloading the page: typing on page four should not
+  // throw you back to page one every time you pause. Then the pages are laid
+  // out over it, since they are measured (UX-73).
+  const show = () => {
+    sheet.innerHTML = last;
+    window.jotPages(sheet.querySelector(".jotstak"));
+  };
   addEventListener("message", (e) => {
     if (!e.data || e.data.type !== "render") return;
-    // Replacing the markup in place keeps the scroll position, which is the
-    // whole point of not reloading the page: typing on page four should not
-    // throw you back to page one every time you pause.
-    sheet.innerHTML = e.data.html;
+    last = e.data.html;
+    show();
+  });
+  // Again once the fonts arrive, and when the pane's width changes: below the
+  // phone threshold a document is one column rather than sheets.
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => last && show());
+  let width = innerWidth;
+  let timer = 0;
+  addEventListener("resize", () => {
+    if (innerWidth === width) return;
+    width = innerWidth;
+    clearTimeout(timer);
+    timer = setTimeout(() => last && show(), 150);
   });
   api.postMessage({ type: "ready" });
 </script>
