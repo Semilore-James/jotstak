@@ -300,6 +300,12 @@ describe("cards", () => {
     expect(document).toContain("<w:cantSplit/>");
   });
 
+  it("keep a persona's description under its fields (UX-72)", async () => {
+    const { document } = await docx("@persona name=Marta\n  role: Platform PM\n  Writes every spec herself.");
+    expect(document.indexOf("Platform PM")).toBeGreaterThan(-1);
+    expect(document.indexOf("Writes every spec herself.")).toBeGreaterThan(document.indexOf("Platform PM"));
+  });
+
   it("turn terracotta when flagged", async () => {
     const { document } = await docx('@risk title="Churn" level=high\n  owner: Growth');
     expect(document).toContain(`<w:top w:val="single" w:sz="6" w:space="0" w:color="C67139"/>`);

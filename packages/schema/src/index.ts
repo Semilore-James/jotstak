@@ -644,17 +644,19 @@ const persona: PrimitiveSpec = {
   short:
     "Who you are building for, as a card of named fields.",
   summary:
-    "Persona card. Body uses `key: value` lines for structured fields. Keys are freeform — use whatever fields suit the persona (name, role, goal, frustration, quote, tools, context). Renders as a styled card with the name prominent.",
+    "Persona card. Body uses `key: value` lines for structured fields. Keys are freeform — use whatever fields suit the persona (name, role, goal, frustration, quote, tools, context). Any other line is a description, shown under the fields. Renders as a styled card with the name prominent.",
   params: [
     { name: "name", type: "string", required: true, description: "Persona name or archetype label." },
     { name: "image", type: "string", required: false, description: "Path or URL to an avatar image.", planned: true },
   ],
-  bodyShape: "keyed",
+  // Mixed, like @risk and @decision, rather than fields only (UX-72): a line
+  // of prose under a persona's fields used to be dropped without a word.
+  bodyShape: "mixed",
   holds: "inside",
   nests: true,
   breaksRuling: true,
   examples: [
-    '@persona name="Marta, the systems PM"\n  role: Platform PM at a mid-size fintech\n  goal: Sketch data relationships inside the spec, not in a separate tool\n  frustration: Notion has no star schema view, Miro loses sync with the doc\n  tools: VS Code, Datadog, dbt, Notion (reluctantly)\n  quote: "I just want the diagram next to the paragraph that explains it."',
+    '@persona name="Marta, the systems PM"\n  role: Platform PM at a mid-size fintech\n  goal: Sketch data relationships inside the spec, not in a separate tool\n  frustration: Notion has no star schema view, Miro loses sync with the doc\n  tools: VS Code, Datadog, dbt, Notion (reluctantly)\n  quote: "I just want the diagram next to the paragraph that explains it."\n  Writes every spec herself, and keeps it open in VS Code all day.',
   ],
 };
 

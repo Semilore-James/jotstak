@@ -61,6 +61,17 @@ describe("inside a block", () => {
   });
 });
 
+describe("a persona's description", () => {
+  // Its body was fields only, so a line of prose under the fields was dropped
+  // without a word (UX-72). It reads like @risk's and @decision's now.
+  it("shows under its fields, rather than vanishing", () => {
+    const out = html("@persona name=Marta\n  role: Platform PM\n  Writes every spec herself.\n\n  Keeps it open all day.");
+    expect(out).toContain("Platform PM");
+    expect(paragraphs(out)).toEqual(["Writes every spec herself.", "Keeps it open all day."]);
+    expect(out.indexOf("Platform PM")).toBeLessThan(out.indexOf("Writes every spec"));
+  });
+});
+
 describe("a note or a quote with lines under it", () => {
   // Either alone was fine; both together dropped the first line.
   it("keeps the words on its own line", () => {
