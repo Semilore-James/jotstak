@@ -16,16 +16,17 @@ Start with [CONTRIBUTING.md](CONTRIBUTING.md) to get a dev environment running, 
 | --- | --- |
 | `packages/renderer` | Framework-free `.jot` → HTML. The shared heart. Imported by the extension preview AND the web playground. |
 | `packages/schema` | Primitive definitions — single source of truth for LSP autocomplete and generated docs reference. |
-| `packages/icons` | Lucide (MIT) icons with a per-mode treatment: roughened in notebook mode, clean in doc mode. Opt-in per block. |
+| `packages/docx` | A `.jot` document as a Word file (.docx) for Word and Google Docs. No dependencies: runs in the browser and in Node. |
+| `packages/icons` | **Not built yet.** The plan for `@icon`: Lucide (MIT) icons, roughened in notebook mode and clean in doc mode. |
 | `apps/extension` | VS Code extension (Marketplace + Open VSX). |
 | `apps/web` | Astro site: marketing + playground + docs (Starlight), one build. |
-| `templates` | Starter `.jot` files (PRD, retro, persona, …). |
+| `templates` | Starter `.jot` files: a PRD and a retro so far. |
 
 ## Stack
 
-- Site: **Astro** on **Cloudflare Pages**; DNS + SSL on the **Cloudflare** zone.
+- Site: **Astro** on **Cloudflare Pages**, at [jotstak.pages.dev](https://jotstak.pages.dev).
 - Extension: **VS Code Marketplace** (primary) + **Open VSX**.
-- Email capture: **Buttondown**.
+- Email capture: **Buttondown**, planned.
 - Deferred backend (cloud sync / team / hosted render): **Supabase**, not built yet.
 
 ## Develop

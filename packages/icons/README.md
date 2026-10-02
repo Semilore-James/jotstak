@@ -1,6 +1,8 @@
 # @jotstak/icons
 
-Icon set bundled into the extension and web renderer so `@icon` works offline.
+> **Not built yet.** `@icon` is marked planned: the docs and autocomplete say so, and using it shows a note rather than an icon. What follows is the design it will be built to.
+
+Icon set to be bundled into the extension and web renderer so `@icon` works offline.
 
 ## Source set: Lucide (MIT)
 
