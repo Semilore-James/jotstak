@@ -143,8 +143,9 @@ describe("the zip", () => {
   });
 
   it("makes the same bytes for the same document", async () => {
-    const source = "# Same\n\nEvery time.";
-    expect(await toDocx(source)).toEqual(await toDocx(source));
+    const source = "# Same\n\nEvery time.\n@note Even with a note.";
+    const date = new Date("2026-10-02T00:00:00Z");
+    expect(await toDocx(source, { date })).toEqual(await toDocx(source, { date }));
   });
 });
 
@@ -366,6 +367,47 @@ describe("diagrams", () => {
     expect(seen).toHaveLength(1);
     expect(seen[0]).toHaveLength(2);
     expect(document).toContain(`descr="Sticky notes: First note; Second note"`);
+  });
+});
+
+// ── Google Docs ──────────────────────────────────────────────────────────
+//
+// The first file was opened in Google Docs and came out with a third of a
+// page of air under every heading and no space at all between two cards.
+// Docs has no exact line height: it read a 56px line as "3.5 lines", and a
+// row of space set as the height of an empty 1pt line as almost nothing.
+
+describe("in Google Docs", () => {
+  it("never sets a line's height exactly or as a minimum, which Docs misreads", async () => {
+    const { files } = await docx(readFileSync(fileURLToPath(new URL("../../../samples/showcase.jot", import.meta.url)), "utf8"), camera({ width: 600, height: 300 }));
+    for (const part of ["word/document.xml", "word/styles.xml", "word/numbering.xml"]) {
+      expect(text(files, part), part).not.toMatch(/w:lineRule="(exact|atLeast)"/);
+    }
+  });
+
+  it("never sets a line below single, which clips the tops of letters", async () => {
+    const { files } = await docx("# Title\n\n### Small heading\n\nText.");
+    for (const part of ["word/document.xml", "word/styles.xml"]) {
+      for (const m of text(files, part).matchAll(/w:line="(\d+)"/g)) expect(Number(m[1])).toBeGreaterThanOrEqual(240);
+    }
+  });
+
+  it("makes a row of space between blocks out of space after a paragraph, which every reader takes exactly", async () => {
+    const { files, document } = await docx('@decision title="A"\n  x: 1\n\n@decision title="B"\n  y: 2');
+    expect(document).toContain(`</w:tbl><w:p><w:pPr><w:pStyle w:val="Gap"/></w:pPr></w:p><w:tbl>`);
+    expect(text(files, "word/styles.xml")).toMatch(/w:styleId="Gap">.*?<w:spacing w:after="400" w:line="240" w:lineRule="auto"\/>/);
+  });
+
+  it("sets a card's key and value on one line, so they share a baseline", async () => {
+    const { document } = await docx('@decision title="A"\n  context: Seat pricing punishes adoption');
+    const p = paragraphsWith(document, ">context<")[0]!;
+    expect(p).toContain("Seat pricing punishes adoption");
+    expect(p).toContain("<w:tab/>");
+  });
+
+  it("dates every comment, rather than leaving Docs to call it 1970", async () => {
+    const files = unzip(await toDocx("Words.\n@note A thought.", { date: new Date("2026-10-02T09:30:00.123Z") }));
+    expect(text(files, "word/comments.xml")).toContain(`w:date="2026-10-02T09:30:00Z"`);
   });
 });
 

@@ -116,6 +116,7 @@ export function run(text: string, p: RunProps = {}): string {
 }
 
 export const lineBreak = (): string => "<w:r><w:br/></w:r>";
+export const tab = (): string => "<w:r><w:tab/></w:r>";
 export const pageBreak = (): string => `<w:r><w:br w:type="page"/></w:r>`;
 
 // ── Borders ──────────────────────────────────────────────────────────────
@@ -162,6 +163,8 @@ export interface ParaProps {
   borders?: Sides;
   /** Background fill. */
   fill?: string;
+  /** Left tab stops, in twips. */
+  tabs?: number[];
   spacing?: Spacing;
   indent?: { left?: number; right?: number; hanging?: number };
   align?: "left" | "center" | "right" | "both";
@@ -195,6 +198,7 @@ export function pPr(p: ParaProps): string {
     (p.numbering ? `<w:numPr><w:ilvl w:val="${p.numbering.level}"/><w:numId w:val="${p.numbering.id}"/></w:numPr>` : "") +
     borders +
     (p.fill ? `<w:shd w:val="clear" w:color="auto" w:fill="${p.fill}"/>` : "") +
+    (p.tabs?.length ? `<w:tabs>${p.tabs.map((t) => `<w:tab w:val="left" w:pos="${t}"/>`).join("")}</w:tabs>` : "") +
     spacing +
     indent +
     val("jc", p.align) +

@@ -11,7 +11,7 @@ know this page — with one difference, and it is the first section.
 ## A line you ended is a line
 
 Press Enter and the line breaks. Leave a blank line and you start a new
-paragraph.
+paragraph, a row further down. That holds inside a card or a column too.
 
 ```jot-demo
 Discovery ran for six weeks.

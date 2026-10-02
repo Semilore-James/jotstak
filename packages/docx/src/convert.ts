@@ -12,7 +12,7 @@
 // do what the page does, the nearest thing it can do is chosen and the reason
 // is written beside it.
 
-import { PAGE, buildTable, isCard, readCard, readCover, rowsOf, TREND } from "@jotstak/renderer";
+import { PAGE, buildTable, isCard, proseOf, readCard, readCover, rowsOf, TREND } from "@jotstak/renderer";
 import type {
   BlockNode,
   DocumentNode,
@@ -25,7 +25,7 @@ import type {
   Row,
   TreeNode,
 } from "@jotstak/renderer";
-import { HEADINGS, KICKER, LABEL, Numbering, ROW_TW } from "./styles.js";
+import { HEADINGS, KICKER, LABEL, Numbering, ROW_TW, TINY, lineFor } from "./styles.js";
 import {
   C,
   FONT,
@@ -39,6 +39,7 @@ import {
   rPr,
   run,
   sectPr,
+  tab,
   tblPr,
   tcPr,
   tw,
@@ -173,6 +174,8 @@ export class Context {
     readonly breaks: boolean,
     /** The name every comment carries: the document's author, else "Note" (UX-70). */
     readonly author: string,
+    /** When the file was made, which every comment is dated: without one, Google Docs dates it 1970. */
+    readonly date: string,
     readonly picture?: DrawPicture,
   ) {}
 
@@ -215,7 +218,7 @@ export class Context {
     const ref = `<w:r>${rPr({ style: "CommentReference" })}<w:annotationRef/></w:r>`;
     const words = inline(note.lines.join(" "), {}, this);
     this.comments.push(
-      `<w:comment w:id="${id}" w:author="${esc(this.author)}" w:initials="${esc(initials(this.author))}">` +
+      `<w:comment w:id="${id}" w:author="${esc(this.author)}" w:date="${this.date}" w:initials="${esc(initials(this.author))}">` +
         `<w:p>${pPr({ style: "CommentText" })}${ref}${words}</w:p>` +
         `</w:comment>`,
     );
@@ -418,9 +421,14 @@ function markdown(text: string, where: Where, ctx: Context, quote = false): Item
         break;
       }
       case "paragraph_open": {
-        // A paragraph after another is a blank line in the source: a row of space.
-        if (fresh) fresh = false;
-        else startBlock();
+        // A paragraph after another is a blank line in the source: a row of
+        // space (UX-71). In a list, only between paragraphs of one point —
+        // a point's own first line follows the point before it directly.
+        if (marker) fresh = false;
+        else if (fresh) fresh = false;
+        else if (lists.length > 0) {
+          if (!t.hidden) gapAfter(items);
+        } else startBlock();
         const words = tokens[i + 1]?.children ?? [];
         items.push(para(inlineTokens(words, {}, ctx), props()));
         i += 2;
@@ -535,7 +543,13 @@ function dataTable(
       cantSplit: true,
       cells: grid.map((w, c) => ({
         props: { width: w },
-        items: [para(cells[c]?.runs ?? "", { align: cells[c]?.align === "left" ? undefined : cells[c]?.align, keepNext: head[r] })],
+        items: [
+          para(cells[c]?.runs ?? "", {
+            style: head[r] ? "Label" : undefined,
+            keepNext: head[r],
+            align: cells[c]?.align === "left" ? undefined : cells[c]?.align,
+          }),
+        ],
       })),
     })),
   };
@@ -552,7 +566,7 @@ function dataTable(
 function box(items: Item[], where: Where, cell: Omit<CellProps, "width">, keep = true): Table {
   const content = items.length > 0 ? items : [para("")];
   // A cell must end in a paragraph, and one that ends in a table needs one after it.
-  if (content[content.length - 1]!.kind === "tbl") content.push(para("", { spacing: { line: 20, rule: "exact" } }));
+  if (content[content.length - 1]!.kind === "tbl") content.push(para("", TINY));
   return {
     kind: "tbl",
     props: { width: where.width, indent: where.indent || undefined, fixed: true, cellMargins: { top: 0, left: 0, bottom: 0, right: 0 } },
@@ -588,7 +602,7 @@ async function card(n: BlockNode, where: Where, ctx: Context): Promise<Item[]> {
         run(m.metric.value, { bold: true, size: hp(28) }) +
           (trend ? run(`  ${trend}`, { ...small, color: trendColor }) : "") +
           (m.metric.target ? run(`  target ${m.metric.target}`, small) : ""),
-        { spacing: { line: tw(2 * ROW), rule: "exact" }, keepNext: true },
+        { spacing: lineFor(28, 2 * ROW), keepNext: true },
       ),
     );
   }
@@ -610,7 +624,7 @@ async function callout(n: BlockNode, where: Where, ctx: Context): Promise<Item[]
   const color = CALLOUT_COLORS[flavor] ?? C.hairline;
   const left = tw(ROW - 2);
   const cell = inside(where, left);
-  const items: Item[] = [para(run(flavor, { ...KICKER, color }), { keepNext: true })];
+  const items: Item[] = [para(run(flavor, { ...KICKER, color }), { style: "Kicker" })];
   const body = bodyItems(n, cell, ctx);
   items.push(...(body.length > 0 ? body : n.title ? [para(inline(n.title, {}, ctx))] : []));
   await nestedAfter(n.children, items, cell, ctx);
@@ -629,7 +643,7 @@ function cover(n: BlockNode, where: Where, ctx: Context): Item[] {
   const title = para(inline(m.title, {}, ctx), {
     style: "Title",
     ...(m.style === "minimal"
-      ? { mark: { size: hp(22) }, spacing: { line: tw(ROW), rule: "exact" as const } }
+      ? { mark: { size: hp(22) }, spacing: lineFor(22, ROW) }
       : {}),
   });
   // A minimal cover's title comes down a size, so it is not louder than the h1 under it.
@@ -677,7 +691,7 @@ async function columns(n: BlockNode, where: Where, ctx: Context): Promise<Item[]
       const items: Item[] = [];
       const f = fields[i];
       if (f) {
-        if (showHeadings) items.push(para(inline(f.key, LABEL, ctx), { keepNext: true }));
+        if (showHeadings) items.push(para(inline(f.key, LABEL, ctx), { style: "Label", keepNext: true }));
         items.push(...(await interleave(f.children, f.blocks, (lines) => looseProse(lines, room, ctx), room, ctx)));
       } else {
         for (const child of n.children) {
@@ -699,7 +713,7 @@ async function columns(n: BlockNode, where: Where, ctx: Context): Promise<Item[]
 }
 
 function endInPara(items: Item[]): Item[] {
-  if (items[items.length - 1]?.kind === "tbl") items.push(para("", { spacing: { line: 20, rule: "exact" } }));
+  if (items[items.length - 1]?.kind === "tbl") items.push(para("", TINY));
   return items;
 }
 
@@ -716,7 +730,7 @@ function meta(n: BlockNode): Item[] {
         run(f.value, { font: FONT.label, size: hp(12) }),
     )
     .join("");
-  return [para(runs)];
+  return [para(runs, { spacing: lineFor(12, ROW, FONT.label) })];
 }
 
 /** A divider: a short centred mark, 40% of the width, in the accent. */
@@ -731,52 +745,57 @@ function divider(style: string, where: Where): Para {
   return para("", {
     borders: { bottom: border },
     indent: { left: where.indent + quarter, right: quarter },
-    spacing: { line: tw(20), rule: "exact", after: tw(8) },
+    // A line of next to no height in the middle of a row, its border the mark.
+    mark: TINY.mark,
+    spacing: { ...TINY.spacing, before: tw(ROW / 2 - 1), after: tw(ROW / 2 - 1) },
   });
 }
 
 // ── Bodies ───────────────────────────────────────────────────────────────
 
-function fieldTable(fields: Field[], where: Where, ctx: Context): Table {
-  // The page's field grid: a 7rem key column, a 14px gap, then the value.
+/**
+ * A card's fields: the key, a tab, the value, on ONE line, with the value's
+ * wrapped lines hanging under its first. The page sets them as a grid of two
+ * columns; a two-column table did the same in Word and put the small key a
+ * few pixels above the value's line in Google Docs, which sets each cell's
+ * line on its own. On one line they share a baseline in every reader.
+ */
+function fields(list: Field[], where: Where, ctx: Context): Item[] {
+  // The page's field grid: a 7rem key column and a 14px gap, then the value.
   const key = tw(112 + ROW / 2);
-  const value = where.width - key;
-  return {
-    kind: "tbl",
-    props: { width: where.width, fixed: true },
-    grid: [key, value],
-    rows: fields.map((f) => {
-      const items: Item[] = [];
-      if (f.value) items.push(para(inline(f.value, {}, ctx)));
-      for (const c of f.children) {
-        items.push(para(inline(c.text, {}, ctx), { numbering: { id: ctx.numbering.bullets, level: 0 }, indent: listIndent({ width: value, indent: 0, top: false }, 0) }));
-      }
-      return {
-        cells: [
-          { props: { width: key, margins: { right: tw(ROW / 2) } }, items: [para(run(f.key, LABEL))] },
-          { props: { width: value }, items: items.length > 0 ? items : [para("")] },
-        ],
-      };
-    }),
-  };
+  const items: Item[] = [];
+  for (const f of list) {
+    items.push(
+      para(run(f.key, LABEL) + tab() + (f.value ? inline(f.value, {}, ctx) : ""), {
+        tabs: [where.indent + key],
+        indent: { left: where.indent + key, hanging: key },
+      }),
+    );
+    for (const c of f.children) {
+      items.push(
+        para(inline(c.text, {}, ctx), {
+          numbering: { id: ctx.numbering.bullets, level: 0 },
+          indent: { left: where.indent + key + ROW_TW, hanging: ROW_TW },
+        }),
+      );
+    }
+  }
+  return items;
 }
-
-const nested = (r: TreeNode, depth = 0): string =>
-  [`${"  ".repeat(depth)}${r.text}`, ...r.children.map((c) => nested(c, depth + 1))].join("\n");
 
 /** Lines in a body that are not `key: value` are prose, read as Markdown, as on the page. */
 function looseProse(roots: TreeNode[], where: Where, ctx: Context): Item[] {
   if (roots.length === 0) return [];
-  return markdown(roots.map((r) => (r.children.length > 0 ? nested(r) : r.text)).join("\n"), where, ctx);
+  return markdown(proseOf(roots), where, ctx);
 }
 
 function bodyItems(n: BlockNode, where: Where, ctx: Context): Item[] {
   const b = n.body;
   switch (b.shape) {
     case "keyed":
-      return b.fields.length > 0 ? [fieldTable(b.fields, where, ctx)] : [];
+      return fields(b.fields, where, ctx);
     case "mixed":
-      return [...(b.fields.length > 0 ? [fieldTable(b.fields, where, ctx)] : []), ...looseProse(b.roots, where, ctx)];
+      return [...fields(b.fields, where, ctx), ...looseProse(b.roots, where, ctx)];
     case "plain":
       return b.lines.length > 0 ? markdown(b.lines.join("\n"), where, ctx) : [];
     case "indented":
@@ -1083,7 +1102,7 @@ async function block(n: Node, where: Where, ctx: Context, first = false): Promis
     case "meta":
       return { items: meta(n) };
     case "pagebreak":
-      return { items: [para(pageBreak(), { spacing: { line: 20, rule: "exact" } })] };
+      return { items: [para(pageBreak(), TINY)] };
     case "page":
       return { items: [] };
     default: {

@@ -54,7 +54,7 @@ export type { HtmlOptions } from "./html.js";
 // What the other outputs read a document with — the Word export — so that a
 // card, a table, a cover and a note's anchor mean the same thing there as on
 // the page. Each is the function the page itself is drawn from.
-export { readCard, isCard, TREND, markdownFor, toRows as rowsOf } from "./html.js";
+export { readCard, isCard, TREND, markdownFor, proseOf, toRows as rowsOf } from "./html.js";
 export type { CardModel, Row } from "./html.js";
 export { buildTable } from "./table.js";
 export type { TableModel, Align } from "./table.js";

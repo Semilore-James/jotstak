@@ -33,6 +33,8 @@ export interface DocxOptions {
   picture?: DrawPicture;
   /** The title in the file's properties. Defaults to the document's first heading. */
   title?: string;
+  /** When the file is made, which its comments are dated. Defaults to now. */
+  date?: Date;
 }
 
 /** The author or owner the document's @meta names, if it names one. */
@@ -66,7 +68,9 @@ export async function toDocx(source: string, options: DocxOptions = {}): Promise
   const page = ast.children.find((n) => n.type === "block" && n.name === "page");
   const breaks = !(page?.type === "block" && page.params.breaks === "off");
   const writer = author(ast);
-  const ctx = new Context(markdownFor(breaks), breaks, writer ?? "Note", options.picture);
+  // Seconds, no fraction: the form Word writes its own comment dates in.
+  const date = (options.date ?? new Date()).toISOString().replace(/\.\d{3}Z$/, "Z");
+  const ctx = new Context(markdownFor(breaks), breaks, writer ?? "Note", date, options.picture);
 
   const sections = await convertDocument(ast, ctx);
   const document =

@@ -323,6 +323,13 @@ ${scope} .jot-body blockquote p {
   line-height: ${ROW}px;
   font-size: ${typography.body.lg.size};
 }
+/* A blank line between two paragraphs is a row of space (UX-71). The rule
+   above zeroes every paragraph's margin, and it outranks the row each block
+   gets below it, so a blank line used to show as nothing at all: two
+   paragraphs read as one that happened to break. Only between two PLAIN
+   paragraphs — a card's kicker and title, a cover's title and subtitle, a
+   column's heading are paragraphs too, with a class, and stay tight. */
+${scope} .jot-body p:not([class]) + p:not([class]) { margin-top: ${ROW}px; }
 
 
 /* ── Headings: six levels, six looks ────────────────────────────────── */

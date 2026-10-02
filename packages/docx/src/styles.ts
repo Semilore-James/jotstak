@@ -17,6 +17,38 @@ const px = (size: string): number => parseFloat(size);
 export const ROW_TW = tw(ROW);
 
 /**
+ * How tall a typeface sets a line at "single" spacing, as a share of its
+ * size. It is not one number. Google Docs and Word for Mac read it from one
+ * pair of the font's measurements and Word for Windows from another, and for
+ * Lora and Inter the two differ by a sixth (Lora: 1.28 against 1.50 of its
+ * size; Inter: 1.21 against 1.43). Line heights are set from the point
+ * halfway between, so a 28px row comes out within 8% of 28px wherever the
+ * file is opened.
+ *
+ * Why not give the height exactly, as Word allows? Because Google Docs has no
+ * exact line height. It read a heading's 56px line as "3.5 lines" and gave
+ * every heading a third of a page of air below it.
+ */
+const SINGLE: Record<string, number> = {
+  [FONT.body]: (1.28 + 1.5) / 2,
+  [FONT.label]: (1.2104 + 1.4302) / 2,
+  [FONT.mono]: 1.3,
+};
+
+/**
+ * Line spacing that makes text of this size take this many pixels, as a
+ * multiple of single spacing — the one kind every reader agrees on. Never
+ * below single, which clips the tops of letters in Word.
+ */
+export function lineFor(fontPx: number, targetPx: number, family: string = FONT.body): { line: number; rule: "auto" } {
+  const single = fontPx * (SINGLE[family] ?? SINGLE[FONT.body]!);
+  return { line: Math.max(240, Math.round((240 * targetPx) / single)), rule: "auto" };
+}
+
+/** An empty paragraph's mark set at 1pt, single: a line of next to no height. */
+export const TINY = { mark: { size: 2 }, spacing: { line: 240, rule: "auto" as const } };
+
+/**
  * Headings, as doc mode sets them. `before` and `after` are the space the page
  * leaves above and below each one — measured, because a heading's place on
  * the page includes the shift that sits its text on a ruled line, and that is
@@ -33,8 +65,6 @@ export const HEADINGS = {
 } as const;
 
 export type HeadingLevel = keyof typeof HEADINGS;
-
-const exact = (px: number) => ({ line: tw(px), rule: "exact" as const });
 
 /** A label: the small capitals used for kickers, field keys, column headings and table headers. */
 export const LABEL: RunProps = {
@@ -81,7 +111,7 @@ const STYLES: StyleDef[] = [
       para: {
         keepNext: true,
         keepLines: true,
-        spacing: { before: tw(h.before), after: tw(h.after), ...exact(h.line) },
+        spacing: { before: tw(h.before), after: tw(h.after), ...lineFor(h.size, h.line, level === 6 ? FONT.label : FONT.body) },
         outline: level - 1,
       },
       run:
@@ -95,7 +125,7 @@ const STYLES: StyleDef[] = [
     name: "Title",
     basedOn: "Normal",
     next: "Subtitle",
-    para: { keepNext: true, spacing: exact(2 * ROW) },
+    para: { keepNext: true, spacing: lineFor(px(type.headline.xl.size), 2 * ROW) },
     run: { bold: true, size: hp(px(type.headline.xl.size)), tracking: tw(-0.72) },
   },
   {
@@ -103,6 +133,7 @@ const STYLES: StyleDef[] = [
     name: "Subtitle",
     basedOn: "Normal",
     next: "Normal",
+    para: { spacing: lineFor(px(type.body.lg.size), ROW, FONT.label) },
     run: { font: FONT.label, color: C.muted },
   },
   {
@@ -119,17 +150,31 @@ const STYLES: StyleDef[] = [
     name: "Quote Credit",
     basedOn: "Normal",
     next: "Normal",
-    para: { borders: quoteBorder, indent: quoteIndent },
+    para: { borders: quoteBorder, spacing: lineFor(px(type.label.md.size), ROW, FONT.label), indent: quoteIndent },
     run: { font: FONT.label, size: hp(px(type.label.md.size)), color: C.muted },
   },
-  { id: "Label", name: "Label", basedOn: "Normal", next: "Normal", run: LABEL },
-  { id: "Kicker", name: "Card Kicker", basedOn: "Normal", next: "CardTitle", para: { keepNext: true }, run: KICKER },
+  {
+    id: "Label",
+    name: "Label",
+    basedOn: "Normal",
+    next: "Normal",
+    para: { spacing: lineFor(px(type.label.md.size), ROW, FONT.label) },
+    run: LABEL,
+  },
+  {
+    id: "Kicker",
+    name: "Card Kicker",
+    basedOn: "Normal",
+    next: "CardTitle",
+    para: { keepNext: true, spacing: lineFor(px(type.label.sm.size), ROW, FONT.label) },
+    run: KICKER,
+  },
   {
     id: "CardTitle",
     name: "Card Title",
     basedOn: "Normal",
     next: "Normal",
-    para: { keepNext: true },
+    para: { keepNext: true, spacing: lineFor(px(type.headline.sm.size), ROW) },
     run: { bold: true, size: hp(px(type.headline.sm.size)) },
   },
   {
@@ -138,7 +183,7 @@ const STYLES: StyleDef[] = [
     name: "Table Caption",
     basedOn: "Normal",
     next: "Normal",
-    para: { keepNext: true },
+    para: { keepNext: true, spacing: lineFor(px(type.label.md.size), ROW, FONT.label) },
     run: { ...LABEL, color: C.ink, tracking: tw(0.24) },
   },
   {
@@ -146,18 +191,21 @@ const STYLES: StyleDef[] = [
     name: "Code Block",
     basedOn: "Normal",
     next: "Normal",
+    para: { spacing: lineFor(15, ROW, FONT.mono) },
     run: { font: FONT.mono, size: hp(15) },
   },
   {
     // A row of space and nothing else. Two tables written one after the other
     // must have a paragraph between them or Word fuses them into one table,
-    // so the gap below a table is this rather than spacing.
+    // so the gap below a table is this. The row is the space after a line of
+    // next to no height, not the height of the line: space before and after a
+    // paragraph is the one vertical measure every reader takes exactly.
     id: "Gap",
     name: "Gap",
     basedOn: "Normal",
     next: "Normal",
     hidden: true,
-    para: { spacing: exact(ROW) },
+    para: { spacing: { after: ROW_TW - 20, line: 240, rule: "auto" } },
     run: { size: 2 },
   },
   {
@@ -194,9 +242,9 @@ export function stylesXml(): string {
     `<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">` +
     `<w:docDefaults>` +
     `<w:rPrDefault><w:rPr>${body}</w:rPr></w:rPrDefault>` +
-    // At least one row, rather than exactly: a line holding a picture or
-    // a larger run of type has to be allowed to grow.
-    `<w:pPrDefault><w:pPr><w:spacing w:after="0" w:line="${ROW_TW}" w:lineRule="atLeast"/></w:pPr></w:pPrDefault>` +
+    // A row per line of body text, as a multiple of single spacing (see
+    // SINGLE above), so a line holding a picture still grows to fit it.
+    `<w:pPrDefault><w:pPr><w:spacing w:after="0" w:line="${lineFor(px(type.body.lg.size), ROW).line}" w:lineRule="auto"/></w:pPr></w:pPrDefault>` +
     `</w:docDefaults>` +
     `<w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:qFormat/></w:style>` +
     `<w:style w:type="character" w:default="1" w:styleId="DefaultParagraphFont"><w:name w:val="Default Paragraph Font"/><w:uiPriority w:val="1"/><w:semiHidden/><w:unhideWhenUsed/></w:style>` +

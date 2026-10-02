@@ -377,7 +377,7 @@ function renderColumns(n: BlockNode, diagnostics: Diagnostic[]): string {
     const items = interleave(
       f.children,
       f.blocks,
-      (run) => block(run.map((c) => renderNested(c)).join("\n")),
+      (run) => block(proseOf(run)),
       diagnostics,
     );
     const basis = ratio[i] !== undefined ? ` style="flex-grow:${ratio[i]}"` : "";
@@ -482,8 +482,31 @@ function fieldRows(fields: { key: string; value: string; children: TreeNode[] }[
  */
 function looseProse(roots: TreeNode[]): string {
   if (roots.length === 0) return "";
-  const lines = roots.map((r) => (r.children.length > 0 ? renderNested(r) : r.text));
-  return block(lines.join("\n"));
+  return block(proseOf(roots));
+}
+
+/** The last source line a line of text, and everything indented under it, reaches. */
+function lastLine(r: TreeNode): number {
+  let last = r;
+  while (last.children.length > 0) last = last.children[last.children.length - 1]!;
+  return last.position.line;
+}
+
+/**
+ * The lines of a body, back as the Markdown they were written as — blank
+ * lines included. The parser keeps each line's position but not the empty
+ * lines between them, so a blank line in a card or a column, which starts a
+ * new paragraph there as it does anywhere else, is read back off the gap in
+ * the line numbers (UX-71). It used to vanish, and two paragraphs came out as
+ * one with a line break in it.
+ */
+export function proseOf(roots: TreeNode[]): string {
+  return roots
+    .map((r, i) => {
+      const prev = roots[i - 1];
+      return (prev && r.position.line > lastLine(prev) + 1 ? "\n" : "") + renderNested(r);
+    })
+    .join("\n");
 }
 
 function renderNested(r: TreeNode, depth = 0): string {

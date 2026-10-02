@@ -552,6 +552,15 @@ function bodyToLines(body: BlockBody): string[] {
 }
 
 /**
+ * The words on a note's or a quote's own line, then the lines under it.
+ * Either alone used to be fine, and both together lost the first: `@note
+ * Ask Ana` with a second line indented beneath kept only the second.
+ */
+function withTitle(title: string, lines: string[]): string[] {
+  return title ? [title, ...lines] : lines;
+}
+
+/**
  * Resolve shortcode sugar into explicit params:
  *   `@warn ...`     -> callout with flavor=warn   (alias maps onto an enum param)
  *   `@callout warn` -> callout with flavor=warn   (first bare word matches that param)
@@ -905,20 +914,18 @@ export function parseTokens(
             break;
           }
           case "quote": {
-            const lines = bodyToLines(body);
             children.push({
               type: "quote",
-              lines: lines.length > 0 ? lines : [resolved.title].filter(Boolean),
+              lines: withTitle(resolved.title, bodyToLines(body)),
               params: resolved.params,
               position: startPos,
             });
             break;
           }
           case "note": {
-            const lines = bodyToLines(body);
             children.push({
               type: "margin_note",
-              lines: lines.length > 0 ? lines : [resolved.title].filter(Boolean),
+              lines: withTitle(resolved.title, bodyToLines(body)),
               params: resolved.params,
               position: startPos,
             });
