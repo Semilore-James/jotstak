@@ -20,6 +20,14 @@ Three tools, one decision. Everything lives here.
 
 Everything below is optional, and you can stop at any rung.
 
+:::tip[Learn by doing]
+The [playground](/playground)'s **Start here** sample is a two-page tour: six
+steps, each ending in something to change and watch the page follow. In VS Code
+the same tour opens the first time you install the extension, and again from
+**Jotstak: Open the Welcome Document**. **Jotstak: Learn the Syntax** opens a
+step-by-step guide on VS Code's Get Started page.
+:::
+
 ## 1. Add a note in the margin
 
 Write `@note` followed by the text. It floats beside the block it follows, in

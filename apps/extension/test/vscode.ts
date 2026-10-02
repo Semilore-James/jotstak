@@ -110,5 +110,29 @@ export const window = {
   onDidChangeTextEditorSelection: () => ({ dispose() {} }),
   onDidChangeActiveTextEditor: () => ({ dispose() {} }),
   activeTextEditor: undefined,
+  /** Records what was shown, for the welcome tests. */
+  shown: [] as unknown[],
+  showTextDocument: async (doc: unknown) => {
+    window.shown.push(doc);
+    return undefined;
+  },
 };
-export const workspace = { onDidChangeTextDocument: () => ({ dispose() {} }) };
+export const workspace = {
+  onDidChangeTextDocument: () => ({ dispose() {} }),
+  /** An untitled document, the way the welcome document is opened. */
+  openTextDocument: async (options: { language: string; content: string }) => ({
+    languageId: options.language,
+    getText: () => options.content,
+    uri: { path: "Untitled-1" },
+    fileName: "Untitled-1",
+  }),
+};
+export const ViewColumn = { One: 1, Beside: -2 } as const;
+export const commands = {
+  /** Records every command run, for the welcome tests. */
+  ran: [] as unknown[][],
+  executeCommand: async (...args: unknown[]) => {
+    commands.ran.push(args);
+    return undefined;
+  },
+};

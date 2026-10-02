@@ -15,6 +15,7 @@ import type { ExportKind } from "./export-menu.js";
 import { registerExtentRuler } from "./extent-ruler.js";
 import { isJot, offerAssociation } from "./jot-files.js";
 import { registerLanguageFeatures } from "./language-features.js";
+import { openWalkthrough, openWelcome, welcomeOnFirstRun } from "./welcome.js";
 
 /** The .jot file the command should act on, or a complaint if there is none. */
 function activeJot(): vscode.TextDocument | undefined {
@@ -76,12 +77,16 @@ export function activate(context: vscode.ExtensionContext): void {
       if (doc) await runExport(context, doc, "html");
     }),
 
-    vscode.commands.registerCommand("jotstak.learnSyntax", () => {
-      // pages.dev, not jotstak.com: that domain is not registered yet, so the
-      // button opened a page that did not exist. Move it back once it is.
-      void vscode.env.openExternal(vscode.Uri.parse("https://jotstak.pages.dev/docs/"));
-    }),
+    // The step-by-step guide on VS Code's own Get Started page (PRD-24). It
+    // used to open the docs website, which is the guide's last step now.
+    vscode.commands.registerCommand("jotstak.learnSyntax", () => void openWalkthrough(context)),
+
+    vscode.commands.registerCommand("jotstak.openWelcome", () => void openWelcome(context)),
   );
+
+  // The first time the extension runs, the welcome document opens with its
+  // page beside it, and never again by itself.
+  void welcomeOnFirstRun(context);
 
   // Rendering on activation warms the module graph, so the first preview does
   // not pay for parsing the renderer while the author is watching.

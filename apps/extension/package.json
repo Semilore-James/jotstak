@@ -28,7 +28,8 @@
   "main": "./dist/extension.js",
   "activationEvents": [
     "onLanguage:jot",
-    "workspaceContains:**/*.jot"
+    "workspaceContains:**/*.jot",
+    "onStartupFinished"
   ],
   "contributes": {
     "languages": [
@@ -62,7 +63,7 @@
       },
       {
         "command": "jotstak.export",
-        "title": "Jotstak: Export\u2026"
+        "title": "Jotstak: Export…"
       },
       {
         "command": "jotstak.exportHtml",
@@ -71,6 +72,10 @@
       {
         "command": "jotstak.learnSyntax",
         "title": "Jotstak: Learn the Syntax"
+      },
+      {
+        "command": "jotstak.openWelcome",
+        "title": "Jotstak: Open the Welcome Document"
       },
       {
         "command": "jotstak.indent",
@@ -91,6 +96,85 @@
         "command": "jotstak.outdent",
         "key": "shift+tab",
         "when": "editorTextFocus && !editorReadonly && editorLangId == jot && !suggestWidgetVisible && !inSnippetMode && !editorTabMovesFocus && !editorHasMultipleSelections"
+      }
+    ],
+    "walkthroughs": [
+      {
+        "id": "start",
+        "title": "Get started with Jotstak",
+        "description": "Write a document in plain text and watch it become a page.",
+        "steps": [
+          {
+            "id": "welcome",
+            "title": "Open the welcome document",
+            "description": "Six short steps that teach by doing: change the text, watch the page follow. It opens as an unsaved copy, so it is yours to break.\n[Open the welcome document](command:jotstak.openWelcome)",
+            "media": {
+              "image": "media/walkthrough/page.png",
+              "altText": "The welcome document rendered as a page of ruled notebook paper."
+            },
+            "completionEvents": [
+              "onCommand:jotstak.openWelcome"
+            ]
+          },
+          {
+            "id": "preview",
+            "title": "See it as a page",
+            "description": "Open the preview beside any .jot file. It follows you as you type, as real A4 pages, and prints exactly as it shows.\n[Open the preview](command:jotstak.openPreview)",
+            "media": {
+              "image": "media/walkthrough/page.png",
+              "altText": "A Jotstak page beside its source."
+            },
+            "completionEvents": [
+              "onCommand:jotstak.openPreview"
+            ]
+          },
+          {
+            "id": "blocks",
+            "title": "Add a block",
+            "description": "Type @ at the start of a line to see every block and what it does. Pick one and it arrives ready to fill in: a decision, a risk, a tree, a timeline.\n[Show the blocks](command:editor.action.triggerSuggest)",
+            "media": {
+              "image": "media/walkthrough/blocks.png",
+              "altText": "A decision card and a tree, each written in a few indented lines."
+            },
+            "completionEvents": [
+              "onCommand:editor.action.triggerSuggest"
+            ]
+          },
+          {
+            "id": "looks",
+            "title": "Notebook or doc",
+            "description": "The same file in two looks: a warm, ruled notebook, or a clean white document.\n[Switch the look](command:jotstak.toggleMode)",
+            "media": {
+              "image": "media/walkthrough/looks.png",
+              "altText": "The same card in notebook mode and in doc mode, side by side."
+            },
+            "completionEvents": [
+              "onCommand:jotstak.toggleMode"
+            ]
+          },
+          {
+            "id": "share",
+            "title": "Hand it on",
+            "description": "Export a PDF, an HTML file that opens anywhere without the internet, or a copy to paste into an email or a wiki.\n[Export…](command:jotstak.export)",
+            "media": {
+              "markdown": "media/walkthrough/share.md"
+            },
+            "completionEvents": [
+              "onCommand:jotstak.export"
+            ]
+          },
+          {
+            "id": "docs",
+            "title": "Every block, with examples",
+            "description": "The docs explain every block and every setting, with examples you can copy.\n[Open the docs](https://jotstak.pages.dev/docs/)",
+            "media": {
+              "markdown": "media/walkthrough/docs.md"
+            },
+            "completionEvents": [
+              "onLink:https://jotstak.pages.dev/docs/"
+            ]
+          }
+        ]
       }
     ]
   },

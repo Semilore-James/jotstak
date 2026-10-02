@@ -345,6 +345,7 @@ ${renderPageCss()}
             </svg>
           </button>
           <ul class="picker-menu" id="picker-menu" role="listbox">
+            <li><button role="option" data-value="welcome" aria-selected="false">Start here<small>Six steps, five minutes</small></button></li>
             <li><button role="option" data-value="starter" aria-selected="true">A real PM document<small>Seven primitives, composed</small></button></li>
             <li><button role="option" data-value="markdown" aria-selected="false">Plain Markdown<small>No .jot syntax at all</small></button></li>
             <li><button role="option" data-value="nested" aria-selected="false">Nested blocks<small>A metric inside a decision</small></button></li>
@@ -410,6 +411,9 @@ ${renderPageCss()}
 
 <script>
   import { PAGE_GEOMETRY, documentName, paginate, parse, render } from "@jotstak/renderer";
+  // The welcome document the VS Code extension opens on first install (PRD-24),
+  // so the playground and the editor teach the same six steps.
+  import welcome from "../../../../samples/welcome.jot?raw";
   import type { Node as JotNode } from "@jotstak/renderer";
   import {
     UNIVERSAL_PARAMS,
@@ -424,6 +428,7 @@ ${renderPageCss()}
 
   const SAMPLES: Record<string, string> = {
     starter: "",
+    welcome,
     markdown: [
       "# A plain Markdown file",
       "",
@@ -531,6 +536,11 @@ ${renderPageCss()}
       // The pages are measured, so they are laid out after the HTML is in.
       const root = out.querySelector<HTMLElement>(".jotstak");
       if (root) paginate(root, PAGE_GEOMETRY);
+      // A face the page had not used yet — handwriting, code — only starts
+      // loading when text needs it, which is during the layout just measured.
+      // Measured with the stand-in, a page can break a line early; so once the
+      // real faces arrive, lay the pages out again.
+      if (document.fonts?.status === "loading") void document.fonts.ready.then(paint);
       diags.innerHTML = diagnostics
         .map((d) => {
           const text = `${d.severity} · line ${d.line + 1} — ${d.message}`;

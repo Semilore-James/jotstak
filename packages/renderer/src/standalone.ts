@@ -80,6 +80,9 @@ ${pagesScript()}
   var run = function () {
     host.innerHTML = original;
     window.jotPages(host.querySelector(".jotstak"));
+    // A face not used before only starts loading during that layout; measured
+    // with its stand-in a page can break early, so measure again once it is in.
+    if (document.fonts && document.fonts.status === "loading") document.fonts.ready.then(run);
   };
   (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(run);
   var width = window.innerWidth;

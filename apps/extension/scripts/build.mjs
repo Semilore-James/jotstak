@@ -55,6 +55,8 @@ const options = {
   target: "node20",
   // Supplied by the extension host, never bundled.
   external: ["vscode"],
+  // The welcome document is samples/welcome.jot, bundled as its text.
+  loader: { ".jot": "text" },
   sourcemap: true,
   minify: !watch,
   logLevel: "info",

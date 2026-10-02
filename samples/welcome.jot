@@ -1,0 +1,52 @@
+@cover Welcome to Jotstak
+  Five minutes, six steps
+
+This is a Jotstak document. Change anything in it and watch the page follow.
+@note This copy is yours to break.
+
+## 1. It is Markdown
+
+Everything you know from Markdown already works: **bold**, *italic*, `code`, [links](https://jotstak.pages.dev) and lists.
+
+- Press Enter and the line breaks.
+- Leave a blank line and a new paragraph starts.
+
+==Try it:== add a third point to the list above.
+
+## 2. A note in the margin
+
+A line starting with `@note` goes in the margin, beside the line before it.
+@note Like this one.
+
+==Try it:== add a note of your own under this line.
+
+## 3. Blocks
+
+A line that starts with `@` is a block. Its settings go on that line; what goes inside it is indented underneath.
+
+@decision title="Write our specs in Jotstak" status=proposed
+  context: Our PRDs are spread across five tools
+  choice: One plain-text file per spec
+  consequences: Diagrams sit beside the words that explain them
+
+==Try it:== change `status=proposed` to `status=accepted`.
+
+## 4. Diagrams from indentation
+
+Indent a line under another and it becomes its child. That is all a diagram needs.
+
+@tree dir=down nodes=boxed
+  Launch
+    Docs
+    Extension
+    Playground
+
+==Try it:== add a fourth line under Launch, indented like the others.
+
+## 5. Every block, one keystroke away
+
+Type `@` at the start of a line in VS Code, or click a tile in the playground: every block, ready to fill in.
+
+## 6. Hand it on
+
+What you see is what prints, page for page: download a PDF or a Word file from the playground, or use **Jotstak: Export…** in VS Code. Every block is explained at [jotstak.pages.dev/docs](https://jotstak.pages.dev/docs/).

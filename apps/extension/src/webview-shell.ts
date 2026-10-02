@@ -80,6 +80,9 @@ ${pagesScript()}
   const show = () => {
     sheet.innerHTML = last;
     window.jotPages(sheet.querySelector(".jotstak"));
+    // A face not used before only starts loading during that layout; measured
+    // with its stand-in a page can break early, so measure again once it is in.
+    if (document.fonts && document.fonts.status === "loading") document.fonts.ready.then(show);
   };
   addEventListener("message", (e) => {
     if (!e.data || e.data.type !== "render") return;
