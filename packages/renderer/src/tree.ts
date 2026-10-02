@@ -6,8 +6,10 @@
 //   right + text   → columns        each level its own aligned column, labels
 //                                   joined by thin lines (the "Table" reference)
 //   right + boxed  → columns        the same, every node a pill (UX-29)
-//   down  + boxed  → chart          top-down pills; leaves stack, branches
-//                                   spread (UX-30) (the "Literature" reference)
+//   down  + boxed  → chart          top-down pills; families spread side by
+//                                   side, and a family of leaves stacks only
+//                                   when spreading would not fit (UX-75)
+//                                   (the "Literature" reference)
 //   split + either → split          branches balanced either side of a hub
 //
 // Everything that can be wider than the page is sized HERE, before any browser
@@ -20,6 +22,7 @@ import type { Diagnostic } from "./index.js";
 import { broken, brokenWidth, ESTIMATE_SAFETY, segments, type Face } from "./measure.js";
 import { figureAttrs, placeFigure } from "./figure.js";
 import type { Placement, Size } from "./figure.js";
+import { PAGE } from "./page.js";
 
 /**
  * The geometry every look is built from, in CSS pixels at full size. The
@@ -127,7 +130,52 @@ const leaves = (n: TreeNode): number =>
     : Math.max(labelRows(n), n.children.reduce((s, c) => s + leaves(c), 0));
 const depth = (n: TreeNode): number => 1 + Math.max(0, ...n.children.map(depth));
 const count = (n: TreeNode): number => labelRows(n) + n.children.reduce((s, c) => s + count(c), 0);
-const isStack = (n: TreeNode): boolean => n.children.length > 0 && n.children.every((c) => c.children.length === 0);
+/** A parent whose children are all leaves: the only kind of family that can hang down a rail. */
+const leafFamily = (n: TreeNode): boolean => n.children.length > 0 && n.children.every((c) => c.children.length === 0);
+
+/** The families of leaves in a chart that hang down a rail rather than spread. */
+export type Stacks = ReadonlySet<TreeNode>;
+
+/**
+ * Which families of leaves stack (UX-75).
+ *
+ * Every family spreads side by side under its parent while the chart fits the
+ * room it has. When it does not, the family whose stacking saves the most
+ * width stacks first, then the chart is measured again, until it fits or
+ * every family of leaves is stacked — at which point it is a figure too wide
+ * for its page like any other, and goes to the full width or a landscape
+ * sheet (UX-31). That is the packing a designer does by hand, and the rule it
+ * replaced (UX-30: leaves always stack) stood five short tools in a column
+ * under "One PRD" with two thirds of the page empty beside them.
+ */
+export function chooseStacks(roots: TreeNode[], room: number): Set<TreeNode> {
+  const stacks = new Set<TreeNode>();
+  const width = (): number =>
+    Math.ceil(roots.reduce((s, r) => s + chartWidth(r, true, stacks) + 2 * TREE.spread, 0) * ESTIMATE_SAFETY);
+  const families: TreeNode[] = [];
+  const visit = (n: TreeNode): void => {
+    if (leafFamily(n)) families.push(n);
+    n.children.forEach(visit);
+  };
+  roots.forEach(visit);
+  while (width() > room) {
+    let best: TreeNode | undefined;
+    let bestWidth = Infinity;
+    for (const f of families) {
+      if (stacks.has(f)) continue;
+      stacks.add(f);
+      const w = width();
+      stacks.delete(f);
+      if (w < bestWidth) {
+        best = f;
+        bestWidth = w;
+      }
+    }
+    if (!best) break;
+    stacks.add(best);
+  }
+  return stacks;
+}
 
 export function resolveLook(dir: string, nodes: string): Look {
   if (dir === "split") return "split";
@@ -167,21 +215,21 @@ function columnWidths(roots: TreeNode[], boxed: boolean): number[] {
 }
 
 /** Chart: the width one node's family needs, not counting the spread padding its parent adds. */
-function chartWidth(n: TreeNode, isRoot: boolean): number {
+function chartWidth(n: TreeNode, isRoot: boolean, stacks: Stacks): number {
   const pw = pillWidth(label(n), pillFace(roleOf(n, isRoot)));
   if (!n.children.length) return pw;
-  if (isStack(n)) {
+  if (stacks.has(n)) {
     const widest = Math.max(...n.children.map((c) => pillWidth(label(c), "lora-400")));
     return Math.max(pw, TREE.railToItem + widest);
   }
-  return Math.max(pw, n.children.reduce((s, c) => s + chartWidth(c, false) + 2 * TREE.spread, 0));
+  return Math.max(pw, n.children.reduce((s, c) => s + chartWidth(c, false, stacks) + 2 * TREE.spread, 0));
 }
 /** Chart: rows a node's family occupies. A stack spends one on the jog (UX-32). */
-function chartRows(n: TreeNode): number {
+function chartRows(n: TreeNode, stacks: Stacks): number {
   if (!n.children.length) return labelRows(n);
   const own = labelRows(n) + 1;
-  if (isStack(n)) return own + n.children.reduce((s, c) => s + labelRows(c), 0);
-  return own + Math.max(...n.children.map(chartRows));
+  if (stacks.has(n)) return own + n.children.reduce((s, c) => s + labelRows(c), 0);
+  return own + Math.max(...n.children.map((c) => chartRows(c, stacks)));
 }
 
 /** Split (outline sides): the width one side needs. */
@@ -203,7 +251,13 @@ function boxedSideWidth(n: TreeNode): number {
 
 
 
-export function measureTree(look: Look, roots: TreeNode[], nodes: string, sides?: { left: TreeNode[]; right: TreeNode[] }): Size {
+export function measureTree(
+  look: Look,
+  roots: TreeNode[],
+  nodes: string,
+  sides?: { left: TreeNode[]; right: TreeNode[] },
+  stacks: Stacks = look === "chart" ? chooseStacks(roots, PAGE.portrait.content) : new Set(),
+): Size {
   const R = TREE.row;
   const safe = (w: number): number => Math.ceil(w * ESTIMATE_SAFETY);
   switch (look) {
@@ -217,8 +271,8 @@ export function measureTree(look: Look, roots: TreeNode[], nodes: string, sides?
       return { w: safe(w), h: roots.reduce((s, r) => s + leaves(r), 0) * R };
     }
     case "chart": {
-      const w = roots.reduce((s, r) => s + chartWidth(r, true) + 2 * TREE.spread, 0);
-      return { w: safe(w), h: Math.max(...roots.map(chartRows)) * R };
+      const w = roots.reduce((s, r) => s + chartWidth(r, true, stacks) + 2 * TREE.spread, 0);
+      return { w: safe(w), h: Math.max(...roots.map((r) => chartRows(r, stacks))) * R };
     }
     case "split": {
       const hub = roots[0]!;
@@ -333,11 +387,11 @@ const rowsAttr = (n: TreeNode): string => {
   return rows > 1 ? ` data-rows="${rows}"` : "";
 };
 
-function nodeHtml(n: TreeNode, isRoot: boolean, look: Look, h: TreeHelpers): string {
-  const flow = look === "chart" && n.children.length ? (isStack(n) ? "stack" : "spread") : "";
+function nodeHtml(n: TreeNode, isRoot: boolean, look: Look, h: TreeHelpers, stacks: Stacks = new Set()): string {
+  const flow = look === "chart" && n.children.length ? (stacks.has(n) ? "stack" : "spread") : "";
   const flowAttr = flow ? ` data-flow="${flow}"` : "";
   const kids = n.children.length
-    ? `<ul class="jot-tree-kids"${flowAttr}>${n.children.map((c) => nodeHtml(c, false, look, h)).join("")}</ul>`
+    ? `<ul class="jot-tree-kids"${flowAttr}>${n.children.map((c) => nodeHtml(c, false, look, h, stacks)).join("")}</ul>`
     : "";
   return (
     `<li class="jot-tree-node" data-role="${roleOf(n, isRoot)}"${flowAttr}${rowsAttr(n)}>` +
@@ -354,7 +408,11 @@ export function renderTree(n: BlockNode, diagnostics: Diagnostic[], h: TreeHelpe
   const look = resolveLook(dir, nodes);
 
   const sides = look === "split" && roots[0] ? splitSides(roots[0].children) : undefined;
-  const size = measureTree(look, roots, nodes, sides);
+  // A chart spreads its families while they fit the room it is pinned to, or
+  // the page's full width when it is not pinned (UX-75).
+  const stacks =
+    look === "chart" ? chooseStacks(roots, pinned === "column" ? PAGE.portrait.column : PAGE.portrait.content) : new Set<TreeNode>();
+  const size = measureTree(look, roots, nodes, sides, stacks);
   const place = placeTree(look, size, pinned, n, diagnostics);
 
   const levels = Math.max(1, ...roots.map(depth));
@@ -382,7 +440,7 @@ export function renderTree(n: BlockNode, diagnostics: Diagnostic[], h: TreeHelpe
       // rather than silently dropped.
       roots.slice(1).map((r) => `<ul class="jot-tree-root">${nodeHtml(r, true, "outline", h)}</ul>`).join("");
   } else {
-    body = `<ul class="jot-tree-root">${roots.map((r) => nodeHtml(r, true, look, h)).join("")}</ul>`;
+    body = `<ul class="jot-tree-root">${roots.map((r) => nodeHtml(r, true, look, h, stacks)).join("")}</ul>`;
   }
 
   const figure =

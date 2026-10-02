@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 import { render } from "./index.js";
 import { renderLayoutCss } from "./layout.js";
 import { PAGE } from "./page.js";
-import { MIN_SCALE_BEFORE_LANDSCAPE, TREE, resolveLook } from "./tree.js";
+import { MIN_SCALE_BEFORE_LANDSCAPE, TREE, chooseStacks, resolveLook } from "./tree.js";
+import type { TreeNode } from "./ast.js";
 import { colors } from "./tokens.js";
 
 const figure = (src: string) => {
@@ -49,12 +50,36 @@ describe("@tree — dir means the way it grows (UX-28)", () => {
   });
 });
 
-describe("@tree — the chart stacks leaves and spreads branches (UX-30)", () => {
-  it("stacks a family whose children are all leaves, and spreads any other", () => {
-    const { html } = render(tree("down", "boxed", lines("Root", "  Stacked", "    a", "    b", "  Spread", "    Deeper", "      x", "    leaf")), { mode: "notebook" });
+describe("@tree — the chart spreads families while they fit (UX-75)", () => {
+  // UX-30 stacked every family of leaves, always. Five short tools under "One
+  // PRD" stood in a column with two thirds of the page empty beside them.
+  const long = (n: number, prefix = "A leaf with quite a long label") =>
+    Array.from({ length: n }, (_, i) => `  ${prefix} ${i}`);
+
+  it("spreads a family of leaves side by side when the chart fits", () => {
+    const { html } = render(tree("down", "boxed", lines("One PRD", "  Google Docs", "  Sheets", "  Miro", "  Notion", "  Jira")), { mode: "notebook" });
     expect(html).toMatch(/data-role="root" data-flow="spread"/);
-    expect(html).toMatch(/data-role="branch" data-flow="stack"><span class="jot-tree-label"><span class="jot-tree-text">Stacked/);
-    expect(html).toMatch(/data-role="branch" data-flow="spread"><span class="jot-tree-label"><span class="jot-tree-text">Spread/);
+    expect(html).not.toContain('data-flow="stack"');
+  });
+
+  it("stacks a family of leaves that would not fit spread out", () => {
+    const { html } = render(tree("down", "boxed", lines("Root", ...long(6))), { mode: "notebook" });
+    expect(html).toMatch(/data-role="root" data-flow="stack"/);
+  });
+
+  it("stacks the family that saves the most width first, and only as many as it needs", () => {
+    // One wide family and one narrow one: stacking the wide one is enough.
+    const n = (text: string, children: TreeNode[] = []): TreeNode => ({ text, children, position: { line: 0, column: 0 } });
+    const wide = n("Wide", long(5).map((t) => n(t.trim())));
+    const narrow = n("Narrow", [n("a"), n("b")]);
+    const stacks = chooseStacks([n("Root", [wide, narrow])], PAGE.portrait.content);
+    expect(stacks.has(wide)).toBe(true);
+    expect(stacks.has(narrow)).toBe(false);
+  });
+
+  it("never stacks a family that has branches in it", () => {
+    const { html } = render(tree("down", "boxed", lines("Root", "  Branch", "    leaf", ...long(6))), { mode: "notebook" });
+    expect(html).toMatch(/data-role="root" data-flow="spread"/);
   });
 
   it("marks every node's role, which is what the two shades hang on", () => {
@@ -74,8 +99,8 @@ describe("@tree — sizes are predicted, not discovered (ARC-15)", () => {
     const R = TREE.row;
     expect(figure(tree("right", "text", lines("A", "  B", "  C", "    D"))).h).toBe(2 * R); // leaves
     expect(figure(tree("right", "boxed", lines("A", "  B", "  C"))).h).toBe(2 * R);
-    // chart: root row + connector row + the stack (parent + jog + 2 leaves)
-    expect(figure(tree("down", "boxed", lines("A", "  B", "    x", "    y"))).h).toBe(6 * R);
+    // chart: root row + connector row + B + connector row + its two leaves side by side
+    expect(figure(tree("down", "boxed", lines("A", "  B", "    x", "    y"))).h).toBe(5 * R);
     expect(figure(tree("split", "text", lines("Hub", "  > a", "    a1", "  < b"))).h).toBe(2 * R);
   });
 
@@ -87,11 +112,14 @@ describe("@tree — sizes are predicted, not discovered (ARC-15)", () => {
     // The row is the price of the parent sitting over its family. A rail
     // dropping from near the pill's left end saved it, and made a stack read
     // as a heading above a list rather than a parent with children.
-    const stack = figure(tree("down", "boxed", lines("A", "  x", "  y"))).h;
-    const flat = figure(tree("down", "boxed", lines("A", "  x"))).h;
-    // Parent + jog + two leaves, against parent + jog + one leaf.
-    expect(stack).toBe(4 * TREE.row);
-    expect(stack - flat).toBe(TREE.row);
+    // A family only stacks when it would not fit spread (UX-75), so these
+    // leaves are long enough that six of them side by side would not.
+    const leaves = (k: number) => Array.from({ length: k }, (_, i) => `  A leaf with quite a long label ${i}`);
+    const stack = figure(tree("down", "boxed", lines("A", ...leaves(6)))).h;
+    const shorter = figure(tree("down", "boxed", lines("A", ...leaves(5)))).h;
+    // Parent + jog + six leaves, against parent + jog + five.
+    expect(stack).toBe(8 * TREE.row);
+    expect(stack - shorter).toBe(TREE.row);
   });
 
   it("does not count a parent's outgoing line as width", () => {
