@@ -23,15 +23,17 @@ join them.
 Only if you download a PDF. The playground draws your document in your own
 browser, and nothing you type leaves the page while you write. When you choose
 **Download → PDF**, the document is sent to our server, printed there by a
-browser, and sent back to you as a file; it is not kept. **Download → Print**
-makes a PDF without sending anything anywhere.
+browser, and sent back to you as a file; it is not kept. **Download → Word**
+and **Download → Print** make their files on your computer, without sending
+anything anywhere.
 
 This website also counts page visits, without cookies or anything that
 identifies you.
 
-## Can I get a PDF?
+## Can I get a PDF, or a Word file?
 
-Yes, from the playground or from VS Code. See
+Yes. A PDF from the playground or from VS Code, and a Word file from the
+playground, which opens in Word and in Google Docs. See
 [Pages, print and PDF](/docs/guide/printing/).
 
 ## Where can I use it?

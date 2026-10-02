@@ -366,6 +366,7 @@ ${renderPageCss()}
           </button>
           <ul class="picker-menu" id="dl-menu" role="menu">
             <li><button role="menuitem" data-dl="pdf">PDF<small>Made on our server, and not kept</small></button></li>
+            <li><button role="menuitem" data-dl="docx">Word<small>For Word or Google Docs, made on your computer</small></button></li>
             <li><button role="menuitem" data-dl="print">Print<small>Or save a PDF yourself, all on your computer</small></button></li>
           </ul>
         </div>
@@ -405,7 +406,7 @@ ${renderPageCss()}
 </Base>
 
 <script>
-  import { parse, render } from "@jotstak/renderer";
+  import { documentName, parse, render } from "@jotstak/renderer";
   import type { Node as JotNode } from "@jotstak/renderer";
   import {
     UNIVERSAL_PARAMS,
@@ -1154,6 +1155,38 @@ ${renderPageCss()}
         dlBtn?.removeAttribute("aria-busy");
       }
     };
+    // Word is made here, in the browser (PRD-31): nothing leaves the page. The
+    // converter, the fonts it embeds and the diagram camera load only when
+    // someone asks for a Word file, so nobody else downloads them.
+    const downloadDocx = async (): Promise<void> => {
+      say("Making your Word file…");
+      dlBtn?.setAttribute("aria-busy", "true");
+      let pictures: { dispose(): void } | undefined;
+      try {
+        const [{ toDocx, WORD_FONTS, DOCX_TYPE }, { createPictureMaker }] = await Promise.all([
+          import("@jotstak/docx"),
+          import("../lib/docx-pictures"),
+        ]);
+        const fonts = await Promise.all(
+          WORD_FONTS.map(async (f) => {
+            const res = await fetch(`/fonts/${f.file}`);
+            if (!res.ok) throw new Error(`font ${f.file}: ${res.status}`);
+            return { family: f.family, style: f.style, data: new Uint8Array(await res.arrayBuffer()) };
+          }),
+        );
+        const maker = await createPictureMaker();
+        pictures = maker;
+        const bytes = await toDocx(src.value, { fonts, picture: maker.draw });
+        save(new Blob([bytes as BlobPart], { type: DOCX_TYPE }), `${documentName(src.value)}.docx`);
+        say("");
+      } catch (e) {
+        console.error(e);
+        say("Couldn't make the Word file just now. Try again, or use Print.");
+      } finally {
+        pictures?.dispose();
+        dlBtn?.removeAttribute("aria-busy");
+      }
+    };
     dlBtn?.addEventListener("click", (e) => {
       e.stopPropagation();
       setDl(dl?.dataset.open !== "true");
@@ -1163,6 +1196,7 @@ ${renderPageCss()}
       if (!item) return;
       setDl(false);
       if (item.dataset.dl === "pdf") void downloadPdf();
+      else if (item.dataset.dl === "docx") void downloadDocx();
       else if (item.dataset.dl === "print") window.print();
     });
     document.addEventListener("click", () => setDl(false));

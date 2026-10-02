@@ -50,6 +50,16 @@ export { PAGE, LANDSCAPE_PAGE, renderPageCss } from "./page.js";
 export { measureText, ESTIMATE_SAFETY } from "./measure.js";
 export { renderDocument, RENDER_FUNCTIONS } from "./html.js";
 export type { HtmlOptions } from "./html.js";
+
+// What the other outputs read a document with — the Word export — so that a
+// card, a table, a cover and a note's anchor mean the same thing there as on
+// the page. Each is the function the page itself is drawn from.
+export { readCard, isCard, TREND, markdownFor, toRows as rowsOf } from "./html.js";
+export type { CardModel, Row } from "./html.js";
+export { buildTable } from "./table.js";
+export type { TableModel, Align } from "./table.js";
+export { readCover } from "./cover.js";
+export type { CoverModel, CoverStyle } from "./cover.js";
 export * as tokens from "./tokens.js";
 
 export { lex } from "./lexer.js";

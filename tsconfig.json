@@ -1,11 +1,12 @@
 {
   // Solution config: `tsc -b` at the root builds every TypeScript project in
-  // dependency order (schema -> renderer -> extension). The Astro app is checked
+  // dependency order (schema -> renderer -> docx -> extension). The Astro app is checked
   // separately by `astro check`, which understands .astro files.
   "files": [],
   "references": [
     { "path": "./packages/schema" },
     { "path": "./packages/renderer" },
+    { "path": "./packages/docx" },
     { "path": "./apps/extension" }
   ]
 }

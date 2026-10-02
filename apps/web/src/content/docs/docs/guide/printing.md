@@ -1,6 +1,6 @@
 ---
 title: "Pages, print and PDF"
-description: "What you see is a page. Print it, or save it as a PDF, and you get the same thing on paper."
+description: "What you see is a page. Print it, save it as a PDF, or download it as a Word file."
 sidebar:
   order: 5
 ---
@@ -50,3 +50,21 @@ with no internet, or **copy the document** to paste into an email or a wiki.
 
 Notebook mode prints as it looks, paper and lines included. Doc mode prints on
 plain white.
+
+## Saving a Word file
+
+In the playground, click **Download → Word**. The file opens in Word and in
+Google Docs, and it is made on your computer: nothing is sent anywhere.
+
+Word has no notebook, so the file reads like doc mode, with the same margins as
+the PDF:
+
+- headings, text, lists, quotes and tables are ordinary Word text you can edit,
+  with Word's own heading styles
+- cards and callouts keep their look, a thin line above or beside them
+- diagrams and sticky notes are pictures, exactly as they look on the page; a
+  diagram too wide for the page gets a sideways page of its own
+- margin notes become Word comments, in the margin beside the line they are
+  about, under the author named in `@meta`
+- the typefaces travel inside the file, so it looks the same on a computer that
+  does not have them

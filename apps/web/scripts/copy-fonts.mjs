@@ -8,6 +8,7 @@
 // so it is copied alongside them rather than left in node_modules.
 
 import { FONT_FACES } from "@jotstak/renderer";
+import { WORD_FONTS } from "@jotstak/docx";
 import { copyFileSync, mkdirSync, existsSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
@@ -20,7 +21,9 @@ const outDir = join(here, "..", "public", "fonts");
 mkdirSync(outDir, { recursive: true });
 
 const licences = [];
-for (const face of FONT_FACES) {
+// The page's faces, and the ones a Word file carries inside it (PRD-31):
+// WOFF rather than WOFF2, in the four styles Word knows a family by.
+for (const face of [...FONT_FACES, ...WORD_FONTS]) {
   copyFileSync(require.resolve(face.source), join(outDir, face.file));
   const pkg = face.source.split("/files/")[0];
   if (!licences.includes(pkg)) licences.push(pkg);
@@ -47,4 +50,4 @@ function readIfExists(p) {
   }
 }
 
-console.log(`copied ${FONT_FACES.length} font files + LICENSES.txt to public/fonts/`);
+console.log(`copied ${FONT_FACES.length + WORD_FONTS.length} font files + LICENSES.txt to public/fonts/`);

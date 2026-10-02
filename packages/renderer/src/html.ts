@@ -57,6 +57,14 @@ const parser = (breaks: boolean): Markdown =>
 
 const MD = { on: parser(true), off: parser(false) } as const;
 
+/**
+ * The Markdown parser a document is read with: `breaks` on, unless the
+ * document says `@page breaks=off`. For outputs that walk Markdown's tokens
+ * rather than its HTML — the Word export — so they read prose exactly as the
+ * page does.
+ */
+export const markdownFor = (breaks: boolean): Markdown => (breaks ? MD.on : MD.off);
+
 // Which one is in force. Set once per document, at the top of renderDocument,
 // because every renderer below reaches for `block()` and `inline()` and
 // threading a flag through all of them would touch every signature for one
@@ -235,21 +243,49 @@ function renderWrapped(n: Node, notes: string, diagnostics: Diagnostic[]): strin
   }
 }
 
-function renderCard(n: BlockNode, diagnostics: Diagnostic[]): string {
+/** What a card says, before anything decides how it looks. */
+export interface CardModel {
+  /** The kicker: what kind of card this is, or the author's own label. */
+  label: string;
+  badge?: string;
+  /** The badge, or the author, says this card needs attention. */
+  alert: boolean;
+  date?: string;
+  title: string;
+  /** @metric's figure, which the card leads with. */
+  metric?: { value?: string; target?: string; trend?: string };
+}
+
+/** Whether a block is drawn as a card: @panel and the presets over it. */
+export const isCard = (name: string): boolean => name in PANELS;
+
+/**
+ * Read a card out of its block. The page and the Word export both draw from
+ * this, so a decision's badge or a risk's alert cannot mean one thing on
+ * screen and another in a file somebody was sent.
+ */
+export function readCard(n: BlockNode): CardModel {
   const card = PANELS[n.name] ?? {};
   const spec = getPrimitive(n.name);
   const title = (card.titleParam ? n.params[card.titleParam] : undefined) ?? n.title;
   const badge = card.badgeParam ? n.params[card.badgeParam] : undefined;
-  const accent = n.params.accent;
   const alert =
-    accent === "alert" || (badge !== undefined && (card.alertValues ?? []).includes(badge));
+    n.params.accent === "alert" || (badge !== undefined && (card.alertValues ?? []).includes(badge));
   // @panel says what it is; a preset is named for what it is.
   const label = n.params.label ?? card.label ?? (n.name === "panel" ? "" : (spec?.name ?? n.name));
+  const date = card.dateParam ? n.params[card.dateParam] : undefined;
+  const metric =
+    n.name === "metric" ? { value: n.params.value, target: n.params.target, trend: n.params.trend } : undefined;
+  return { label, badge, alert, date, title, metric };
+}
+
+function renderCard(n: BlockNode, diagnostics: Diagnostic[]): string {
+  const { label, badge, alert, date, title } = readCard(n);
+  const accent = n.params.accent;
 
   // A decision's date (UX-67). Written down so the record is findable in six
   // months, and read by nothing until now. A real calendar date is marked up
   // as one, so a screen reader and a search both know what it is.
-  const date = card.dateParam ? n.params[card.dateParam] : undefined;
   const dated = date
     ? /^\d{4}-\d{2}-\d{2}$/.test(date)
       ? `<time class="jot-card-date" datetime="${escapeHtml(date)}">${escapeHtml(date)}</time>`
@@ -288,7 +324,7 @@ function renderCard(n: BlockNode, diagnostics: Diagnostic[]): string {
   return `<section class="jot-card" data-primitive="${escapeHtml(n.name)}"${accent ? ` data-accent="${escapeHtml(accent)}"` : ""}${alert ? ' data-alert="true"' : ""}${attr("id", n.params.id)}>${parts.filter(Boolean).join("")}</section>`;
 }
 
-const TREND: Record<string, string> = { up: "↑", down: "↓", flat: "→" };
+export const TREND: Record<string, string> = { up: "↑", down: "↓", flat: "→" };
 
 /**
  * Which primitives share a rendering FUNCTION.
@@ -606,7 +642,7 @@ function renderNode(n: Node, diagnostics: Diagnostic[]): string {
  * Group the flat node list into rows of (content, notes). A margin note attaches
  * to the block it follows in source, which is what lets the grid align them.
  */
-interface Row {
+export interface Row {
   content: Node[];
   notes: MarginNoteNode[];
 }
@@ -614,7 +650,12 @@ interface Row {
 /** A @sticky block, the one thing that shares a row with its neighbours. */
 const isSticky = (n: Node): n is BlockNode => n.type === "block" && n.name === "sticky";
 
-function toRows(children: Node[]): Row[] {
+/**
+ * Exported as `rowsOf` for the other outputs, so that which block a note
+ * belongs to is decided in one place: the Word export anchors a comment to the
+ * same block this anchors the note beside.
+ */
+export function toRows(children: Node[]): Row[] {
   const rows: Row[] = [];
   for (const child of children) {
     if (child.type === "margin_note") {

@@ -17,6 +17,7 @@
   "dependencies": {
     "@astrojs/markdown-remark": "^7.3.1",
     "@astrojs/starlight": "^0.42.1",
+    "@jotstak/docx": "*",
     "@jotstak/renderer": "*",
     "@jotstak/schema": "*",
     "astro": "^7.3.3"
